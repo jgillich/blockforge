@@ -1,0 +1,3 @@
+[submodule "cgo/xmr-stak"]
+	path = cgo/xmr-stak
+	url = https://github.com/fireice-uk/xmr-stak
