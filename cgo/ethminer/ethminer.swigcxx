@@ -1,0 +1,9 @@
+ %module ethminer
+
+ %include "std_string.i"
+
+%{
+#include "Miner.h"
+%}
+
+%include "Miner.h"

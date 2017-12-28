@@ -1,3 +1,6 @@
 [submodule "cgo/xmrstak/xmr-stak"]
 	path = cgo/xmrstak/xmr-stak
 	url = https://github.com/fireice-uk/xmr-stak
+[submodule "cgo/ethminer/ethminer"]
+	path = cgo/ethminer/ethminer
+	url = https://github.com/ethereum-mining/ethminer.git
