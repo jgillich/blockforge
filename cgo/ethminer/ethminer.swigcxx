@@ -6,4 +6,6 @@
 #include "Miner.h"
 %}
 
+%include "ethminer/libdevcore/Exceptions.h"
+%include "ethminer/libethcore/Exceptions.h"
 %include "Miner.h"

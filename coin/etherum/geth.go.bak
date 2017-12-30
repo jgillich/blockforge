@@ -1,9 +1,11 @@
-package currency
+package etherum
 
 import (
 	"log"
 	"os"
 	"os/signal"
+
+	"gitlab.com/jgillich/autominer/coin"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/eth"
@@ -11,13 +13,13 @@ import (
 )
 
 func init() {
-	Currencies["Etherum"] = &Etherum{}
+	coin.Coins["Ethereum"] = &Ethereum{}
 }
 
-type Etherum struct {
+type Ethereum struct {
 }
 
-func (e *Etherum) Mine(config CurrencyConfig) {
+func (e *Ethereum) Mine(config coin.CoinConfig) {
 
 	nodeConfig := node.DefaultConfig
 	ethConfig := eth.DefaultConfig

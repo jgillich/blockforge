@@ -3,9 +3,6 @@
  %include "std_string.i"
 
 %{
-#include "xmr-stak/xmrstak/net/jpsock.hpp"
-#include "xmr-stak/xmrstak/jconf.hpp"
-#include "xmr-stak/xmrstak/params.hpp"
 #include "xmr-stak/xmrstak/misc/executor.hpp"
 %}
 

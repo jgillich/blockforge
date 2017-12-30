@@ -52,8 +52,6 @@
 #include <libapicore/Api.h>
 #endif
 
-namespace dev { namespace eth {} }
-
 using namespace std;
 using namespace dev;
 using namespace dev::eth;
