@@ -41,8 +41,6 @@
 #if ETH_ETHASHCUDA
 #include <libethash-cuda/CUDAMiner.h>
 #endif
-#include <jsonrpccpp/client/connectors/httpclient.h>
-#include "FarmClient.h"
 #if ETH_STRATUM
 #include <libstratum/EthStratumClient.h>
 #include <libstratum/EthStratumClientV2.h>

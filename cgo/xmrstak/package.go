@@ -1,4 +1,4 @@
 package xmrstak
 
-// #cgo LDFLAGS: -L${SRCDIR}/cgo/xmrstak/xmr-stak/bin -lxmr-stak-backend -lxmr-stak-c -lssl -lcrypto -lhwloc
+// #cgo LDFLAGS: -L${SRCDIR}/xmr-stak/bin -lxmr-stak-backend -lxmr-stak-c -lssl -lcrypto -lhwloc
 import "C"
