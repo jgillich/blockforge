@@ -7,6 +7,7 @@ import "C"
 
 import (
 	"errors"
+	"unsafe"
 )
 
 var (
@@ -45,7 +46,7 @@ const (
 // Topology represents the hardware layout of a machine.
 type Topology interface {
 	RootObject() Object
-	GetByType(ObjectType) []Object
+	GetByType(ObjectType, chan Object)
 }
 
 func NewTopology(flag TopologyFlag) (Topology, error) {
@@ -79,22 +80,31 @@ func (t *topology) RootObject() Object {
 	return &object{ptr: o}
 }
 
-func (t *topology) GetByType(ot ObjectType) []Object {
+func (t *topology) GetByType(ot ObjectType, c chan Object) {
 	n := C.hwloc_get_nbobjs_by_type(t.ptr, C.hwloc_obj_type_t(ot))
 
-	for i := 0; i < int(n); i++ {
-		obj := C.hwloc_get_obj_by_type(t.ptr, C.hwloc_obj_type_t(ot), C.uint(i))
-
-	}
+	go func() {
+		for i := 0; i < int(n); i++ {
+			o := C.hwloc_get_obj_by_type(t.ptr, C.hwloc_obj_type_t(ot), C.uint(i))
+			c <- &object{ptr: o}
+		}
+		close(c)
+	}()
 }
 
 type Object interface {
+	Name() string
 	Type() ObjectType
 	TypeString() string
+	InfoByName(string) string
 }
 
 type object struct {
 	ptr C.hwloc_obj_t
+}
+
+func (o *object) Name() string {
+	return C.GoString(o.ptr.name)
 }
 
 func (o *object) Type() ObjectType {
@@ -105,4 +115,11 @@ func (o *object) TypeString() string {
 	b := [64]C.char{}
 	n := C.hwloc_obj_type_snprintf(&b[0], C.size_t(len(b)), o.ptr, 0)
 	return C.GoStringN(&b[0], n)
+}
+
+func (o *object) InfoByName(name string) string {
+	n := C.CString(name)
+	c := C.hwloc_obj_get_info_by_name(o.ptr, n)
+	C.free(unsafe.Pointer(n))
+	return C.GoString(c)
 }
