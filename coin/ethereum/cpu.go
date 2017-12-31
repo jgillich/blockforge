@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 )
 
-func (e *Ethereum) mineCPU(config coin.CoinConfig) {
+func (e *Ethereum) mineCPU(config coin.MineConfig) {
 
 	nodeConfig := node.DefaultConfig
 	ethConfig := eth.DefaultConfig

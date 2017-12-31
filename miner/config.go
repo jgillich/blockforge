@@ -19,12 +19,11 @@ type Pool struct {
 }
 
 type CPU struct {
-	Name    string `hcl:"name"`
 	Coin    string `hcl:"coin"`
 	Threads int    `hcl:"threads"`
 }
 
 type GPU struct {
-	Name string `hcl:"name"`
-	Coin string `hcl:"coin"`
+	Index int    `hcl:"index"`
+	Coin  string `hcl:"coin"`
 }

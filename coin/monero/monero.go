@@ -1,15 +1,20 @@
 package monero
 
-import "gitlab.com/jgillich/autominer/coin"
+import (
+	"errors"
+
+	"gitlab.com/jgillich/autominer/coin"
+)
 
 func init() {
-	coin.Coins["Monero"] = &Monero{}
+	coin.Coins["monero"] = &Monero{}
 }
 
 type Monero struct {
 }
 
-func (x *Monero) Mine(config coin.CoinConfig) {
+func (x *Monero) Mine(config coin.MineConfig) error {
+	return errors.New("not implemented")
 	//xmrstak.ExecutorInst().Ex_start(true)
 
 }
