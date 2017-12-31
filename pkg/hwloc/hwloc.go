@@ -45,8 +45,9 @@ const (
 
 // Topology represents the hardware layout of a machine.
 type Topology interface {
-	RootObject() Object
-	GetByType(ObjectType, chan Object)
+	GetRootObj() Object
+	GetNbobjsByType(ObjectType) int
+	GetObjByType(ObjectType, int) Object
 }
 
 func NewTopology(flag TopologyFlag) (Topology, error) {
@@ -75,21 +76,19 @@ type topology struct {
 	ptr C.hwloc_topology_t
 }
 
-func (t *topology) RootObject() Object {
+func (t *topology) GetRootObj() Object {
 	o := C.hwloc_get_root_obj(t.ptr)
 	return &object{ptr: o}
 }
 
-func (t *topology) GetByType(ot ObjectType, c chan Object) {
+func (t *topology) GetNbobjsByType(ot ObjectType) int {
 	n := C.hwloc_get_nbobjs_by_type(t.ptr, C.hwloc_obj_type_t(ot))
+	return int(n)
+}
 
-	go func() {
-		for i := 0; i < int(n); i++ {
-			o := C.hwloc_get_obj_by_type(t.ptr, C.hwloc_obj_type_t(ot), C.uint(i))
-			c <- &object{ptr: o}
-		}
-		close(c)
-	}()
+func (t *topology) GetObjByType(ot ObjectType, idx int) Object {
+	o := C.hwloc_get_obj_by_type(t.ptr, C.hwloc_obj_type_t(ot), C.uint(idx))
+	return &object{ptr: o}
 }
 
 type Object interface {
@@ -97,6 +96,7 @@ type Object interface {
 	Type() ObjectType
 	TypeString() string
 	InfoByName(string) string
+	CPUSet()
 }
 
 type object struct {
@@ -122,4 +122,8 @@ func (o *object) InfoByName(name string) string {
 	c := C.hwloc_obj_get_info_by_name(o.ptr, n)
 	C.free(unsafe.Pointer(n))
 	return C.GoString(c)
+}
+
+func (o *object) CPUSet() {
+
 }

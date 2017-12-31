@@ -11,11 +11,11 @@ func TestCoreCount(t *testing.T) {
 		t.Error(err)
 	}
 
-	c := make(chan Object)
-	topology.GetByType(ObjectTypePU, c)
+	width := topology.GetNbobjsByType(ObjectTypePU)
 	count := 0
 
-	for o := range c {
+	for i := 0; i < width; i++ {
+		o := topology.GetObjByType(ObjectTypePU, i)
 		if o.TypeString() != "PU" {
 			t.Fatalf("unexpected type '%s'", o.TypeString())
 		}
