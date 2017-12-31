@@ -1,5 +1,6 @@
 package etherum
 
+/*
 import (
 	"log"
 	"os"
@@ -72,3 +73,4 @@ func (e *Ethereum) mineCPU(config coin.MineConfig) {
 
 	stack.Wait()
 }
+*/

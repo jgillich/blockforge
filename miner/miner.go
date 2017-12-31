@@ -58,13 +58,10 @@ func (m *Miner) Start() error {
 			return fmt.Errorf("unsupported coin '%v'", coinName)
 		}
 
-		go func() {
-			err := coin.Mine(mineConfig)
-			if err != nil {
-				// TODO handle error
-				panic(err)
-			}
-		}()
+		err := coin.Mine(mineConfig)
+		if err != nil {
+			return err
+		}
 	}
 
 	// wait for interrupt signal
