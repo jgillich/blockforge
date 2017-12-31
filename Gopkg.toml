@@ -21,5 +21,9 @@
 
 
 [[constraint]]
-  name = "github.com/ethereum/go-ethereum"
-  version = "1.7.3"
+  branch = "master"
+  name = "github.com/mitchellh/cli"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/hashicorp/hcl"

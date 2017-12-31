@@ -12,14 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 )
 
-func init() {
-	coin.Coins["Ethereum"] = &Ethereum{}
-}
-
-type Ethereum struct {
-}
-
-func (e *Ethereum) Mine(config coin.CoinConfig) {
+func (e *Ethereum) mineCPU(config coin.CoinConfig) {
 
 	nodeConfig := node.DefaultConfig
 	ethConfig := eth.DefaultConfig
