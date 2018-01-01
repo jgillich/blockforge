@@ -41,10 +41,7 @@
 #if ETH_ETHASHCUDA
 #include <libethash-cuda/CUDAMiner.h>
 #endif
-//#if ETH_STRATUM
-#include <libstratum/EthStratumClient.h>
 #include <libstratum/EthStratumClientV2.h>
-//#endif
 #if ETH_DBUS
 #include "DBusInt.h"
 #endif

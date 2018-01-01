@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	for _, c := range []string{"eth", "etc"} {
+	for _, c := range []string{"eth", "etc", "exp", "ubq", "music"} {
 		coin.Coins[c] = &Ethash{}
 	}
 }
