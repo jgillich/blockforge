@@ -27,6 +27,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/buger/goterm"
+  packages = ["."]
+  revision = "ef0fa5b75d0fa2b31323463783a6e90353771116"
+
+[[projects]]
+  branch = "master"
   name = "github.com/edsrzf/mmap-go"
   packages = ["."]
   revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
@@ -396,6 +402,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1de05e046c68f7eb249042f807c57f78aec72bc29aa3f5a04f44c99723664166"
+  inputs-digest = "1d1c26e3e783717fa3ef27f34c96c624c4e93ac8d7ab7996b3e06b05692a5671"
   solver-name = "gps-cdcl"
   solver-version = 1

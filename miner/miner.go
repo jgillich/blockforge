@@ -20,7 +20,7 @@ func New(config Config) *Miner {
 	return &miner
 }
 
-func (m *Miner) Start() error {
+func (m *Miner) Start(stats chan coin.MineStats) error {
 
 	for coinName, coinConfig := range m.config.Coins {
 
@@ -57,6 +57,7 @@ func (m *Miner) Start() error {
 			PoolPass:   coinConfig.Pool.Pass,
 			Threads:    threads,
 			GPUIndexes: gpus,
+			Stats:      stats,
 		}
 
 		coin, ok := coin.Coins[coinName]

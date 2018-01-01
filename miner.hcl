@@ -1,9 +1,11 @@
 donate = 1
 
+/*
 cpu "Intel i5" {
   threads = 2
   coin = "xmr"
 }
+*/
 
 gpu "RX 560" {
   index = 0

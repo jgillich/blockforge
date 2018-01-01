@@ -2,6 +2,7 @@ package etherum
 
 import (
 	"net/url"
+	"time"
 
 	"gitlab.com/jgillich/autominer/cgo/ethminer"
 
@@ -36,5 +37,15 @@ func (e *Ethash) Mine(config coin.MineConfig) error {
 
 	go eth.Start()
 
+	go func() {
+		for {
+			config.Stats <- coin.MineStats{
+				Coin:     config.Coin,
+				Hashrate: float32(time.Now().Second() * 10),
+			}
+			time.Sleep(time.Second * 5)
+		}
+
+	}()
 	return nil
 }

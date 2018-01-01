@@ -25,7 +25,10 @@ type MineConfig struct {
 	PoolPass   string
 	Threads    int
 	GPUIndexes []int
+	Stats      chan MineStats
 }
 
 type MineStats struct {
+	Coin     string
+	Hashrate float32
 }

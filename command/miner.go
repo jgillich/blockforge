@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/buger/goterm"
+
 	"github.com/hashicorp/hcl"
 	"gitlab.com/jgillich/autominer/coin"
 	"gitlab.com/jgillich/autominer/miner"
@@ -47,7 +49,31 @@ func (c MinerCommand) Run(args []string) int {
 	}
 
 	miner := miner.New(config)
-	err = miner.Start()
+
+	stats := make(chan coin.MineStats)
+
+	go func() {
+		allStats := map[string]float32{}
+
+		printStats := func() {
+			goterm.Clear()
+			goterm.MoveCursor(0, 0)
+			goterm.Flush()
+
+			for c, r := range allStats {
+				fmt.Fprintf(goterm.Output, "%v: %v H/s\t", c, r)
+			}
+
+			goterm.Flush()
+		}
+
+		for stat := range stats {
+			allStats[stat.Coin] = stat.Hashrate
+			printStats()
+		}
+	}()
+
+	err = miner.Start(stats)
 	if err != nil {
 		fmt.Println(err)
 		return 1
