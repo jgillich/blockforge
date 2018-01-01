@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"gitlab.com/jgillich/autominer/coin"
 
@@ -56,8 +57,7 @@ func (e *Ethash) mineCPU(config coin.MineConfig) {
 		go stack.Stop()
 	}()
 
-	// TODO threads from config
-	ethereum.Engine().(threaded).SetThreads(1)
+	ethereum.Engine().(threaded).SetThreads(config.Threads)
 
 	// TODO config option
 	// Set the gas price to the limits from the CLI and start mining
@@ -66,6 +66,16 @@ func (e *Ethash) mineCPU(config coin.MineConfig) {
 	if err := ethereum.StartMining(true); err != nil {
 		log.Fatalf("Failed to start mining: %v", err)
 	}
+
+	go func() {
+		for {
+			config.Stats <- coin.MineStats{
+				Coin:     config.Coin,
+				Hashrate: float32(ethereum.Miner().HashRate()),
+			}
+			time.Sleep(time.Second * 10)
+		}
+	}()
 
 	stack.Wait()
 }

@@ -2,7 +2,6 @@ package etherum
 
 import (
 	"net/url"
-	"time"
 
 	"gitlab.com/jgillich/autominer/cgo/ethminer"
 
@@ -20,7 +19,7 @@ type Ethash struct {
 
 func (e *Ethash) Mine(config coin.MineConfig) error {
 	if config.Threads > 0 {
-		//return errors.New("CPU mining is not supported by the ethash miner")
+		go e.mineCPU(config)
 	}
 
 	eth := ethminer.NewEthminer()
@@ -37,15 +36,5 @@ func (e *Ethash) Mine(config coin.MineConfig) error {
 
 	go eth.Start()
 
-	go func() {
-		for {
-			config.Stats <- coin.MineStats{
-				Coin:     config.Coin,
-				Hashrate: float32(time.Now().Second() * 10),
-			}
-			time.Sleep(time.Second * 5)
-		}
-
-	}()
 	return nil
 }
