@@ -26,14 +26,14 @@ First, install the following dependencies:
 
 Next, build all miners:
 
-  cd cgo/xmrstak/xmr-stak
-  mkdir build && cd build
-  cmake .. -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
-  cmake --build .
+    cd cgo/xmrstak/xmr-stak
+    mkdir build && cd build
+    cmake .. -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+    cmake --build .
 
-  cd cgo/ethminer/ethminer
-  mkdir build && cd build
-  cmake ..
-  cmake --build .
+    cd cgo/ethminer/ethminer
+    mkdir build && cd build
+    cmake ..
+    cmake --build .
 
 To install Go dependencies, run `dep ensure`. To build, run `go build`.
