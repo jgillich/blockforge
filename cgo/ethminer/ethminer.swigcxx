@@ -3,9 +3,10 @@
  %include "std_string.i"
 
 %{
-#include "Miner.h"
+#include "Ethminer.hpp"
 %}
 
-%include "ethminer/libdevcore/Exceptions.h"
-%include "ethminer/libethcore/Exceptions.h"
-%include "Miner.h"
+%import "ethminer/libdevcore/Exceptions.h"
+%import "ethminer/libethcore/Exceptions.h"
+
+%include "Ethminer.hpp"

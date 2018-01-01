@@ -44,6 +44,11 @@ func (m *Miner) Start() error {
 			}
 		}
 
+		// skip coins with no threads and gpus
+		if len(gpus) == 0 && threads == 0 {
+			continue
+		}
+
 		mineConfig := coin.MineConfig{
 			Donate:     m.config.Donate,
 			PoolURL:    coinConfig.Pool.URL,

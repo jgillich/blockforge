@@ -1,6 +1,5 @@
 package etherum
 
-/*
 import (
 	"log"
 	"os"
@@ -13,21 +12,18 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 )
 
-func (e *Ethereum) mineCPU(config coin.MineConfig) {
+func (e *Ethash) mineCPU(config coin.MineConfig) {
 
 	nodeConfig := node.DefaultConfig
 	ethConfig := eth.DefaultConfig
+
+	ethConfig.MinerThreads = config.Threads
+	ethConfig.Etherbase = common.HexToAddress(config.PoolUser)
 
 	stack, err := node.New(&nodeConfig)
 	if err != nil {
 		log.Fatalf("Failed to create the protocol stack: %v", err)
 	}
-
-	//ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
-
-	// TODO retrieve etherbase from account
-	// https://github.com/ethereum/go-ethereum/blob/46e5583993afe7b9d0ff432f846b2a97bcb89876/cmd/utils/flags.go#L764
-	ethConfig.Etherbase = common.HexToAddress("0x7ef5a6135f1fd6a02593eedc869c6d41d934aef8")
 
 	// register eth service
 	err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
@@ -73,4 +69,3 @@ func (e *Ethereum) mineCPU(config coin.MineConfig) {
 
 	stack.Wait()
 }
-*/

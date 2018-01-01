@@ -41,28 +41,23 @@
 #if ETH_ETHASHCUDA
 #include <libethash-cuda/CUDAMiner.h>
 #endif
-#if ETH_STRATUM
+//#if ETH_STRATUM
 #include <libstratum/EthStratumClient.h>
 #include <libstratum/EthStratumClientV2.h>
-#endif
+//#endif
 #if ETH_DBUS
 #include "DBusInt.h"
-#endif
-#if API_CORE
-#include <libapicore/Api.h>
 #endif
 
 using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
-
-class BadArgument: public Exception {};
 struct MiningChannel: public LogChannel
 {
-	static const char* name() { return EthGreen "  m"; }
-	static const int verbosity = 2;
-	static const bool debug = false;
+       static const char* name() { return EthGreen "  m"; }
+       static const int verbosity = 2;
+       static const bool debug = false;
 };
 #define minelog clog(MiningChannel)
 
@@ -74,22 +69,11 @@ inline std::string toJS(unsigned long _n)
 	return "0x" + res;
 }
 
-class MinerCLI
+class Ethminer
 {
 public:
-	enum class OperationMode
-	{
-		None,
-		Benchmark,
-		Simulation,
-		Farm,
-		Stratum
-	};
 
-	MinerCLI(OperationMode _mode = OperationMode::None): mode(_mode) {}
-
-#if ETH_STRATUM
-	void doStratum()
+	void start()
 	{
 		map<string, Farm::SealerDescriptor> sealers;
 #if ETH_ETHASHCL
@@ -103,120 +87,56 @@ public:
 
 		Farm f;
 
-#if API_CORE
-		Api api(this->m_api_port, f);
-#endif
-
-		// this is very ugly, but if Stratum Client V2 tunrs out to be a success, V1 will be completely removed anyway
-		if (m_stratumClientVersion == 1) {
-			EthStratumClient client(&f, m_minerType, m_farmURL, m_port, m_user, m_pass, m_maxFarmRetries, m_worktimeout, m_stratumProtocol, m_email);
-			if (m_farmFailOverURL != "")
+		EthStratumClientV2 client(&f, m_minerType, m_farmURL, m_port, m_user, m_pass, m_maxFarmRetries, m_worktimeout, m_stratumProtocol, m_email);
+		if (m_farmFailOverURL != "")
+		{
+			if (m_fuser != "")
 			{
-				if (m_fuser != "")
-				{
-					client.setFailover(m_farmFailOverURL, m_fport, m_fuser, m_fpass);
-				}
-				else
-				{
-					client.setFailover(m_farmFailOverURL, m_fport);
-				}
+				client.setFailover(m_farmFailOverURL, m_fport, m_fuser, m_fpass);
 			}
-			f.setSealers(sealers);
-
-			f.onSolutionFound([&](Solution sol)
+			else
 			{
-				if (client.isConnected()) {
-					client.submit(sol);
-				}
-				else {
-					cwarn << "Can't submit solution: Not connected";
-				}
-				return false;
-			});
-			f.onMinerRestart([&](){
-				client.reconnect();
-			});
-
-			while (client.isRunning())
-			{
-				auto mp = f.miningProgress(m_show_hwmonitors);
-				if (client.isConnected())
-				{
-					if (client.current())
-					{
-						minelog << mp << f.getSolutionStats() << f.farmLaunchedFormatted();
-#if ETH_DBUS
-						dbusint.send(toString(mp).data());
-#endif
-					}
-					else
-					{
-						minelog << "Waiting for work package...";
-					}
-
-					if (this->m_report_stratum_hashrate) {
-						auto rate = mp.rate();
-						client.submitHashrate(toJS(rate));
-					}
-				}
-				this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
+				client.setFailover(m_farmFailOverURL, m_fport);
 			}
 		}
-		else if (m_stratumClientVersion == 2) {
-			EthStratumClientV2 client(&f, m_minerType, m_farmURL, m_port, m_user, m_pass, m_maxFarmRetries, m_worktimeout, m_stratumProtocol, m_email);
-			if (m_farmFailOverURL != "")
-			{
-				if (m_fuser != "")
-				{
-					client.setFailover(m_farmFailOverURL, m_fport, m_fuser, m_fpass);
-				}
-				else
-				{
-					client.setFailover(m_farmFailOverURL, m_fport);
-				}
-			}
-			f.setSealers(sealers);
+		f.setSealers(sealers);
 
-			f.onSolutionFound([&](Solution sol)
-			{
-				client.submit(sol);
-				return false;
-			});
-			f.onMinerRestart([&](){
-				client.reconnect();
-			});
+		f.onSolutionFound([&](Solution sol)
+		{
+			client.submit(sol);
+			return false;
+		});
+		f.onMinerRestart([&](){
+			client.reconnect();
+		});
 
-			while (client.isRunning())
+		while (client.isRunning())
+		{
+			auto mp = f.miningProgress(m_show_hwmonitors);
+			if (client.isConnected())
 			{
-				auto mp = f.miningProgress(m_show_hwmonitors);
-				if (client.isConnected())
+				if (client.current())
 				{
-					if (client.current())
-					{
-						minelog << mp << f.getSolutionStats();
+					minelog << mp << f.getSolutionStats();
 #if ETH_DBUS
-						dbusint.send(toString(mp).data());
+					dbusint.send(toString(mp).data());
 #endif
-					}
-					else if (client.waitState() == MINER_WAIT_STATE_WORK)
-					{
-						minelog << "Waiting for work package...";
-					}
-
-					if (this->m_report_stratum_hashrate) {
-						auto rate = mp.rate();
-						client.submitHashrate(toJS(rate));
-					}
 				}
-				this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
+				else if (client.waitState() == MINER_WAIT_STATE_WORK)
+				{
+					minelog << "Waiting for work package...";
+				}
+
+				if (this->m_report_stratum_hashrate) {
+					auto rate = mp.rate();
+					client.submitHashrate(toJS(rate));
+				}
 			}
+			this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
 		}
+
 
 	}
-#endif
-
-	/// Operating mode.
-	OperationMode mode;
 
 	/// Mining options
 	bool m_running = true;
@@ -262,13 +182,8 @@ public:
 	bool m_farmRecheckSet = false;
 	int m_worktimeout = 180;
 	bool m_show_hwmonitors = false;
-#if API_CORE
-	int m_api_port = 0;
-#endif
 
-#if ETH_STRATUM
 	bool m_report_stratum_hashrate = false;
-	int m_stratumClientVersion = 1;
 	int m_stratumProtocol = STRATUM_PROTOCOL_STRATUM;
 	string m_user;
 	string m_pass;
@@ -276,7 +191,7 @@ public:
 	string m_fuser = "";
 	string m_fpass = "";
 	string m_email = "";
-#endif
+
 	string m_fport = "";
 
 #if ETH_DBUS

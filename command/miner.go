@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/hcl"
@@ -12,8 +13,8 @@ import (
 	"gitlab.com/jgillich/autominer/miner"
 
 	// import coins to initialize them
-	_ "gitlab.com/jgillich/autominer/coin/ethereum"
-	_ "gitlab.com/jgillich/autominer/coin/monero"
+	_ "gitlab.com/jgillich/autominer/coin/cryptonight"
+	_ "gitlab.com/jgillich/autominer/coin/ethash"
 
 	"github.com/mitchellh/cli"
 )
@@ -60,6 +61,7 @@ func (c MinerCommand) Help() string {
 	for c := range coin.Coins {
 		coins = append(coins, c)
 	}
+	sort.Strings(coins)
 
 	helpText := `
 Usage: coin miner [options]
@@ -71,7 +73,7 @@ Usage: coin miner [options]
 	General Options:
 
 		-config=<path>          Config file path.
-		-init										Generate config file.
+		-init                   Generate config file.
 
 	`
 	return strings.TrimSpace(helpText)
