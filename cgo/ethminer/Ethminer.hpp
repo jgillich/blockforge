@@ -42,21 +42,10 @@
 #include <libethash-cuda/CUDAMiner.h>
 #endif
 #include <libstratum/EthStratumClientV2.h>
-#if ETH_DBUS
-#include "DBusInt.h"
-#endif
 
 using namespace std;
 using namespace dev;
 using namespace dev::eth;
-
-inline std::string toJS(unsigned long _n)
-{
-	std::string h = toHex(toCompactBigEndian(_n, 1));
-	// remove first 0, if it is necessary;
-	std::string res = h[0] != '0' ? h : h.substr(1);
-	return "0x" + res;
-}
 
 class Ethminer
 {
@@ -64,8 +53,8 @@ public:
 
 	void start()
 	{
-		// disable all logging
-		g_logVerbosity = -1;
+		// log errors only
+		g_logVerbosity = 0;
 
 		map<string, Farm::SealerDescriptor> sealers;
 #if ETH_ETHASHCL
@@ -107,22 +96,7 @@ public:
 			auto mp = f.miningProgress(m_show_hwmonitors);
 			if (client.isConnected())
 			{
-				if (client.current())
-				{
-					//minelog << mp << f.getSolutionStats();
-#if ETH_DBUS
-					dbusint.send(toString(mp).data());
-#endif
-				}
-				else if (client.waitState() == MINER_WAIT_STATE_WORK)
-				{
-					//minelog << "Waiting for work package...";
-				}
-
-				if (this->m_report_stratum_hashrate) {
-					auto rate = mp.rate();
-					client.submitHashrate(toJS(rate));
-				}
+				m_hashrate = mp.rate();
 			}
 			this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
 		}
@@ -130,13 +104,15 @@ public:
 
 	}
 
+	int m_hashrate = 0;
+
 	/// Mining options
 	bool m_running = true;
 	MinerType m_minerType = MinerType::Mixed;
 	unsigned m_openclPlatform = 0;
 	unsigned m_miningThreads = UINT_MAX;
 	bool m_shouldListDevices = false;
-#if ETH_ETHASHCL
+//#if ETH_ETHASHCL
 	unsigned m_openclDeviceCount = 0;
 	unsigned m_openclDevices[16];
 	unsigned m_openclThreadsPerHash = 8;
@@ -144,7 +120,7 @@ public:
 	unsigned m_globalWorkSizeMultiplier = CLMiner::c_defaultGlobalWorkSizeMultiplier;
 	unsigned m_localWorkSize = CLMiner::c_defaultLocalWorkSize;
 #endif
-#endif
+//#endif
 #if ETH_ETHASHCUDA
 	unsigned m_globalWorkSizeMultiplier = ethash_cuda_miner::c_defaultGridSize;
 	unsigned m_localWorkSize = ethash_cuda_miner::c_defaultBlockSize;
@@ -185,8 +161,4 @@ public:
 	string m_email = "";
 
 	string m_fport = "";
-
-#if ETH_DBUS
-	DBusInt dbusint;
-#endif
 };
