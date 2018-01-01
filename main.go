@@ -19,6 +19,9 @@ func main() {
 		"miner": func() (cli.Command, error) {
 			return command.MinerCommand{Ui: ui}, nil
 		},
+		"gui": func() (cli.Command, error) {
+			return command.GuiCommand{Ui: ui}, nil
+		},
 	}
 
 	exitStatus, err := c.Run()

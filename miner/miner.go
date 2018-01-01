@@ -50,6 +50,7 @@ func (m *Miner) Start() error {
 		}
 
 		mineConfig := coin.MineConfig{
+			Coin:       coinName,
 			Donate:     m.config.Donate,
 			PoolURL:    coinConfig.Pool.URL,
 			PoolUser:   coinConfig.Pool.User,

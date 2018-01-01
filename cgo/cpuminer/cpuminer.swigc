@@ -1,0 +1,12 @@
+ %module cpuminer
+
+ %include "std_string.i"
+
+%{
+#include "Ethminer.hpp"
+%}
+
+%import "ethminer/libdevcore/Exceptions.h"
+%import "ethminer/libethcore/Exceptions.h"
+
+%include "Ethminer.hpp"

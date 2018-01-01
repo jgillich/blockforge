@@ -87,10 +87,31 @@
   version = "v1.7.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/go-gl/gl"
+  packages = [
+    "v2.1/gl",
+    "v3.2-core/gl"
+  ]
+  revision = "ac0d3d2af0fe995e2bb09fa6619b716b0c0fc0fa"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-gl/glfw"
+  packages = ["v3.2/glfw"]
+  revision = "513e4f2bf85c31fba0fc4907abd7895242ccbe50"
+
+[[projects]]
   name = "github.com/go-stack/stack"
   packages = ["."]
   revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
   version = "v1.7.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang-ui/nuklear"
+  packages = ["nk"]
+  revision = "5e3698827620d58c1a606da502897bf2a81e0337"
 
 [[projects]]
   branch = "master"
@@ -266,6 +287,29 @@
   revision = "34011bf325bce385408353a30b101fe5e923eb6e"
 
 [[projects]]
+  name = "github.com/veandco/go-sdl2"
+  packages = ["sdl"]
+  revision = "30f30965227962032c13bd0b12a89e6a5107c768"
+  version = "v0.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xlab/android-go"
+  packages = [
+    "android",
+    "egl",
+    "gles2",
+    "gles3"
+  ]
+  revision = "5051ff33bc6ae9450ba579dec658c49a8038240c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/xlab/closer"
+  packages = ["."]
+  revision = "89cd22812c4fd5188746092cd10992caeffc75ab"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -352,6 +396,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0ef2bdb95f9b273bc784a359f4a830b0eb1a22b0bdb4fa1dff99bb77913c28f9"
+  inputs-digest = "1de05e046c68f7eb249042f807c57f78aec72bc29aa3f5a04f44c99723664166"
   solver-name = "gps-cdcl"
   solver-version = 1
