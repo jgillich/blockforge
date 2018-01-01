@@ -15,11 +15,25 @@ properly.
 
 ## Building
 
-Dependencies:
+First, install the following dependencies:
 
 * Go & dep
+* cmake and a C++ compiler
 * OpenSSL
 * Boost
 * hwloc
+* swig
 
-To install dependencies, run `dep ensure`. To build, run `go build`.
+Next, build all miners:
+
+  cd cgo/xmrstak/xmr-stak
+  mkdir build && cd build
+  cmake .. -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+  cmake --build .
+
+  cd cgo/ethminer/ethminer
+  mkdir build && cd build
+  cmake ..
+  cmake --build .
+
+To install Go dependencies, run `dep ensure`. To build, run `go build`.
