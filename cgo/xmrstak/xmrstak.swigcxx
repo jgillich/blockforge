@@ -3,12 +3,8 @@
  %include "std_string.i"
 
 %{
-#include "xmr-stak/xmrstak/backend/iBackend.hpp"
-#include "xmr-stak/xmrstak/backend/globalStates.hpp"
-
-
-#include "xmr-stak/xmrstak/misc/executor.hpp"
+#include <xmrstak/net/jpsock.hpp>
+#include <xmrstak/misc/executor.hpp>
 %}
 
-%include "xmr-stak/xmrstak/params.hpp"
-%include "xmr-stak/xmrstak/misc/executor.hpp"
+%include <xmrstak/misc/executor.hpp>
