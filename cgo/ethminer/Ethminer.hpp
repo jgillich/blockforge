@@ -50,14 +50,6 @@ using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
-struct MiningChannel: public LogChannel
-{
-       static const char* name() { return EthGreen "  m"; }
-       static const int verbosity = 2;
-       static const bool debug = false;
-};
-#define minelog clog(MiningChannel)
-
 inline std::string toJS(unsigned long _n)
 {
 	std::string h = toHex(toCompactBigEndian(_n, 1));
@@ -72,6 +64,9 @@ public:
 
 	void start()
 	{
+		// disable all logging
+		g_logVerbosity = -1;
+
 		map<string, Farm::SealerDescriptor> sealers;
 #if ETH_ETHASHCL
 		sealers["opencl"] = Farm::SealerDescriptor{ &CLMiner::instances, [](FarmFace& _farm, unsigned _index){ return new CLMiner(_farm, _index); } };
@@ -114,14 +109,14 @@ public:
 			{
 				if (client.current())
 				{
-					minelog << mp << f.getSolutionStats();
+					//minelog << mp << f.getSolutionStats();
 #if ETH_DBUS
 					dbusint.send(toString(mp).data());
 #endif
 				}
 				else if (client.waitState() == MINER_WAIT_STATE_WORK)
 				{
-					minelog << "Waiting for work package...";
+					//minelog << "Waiting for work package...";
 				}
 
 				if (this->m_report_stratum_hashrate) {
