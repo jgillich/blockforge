@@ -1,7 +1,6 @@
-package monero
+package cryptonight
 
 import (
-	"gitlab.com/jgillich/autominer/cgo/xmrstak"
 	"gitlab.com/jgillich/autominer/coin"
 )
 
@@ -22,8 +21,6 @@ type Cryptonight struct {
 	light bool
 }
 
-func (x *Cryptonight) Mine(config coin.MineConfig) error {
-	xmrstak.ExecutorInst().Ex_start(true)
-
-	return nil
+func (c *Cryptonight) Miner(config coin.MinerConfig) (coin.Miner, error) {
+	return NewMiner(config, c.light)
 }

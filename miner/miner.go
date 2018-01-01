@@ -11,34 +11,31 @@ import (
 )
 
 type Miner struct {
-	config Config
+	miners map[string]coin.Miner
 }
 
-func New(config Config) *Miner {
-	miner := Miner{config: config}
+func New(config Config) (*Miner, error) {
+	miner := Miner{
+		miners: map[string]coin.Miner{},
+	}
 
-	return &miner
-}
-
-func (m *Miner) Start(stats chan coin.MineStats) error {
-
-	for coinName, coinConfig := range m.config.Coins {
+	for coinName, coinConfig := range config.Coins {
 
 		threads := 0
-		for _, cpuConfig := range m.config.CPUs {
+		for _, cpuConfig := range config.CPUs {
 			if cpuConfig.Coin == coinName {
 				if cpuConfig.Threads <= 0 {
-					return errors.New("CPU threads must be 1 or larger")
+					return nil, errors.New("CPU threads must be 1 or larger")
 				}
 				threads += cpuConfig.Threads
 			}
 		}
 		if threads > runtime.NumCPU() {
-			return errors.New("CPU threads cannot exceed total CPU cores")
+			return nil, errors.New("CPU threads cannot exceed total CPU cores")
 		}
 
 		var gpus []int
-		for _, gpuConfig := range m.config.GPUs {
+		for _, gpuConfig := range config.GPUs {
 			if gpuConfig.Coin == coinName {
 				gpus = append(gpus, gpuConfig.Index)
 			}
@@ -49,23 +46,36 @@ func (m *Miner) Start(stats chan coin.MineStats) error {
 			continue
 		}
 
-		mineConfig := coin.MineConfig{
+		minerConfig := coin.MinerConfig{
 			Coin:       coinName,
-			Donate:     m.config.Donate,
+			Donate:     config.Donate,
 			PoolURL:    coinConfig.Pool.URL,
 			PoolUser:   coinConfig.Pool.User,
 			PoolPass:   coinConfig.Pool.Pass,
 			Threads:    threads,
 			GPUIndexes: gpus,
-			Stats:      stats,
 		}
 
 		coin, ok := coin.Coins[coinName]
 		if !ok {
-			return fmt.Errorf("unsupported coin '%v'", coinName)
+			return nil, fmt.Errorf("unsupported coin '%v'", coinName)
 		}
 
-		err := coin.Mine(mineConfig)
+		m, err := coin.Miner(minerConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		miner.miners[coinName] = m
+	}
+
+	return &miner, nil
+}
+
+func (m *Miner) Start() error {
+
+	for _, miner := range m.miners {
+		err := miner.Start()
 		if err != nil {
 			return err
 		}
@@ -78,5 +88,14 @@ func (m *Miner) Start(stats chan coin.MineStats) error {
 	<-sigc
 
 	return nil
+}
 
+func (m *Miner) Stats() []coin.MinerStats {
+	stats := make([]coin.MinerStats, 0)
+
+	for _, miner := range m.miners {
+		stats = append(stats, miner.Stats())
+	}
+
+	return stats
 }

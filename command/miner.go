@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/buger/goterm"
 
@@ -48,32 +49,30 @@ func (c MinerCommand) Run(args []string) int {
 		return 1
 	}
 
-	miner := miner.New(config)
-
-	stats := make(chan coin.MineStats)
+	miner, err := miner.New(config)
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
 
 	go func() {
-		allStats := map[string]float32{}
-
-		printStats := func() {
+		for {
+			stats := miner.Stats()
 			goterm.Clear()
 			goterm.MoveCursor(0, 0)
 			goterm.Flush()
 
-			for c, r := range allStats {
-				fmt.Fprintf(goterm.Output, "%v: %v H/s\t", c, r)
+			for _, stat := range stats {
+				fmt.Fprintf(goterm.Output, "%v: %v H/s\t", stat.Coin, stat.Hashrate)
 			}
 
 			goterm.Flush()
-		}
 
-		for stat := range stats {
-			allStats[stat.Coin] = stat.Hashrate
-			printStats()
+			time.Sleep(time.Second * 10)
 		}
 	}()
 
-	err = miner.Start(stats)
+	err = miner.Start()
 	if err != nil {
 		fmt.Println(err)
 		return 1

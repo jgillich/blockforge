@@ -3,8 +3,13 @@ package coin
 var Coins = map[string]Coin{}
 
 type Coin interface {
-	Mine(MineConfig) error
+	Miner(MinerConfig) (Miner, error)
 	//Info() CoinInfo
+}
+
+type Miner interface {
+	Start() error
+	Stats() MinerStats
 }
 
 /*
@@ -17,7 +22,7 @@ type CoinInfo struct {
 
 type CoinConfig struct{}
 
-type MineConfig struct {
+type MinerConfig struct {
 	Coin       string
 	Donate     int
 	PoolURL    string
@@ -25,10 +30,9 @@ type MineConfig struct {
 	PoolPass   string
 	Threads    int
 	GPUIndexes []int
-	Stats      chan MineStats
 }
 
-type MineStats struct {
+type MinerStats struct {
 	Coin     string
 	Hashrate float32
 }
