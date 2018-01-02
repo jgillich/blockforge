@@ -22,6 +22,12 @@ import (
 	"github.com/mitchellh/cli"
 )
 
+func init() {
+	Commands["miner"] = func() (cli.Command, error) {
+		return MinerCommand{}, nil
+	}
+}
+
 type MinerCommand struct {
 	Ui cli.Ui
 }
