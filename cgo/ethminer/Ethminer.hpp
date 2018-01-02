@@ -53,6 +53,8 @@ public:
 
 	void start()
 	{
+		m_running = true;
+
 		// log errors only
 		g_logVerbosity = 0;
 
@@ -93,21 +95,33 @@ public:
 
 		while (client.isRunning())
 		{
+			std::cout << "isRunning";
 			auto mp = f.miningProgress(m_show_hwmonitors);
 			if (client.isConnected())
 			{
 				m_hashrate = mp.rate();
 			}
-			this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
+			//if(!m_running)
+			//{
+				// TODO disconnect is private
+				// client.disconnect();
+			//}
+			//else
+			//{
+				this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
+			//}
 		}
+	}
 
-
+	void stop()
+	{
+		m_running = false;
 	}
 
 	int m_hashrate = 0;
 
 	/// Mining options
-	bool m_running = true;
+	bool m_running = false;
 	MinerType m_minerType = MinerType::Mixed;
 	unsigned m_openclPlatform = 0;
 	unsigned m_miningThreads = UINT_MAX;

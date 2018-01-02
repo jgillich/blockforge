@@ -52,6 +52,10 @@ func (m *Miner) Start() error {
 	return nil
 }
 
+func (m *Miner) Stop() {
+	m.ethminer.Stop()
+}
+
 func (m *Miner) Stats() coin.MinerStats {
 	hashrate := 0
 	hashrate += m.ethminer.GetM_hashrate()

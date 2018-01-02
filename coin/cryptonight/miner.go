@@ -20,6 +20,10 @@ func (m *Miner) Start() error {
 	return nil
 }
 
+func (m *Miner) Stop() {
+
+}
+
 func (m *Miner) Stats() coin.MinerStats {
 	hashrate := 0
 	return coin.MinerStats{

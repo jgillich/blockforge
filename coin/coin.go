@@ -9,6 +9,7 @@ type Coin interface {
 
 type Miner interface {
 	Start() error
+	Stop()
 	Stats() MinerStats
 }
 
