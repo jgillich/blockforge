@@ -7,7 +7,7 @@ before_script:
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
-  - dnf install @development-tools go hwloc swig
+  - dnf install -y @development-tools go hwloc swig
 
 stages:
     - test
