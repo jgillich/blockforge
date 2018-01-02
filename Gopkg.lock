@@ -3,6 +3,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/GeertJohan/go.rice"
+  packages = [
+    ".",
+    "embedded"
+  ]
+  revision = "c02ca9a983da5807ddf7d796784928f5be4afd09"
+
+[[projects]]
+  branch = "master"
   name = "github.com/armon/go-radix"
   packages = ["."]
   revision = "1fca145dffbcaa8fe914309b1ec0cfc67500fe61"
@@ -18,6 +27,12 @@
   name = "github.com/buger/goterm"
   packages = ["."]
   revision = "ef0fa5b75d0fa2b31323463783a6e90353771116"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/daaku/go.zipexe"
+  packages = ["."]
+  revision = "a5fe2436ffcb3236e175e5149162b41cd28bd27d"
 
 [[projects]]
   branch = "master"
@@ -69,6 +84,12 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kardianos/osext"
+  packages = ["."]
+  revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
+
+[[projects]]
   name = "github.com/mattn/go-isatty"
   packages = ["."]
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
@@ -116,6 +137,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/zserge/webview"
+  packages = ["."]
+  revision = "379a92f9055d6371daac45a136b673adaba133e4"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "83801418e1b59fb1880e363299581ee543af32ca"
@@ -123,6 +150,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4afa2f9a1e268c78ec1857ed91c1f76fb9be257a016038d282ddb323800a3764"
+  inputs-digest = "540bdd5d12cc2382c88934be8f551e4bd079d366b5f449d5d9110c5bbcdff23d"
   solver-name = "gps-cdcl"
   solver-version = 1

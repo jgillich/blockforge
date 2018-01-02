@@ -35,3 +35,11 @@
 [[constraint]]
   branch = "master"
   name = "github.com/buger/goterm"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/zserge/webview"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/GeertJohan/go.rice"
