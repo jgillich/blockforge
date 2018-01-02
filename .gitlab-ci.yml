@@ -20,12 +20,12 @@ dep:
     script:
         - go get -u github.com/golang/dep/cmd/dep
         - $GOPATH/bin/dep ensure
-  artifacts:
-    paths:
-      - vendor
-  cache:
-    paths:
-      - vendor
+    artifacts:
+        paths:
+          - vendor
+    cache:
+        paths:
+          - vendor
 
 
 format:
