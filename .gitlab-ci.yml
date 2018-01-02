@@ -19,7 +19,7 @@ dep:
     stage: dependencies
     script:
         - go get -u github.com/golang/dep/cmd/dep
-        - dep ensure
+        - $GOPATH/bin/dep ensure
 
 format:
     stage: test
