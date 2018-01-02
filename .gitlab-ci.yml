@@ -1,6 +1,7 @@
 image: fedora:latest
 
 variables:
+  GOPATH: /go
   REPO_NAME: gitlab.com/jgilich/autominer
 
 before_script:
