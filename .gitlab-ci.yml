@@ -6,7 +6,7 @@ variables:
   REPO_NAME: gitlab.com/jgilich/autominer
 
 before_script:
-  - dnf install -y @development-tools which gcc-c++ go boost-devel hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel swig cmake
+  - dnf install -y @development-tools which gcc-c++ go boost-devel hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel jsoncpp-devel swig cmake
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
@@ -29,6 +29,8 @@ xmrstak:
     script:
         - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
         - make -C cgo/xmrstak/xmr-stak/build
+        - ls -la cgo/xmrstak/xmr-stak/build
+        - ls -la cgo/xmrstak/xmr-stak/build/bin
     artifacts:
         untracked: true
     
