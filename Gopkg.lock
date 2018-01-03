@@ -36,27 +36,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/go-gl/gl"
-  packages = [
-    "v2.1/gl",
-    "v3.2-core/gl"
-  ]
-  revision = "ac0d3d2af0fe995e2bb09fa6619b716b0c0fc0fa"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/go-gl/glfw"
-  packages = ["v3.2/glfw"]
-  revision = "513e4f2bf85c31fba0fc4907abd7895242ccbe50"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/golang-ui/nuklear"
-  packages = ["nk"]
-  revision = "5e3698827620d58c1a606da502897bf2a81e0337"
-
-[[projects]]
-  branch = "master"
   name = "github.com/hashicorp/errwrap"
   packages = ["."]
   revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
@@ -113,35 +92,6 @@
   version = "v1.1"
 
 [[projects]]
-  name = "github.com/veandco/go-sdl2"
-  packages = ["sdl"]
-  revision = "30f30965227962032c13bd0b12a89e6a5107c768"
-  version = "v0.2"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/xlab/android-go"
-  packages = [
-    "android",
-    "egl",
-    "gles2",
-    "gles3"
-  ]
-  revision = "5051ff33bc6ae9450ba579dec658c49a8038240c"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/xlab/closer"
-  packages = ["."]
-  revision = "89cd22812c4fd5188746092cd10992caeffc75ab"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/zserge/webview"
-  packages = ["."]
-  revision = "379a92f9055d6371daac45a136b673adaba133e4"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
@@ -150,6 +100,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "540bdd5d12cc2382c88934be8f551e4bd079d366b5f449d5d9110c5bbcdff23d"
+  inputs-digest = "7027cd1ae0f453957e57e536fede3bfceccf57047cb8a9bd26a5c7e1575e5c46"
   solver-name = "gps-cdcl"
   solver-version = 1
