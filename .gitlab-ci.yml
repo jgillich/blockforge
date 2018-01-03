@@ -49,6 +49,7 @@ dep:
 format:
   stage: test
   script:
+    - ls -la cgo/xmrstak/xmr-stak/xmrstak/misc
     - go fmt $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
     - go test -race $(go list ./... | grep -v /vendor/)
