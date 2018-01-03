@@ -56,7 +56,7 @@ format:
 compile:
   stage: build
   script:
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/autominer
+    - go build -o $CI_PROJECT_DIR/autominer
   artifacts:
     paths:
       - autominer
