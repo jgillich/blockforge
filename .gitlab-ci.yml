@@ -12,50 +12,51 @@ before_script:
   - cd $GOPATH/src/$REPO_NAME
 
 stages:
-    - prepare
-    - test
-    - build
+  - prepare
+  - test
+  - build
 
 ethmimner:
-    stage: prepare
-    script:
-        - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
-        - make -C cgo/ethminer/ethminer/build
-    artifacts:
-        # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
-        #untracked: true
-        paths:
-            - cgo/ethminer/ethminer/build
+  stage: prepare
+  script:
+    - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
+    - make -C cgo/ethminer/ethminer/build
+  artifacts:
+    # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
+    # untracked: true
+    paths:
+      - cgo/ethminer/ethminer/build
 
 xmrstak:
-    stage: prepare
-    script:
-        - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
-        - make -C cgo/xmrstak/xmr-stak/build
-    artifacts:
-        # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
-        #untracked: true
-        paths:
-            - cgo/xmrstak/xmr-stak/build
+  stage: prepare
+  script:
+    - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+    - make -C cgo/xmrstak/xmr-stak/build
+  artifacts:
+    # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
+    # untracked: true
+    paths:
+      - cgo/xmrstak/xmr-stak/build
+
 dep:
-    stage: prepare
-    script:
-        - go get -u github.com/golang/dep/cmd/dep
-        - $GOPATH/bin/dep ensure
-    artifacts:
-        untracked: true
+  stage: prepare
+  script:
+    - go get -u github.com/golang/dep/cmd/dep
+    - $GOPATH/bin/dep ensure
+  artifacts:
+    untracked: true
 
 format:
-    stage: test
-    script:
-      - go fmt $(go list ./... | grep -v /vendor/)
-      - go vet $(go list ./... | grep -v /vendor/)
-      - go test -race $(go list ./... | grep -v /vendor/)
+  stage: test
+  script:
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+    - go test -race $(go list ./... | grep -v /vendor/)
 
 compile:
-    stage: build
-    script:
-      - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/autominer
-    artifacts:
-      paths:
-        - autominer
+  stage: build
+  script:
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/autominer
+  artifacts:
+    paths:
+      - autominer
