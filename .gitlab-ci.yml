@@ -6,7 +6,7 @@ variables:
   REPO_NAME: gitlab.com/jgilich/autominer
 
 before_script:
-  - dnf install -y @development-tools go hwloc-devel swig
+  - dnf install -y @development-tools gcc-c++ go hwloc-devel swig
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
