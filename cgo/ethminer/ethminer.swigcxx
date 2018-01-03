@@ -1,6 +1,11 @@
- %module ethminer
+%module ethminer
 
- %include "std_string.i"
+%include "std_string.i"
+%include "std_vector.i"
+
+namespace std {
+   %template(UnsignedVector) vector<unsigned>;
+}
 
 %{
 #include "Ethminer.hpp"

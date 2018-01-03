@@ -9,59 +9,61 @@ import (
 )
 
 type Miner struct {
-	coin     string
 	ethminer ethminer.Ethminer
+	config   coin.MinerConfig
 }
 
 func NewMiner(config coin.MinerConfig) (coin.Miner, error) {
-
-	miner := Miner{coin: config.Coin}
 
 	if config.Threads > 0 {
 		return nil, fmt.Errorf("coin '%v' does not support cpu mining", config.Coin)
 	}
 
-	if len(config.GPUIndexes) > 0 {
-		miner.ethminer = ethminer.NewEthminer()
-
-		u, err := url.Parse(config.PoolURL)
-		if err != nil {
-			return nil, err
-		}
-
-		openclDevices := make([]uint, len(config.GPUIndexes))
-		for i, idx := range config.GPUIndexes {
-			openclDevices[i] = uint(idx)
-		}
-
-		miner.ethminer.SetM_farmURL(u.Hostname())
-		miner.ethminer.SetM_user(config.PoolUser)
-		miner.ethminer.SetM_pass(config.PoolPass)
-		miner.ethminer.SetM_port(u.Port())
-		miner.ethminer.SetM_openclDevices(&openclDevices[0])
-		miner.ethminer.SetM_openclDeviceCount(uint(len(openclDevices)))
-
+	if len(config.GPUIndexes) == 0 {
+		return nil, fmt.Errorf("no gpus configured for coin '%v'", config.Coin)
 	}
 
-	return &miner, nil
+	return &Miner{config: config}, nil
 }
 
 func (m *Miner) Start() error {
-	go m.ethminer.Start()
+	config := m.config
+
+	u, err := url.Parse(config.PoolURL)
+	if err != nil {
+		return err
+	}
+
+	openclDevices := ethminer.NewUnsignedVector(len(config.GPUIndexes))
+	for _, idx := range config.GPUIndexes {
+		openclDevices.Add(uint(idx))
+	}
+
+	cudaDevices := ethminer.NewUnsignedVector(len(config.GPUIndexes))
+	// TODO
+	//for _, idx := range config.GPUIndexes {
+	//}
+
+	m.ethminer = ethminer.NewEthminer(u.Hostname(), u.Port(), config.PoolUser, config.PoolPass, openclDevices, cudaDevices)
 
 	return nil
 }
 
 func (m *Miner) Stop() {
-	m.ethminer.Stop()
+	if m.ethminer != nil {
+		ethminer.DeleteEthminer(m.ethminer)
+		m.ethminer = nil
+	}
 }
 
 func (m *Miner) Stats() coin.MinerStats {
 	hashrate := 0
-	hashrate += m.ethminer.GetM_hashrate()
+	if m.ethminer != nil {
+		hashrate = m.ethminer.Hashrate()
+	}
 
 	return coin.MinerStats{
-		Coin:     m.coin,
+		Coin:     m.config.Coin,
 		Hashrate: float32(hashrate),
 	}
 }

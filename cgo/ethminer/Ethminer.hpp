@@ -19,7 +19,6 @@
  * CLI module for mining.
  */
 
-
 #include <thread>
 #include <chrono>
 #include <fstream>
@@ -50,129 +49,116 @@ using namespace dev::eth;
 class Ethminer
 {
 public:
+  Ethminer(string url, string port, string user, string pass, vector<unsigned> openclDevices, vector<unsigned> cudaDevices)
+  {
 
-	void start()
-	{
-		m_running = true;
+    // log errors only
+    g_logVerbosity = 0;
 
-		// log errors only
-		g_logVerbosity = 0;
+    MinerType minerType;
 
-		map<string, Farm::SealerDescriptor> sealers;
+    if (openclDevices.size() > 0)
+    {
 #if ETH_ETHASHCL
-		sealers["opencl"] = Farm::SealerDescriptor{ &CLMiner::instances, [](FarmFace& _farm, unsigned _index){ return new CLMiner(_farm, _index); } };
+      CLMiner::setDevices(&openclDevices[0], openclDevices.size());
+
+      CLMiner::setThreadsPerHash(m_openclThreadsPerHash);
+      if (!CLMiner::configureGPU(
+              CLMiner::c_defaultLocalWorkSize,
+              CLMiner::c_defaultGlobalWorkSizeMultiplier,
+              m_openclPlatform,
+              0,
+              0,
+              0))
+        exit(1);
+      CLMiner::setNumInstances(openclDevices.size());
+
+      minerType = MinerType::CL;
+
+#else
+      cerr << "Selected GPU mining without having compiled with -DETHASHCL=1" << endl;
+      exit(1);
+#endif
+    }
+
+    if (cudaDevices.size() > 0)
+    {
+#if ETH_ETHASHCUDA
+      CUDAMiner::setDevices(&cudaDevices[0], cudaDevices.size());
+
+      CUDAMiner::setNumInstances(cudaDevices.size());
+      if (!CUDAMiner::configureGPU(
+              ethash_cuda_miner::c_defaultBlockSize,
+              ethash_cuda_miner::c_defaultGridSize,
+              ethash_cuda_miner::c_defaultNumStreams,
+              4,
+              0,
+              0,
+              0))
+        exit(1);
+
+      CUDAMiner::setParallelHash(m_parallelHash);
+
+      if (minerType == MinerType::CL)
+      {
+        minerType = MinerType::Mixed;
+      }
+      else
+      {
+        minerType = MinerType::CUDA;
+      }
+#else
+      cerr << "CUDA support disabled. Configure project build with -DETHASHCUDA=ON" << endl;
+      exit(1);
+#endif
+    }
+
+    map<string, Farm::SealerDescriptor> sealers;
+#if ETH_ETHASHCL
+    sealers["opencl"] = Farm::SealerDescriptor{&CLMiner::instances, [](FarmFace &_farm, unsigned _index) { return new CLMiner(_farm, _index); }};
 #endif
 #if ETH_ETHASHCUDA
-		sealers["cuda"] = Farm::SealerDescriptor{ &CUDAMiner::instances, [](FarmFace& _farm, unsigned _index){ return new CUDAMiner(_farm, _index); } };
+    sealers["cuda"] = Farm::SealerDescriptor{&CUDAMiner::instances, [](FarmFace &_farm, unsigned _index) { return new CUDAMiner(_farm, _index); }};
 #endif
-		if (!m_farmRecheckSet)
-			m_farmRecheckPeriod = m_defaultStratumFarmRecheckPeriod;
 
-		Farm f;
+    Farm f;
 
-		EthStratumClientV2 client(&f, m_minerType, m_farmURL, m_port, m_user, m_pass, m_maxFarmRetries, m_worktimeout, m_stratumProtocol, m_email);
-		if (m_farmFailOverURL != "")
-		{
-			if (m_fuser != "")
-			{
-				client.setFailover(m_farmFailOverURL, m_fport, m_fuser, m_fpass);
-			}
-			else
-			{
-				client.setFailover(m_farmFailOverURL, m_fport);
-			}
-		}
-		f.setSealers(sealers);
+    EthStratumClientV2 client(&f, minerType, url, port, user, pass, m_maxFarmRetries, m_worktimeout, STRATUM_PROTOCOL_STRATUM, m_email);
+    f.setSealers(sealers);
 
-		f.onSolutionFound([&](Solution sol)
-		{
-			client.submit(sol);
-			return false;
-		});
-		f.onMinerRestart([&](){
-			client.reconnect();
-		});
+    f.onSolutionFound([&](Solution sol) {
+      client.submit(sol);
+      return false;
+    });
+    f.onMinerRestart([&]() {
+      client.reconnect();
+    });
 
-		while (client.isRunning())
-		{
-			std::cout << "isRunning";
-			auto mp = f.miningProgress(m_show_hwmonitors);
-			if (client.isConnected())
-			{
-				m_hashrate = mp.rate();
-			}
-			//if(!m_running)
-			//{
-				// TODO disconnect is private
-				// client.disconnect();
-			//}
-			//else
-			//{
-				this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
-			//}
-		}
-	}
+    while (client.isRunning())
+    {
+      auto mp = f.miningProgress(false);
+      if (client.isConnected())
+      {
+        m_hashrate = mp.rate();
+      }
+      this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
+    }
+  }
 
-	void stop()
-	{
-		m_running = false;
-	}
+  int hashrate()
+  {
+    return m_hashrate;
+  }
 
-	int m_hashrate = 0;
+private:
+  int m_hashrate = 0;
 
-	/// Mining options
-	bool m_running = false;
-	MinerType m_minerType = MinerType::Mixed;
-	unsigned m_openclPlatform = 0;
-	unsigned m_miningThreads = UINT_MAX;
-	bool m_shouldListDevices = false;
-//#if ETH_ETHASHCL
-	unsigned m_openclDeviceCount = 0;
-	unsigned m_openclDevices[16];
-	unsigned m_openclThreadsPerHash = 8;
-#if !ETH_ETHASHCUDA
-	unsigned m_globalWorkSizeMultiplier = CLMiner::c_defaultGlobalWorkSizeMultiplier;
-	unsigned m_localWorkSize = CLMiner::c_defaultLocalWorkSize;
-#endif
-//#endif
-#if ETH_ETHASHCUDA
-	unsigned m_globalWorkSizeMultiplier = ethash_cuda_miner::c_defaultGridSize;
-	unsigned m_localWorkSize = ethash_cuda_miner::c_defaultBlockSize;
-	unsigned m_cudaDeviceCount = 0;
-	unsigned m_cudaDevices[16];
-	unsigned m_numStreams = ethash_cuda_miner::c_defaultNumStreams;
-	unsigned m_cudaSchedule = 4; // sync
-#endif
-	unsigned m_dagLoadMode = 0; // parallel
-	unsigned m_dagCreateDevice = 0;
-	/// Benchmarking params
-	unsigned m_benchmarkWarmup = 15;
-	unsigned m_parallelHash    = 4;
-	unsigned m_benchmarkTrial = 3;
-	unsigned m_benchmarkTrials = 5;
-	unsigned m_benchmarkBlock = 0;
-	/// Farm params
-	string m_farmURL = "http://127.0.0.1:8545";
-	string m_farmFailOverURL = "";
+  unsigned m_openclPlatform = 0;
+  unsigned m_openclThreadsPerHash = 8;
+  unsigned m_maxFarmRetries = 3;
+  unsigned m_farmRecheckPeriod = 2000;
+  bool m_farmRecheckSet = false;
+  int m_worktimeout = 180;
 
-
-	string m_activeFarmURL = m_farmURL;
-	unsigned m_farmRetries = 0;
-	unsigned m_maxFarmRetries = 3;
-	unsigned m_farmRecheckPeriod = 500;
-	unsigned m_defaultStratumFarmRecheckPeriod = 2000;
-	bool m_farmRecheckSet = false;
-	int m_worktimeout = 180;
-	bool m_show_hwmonitors = false;
-
-	bool m_report_stratum_hashrate = false;
-	int m_stratumProtocol = STRATUM_PROTOCOL_STRATUM;
-	string m_user;
-	string m_pass;
-	string m_port;
-	string m_fuser = "";
-	string m_fpass = "";
-	string m_email = "";
-
-	string m_fport = "";
+  string m_email = "";
 };
