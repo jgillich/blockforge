@@ -19,7 +19,7 @@ stages:
 ethmimner:
     stage: prepare
     script:
-        - cmake -Hcgo/ethminer/ethminer -Bbuild
+        - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
         - make -C cgo/ethminer/ethminer/build
     artifacts:
         untracked: true
@@ -27,7 +27,7 @@ ethmimner:
 xmrstak:
     stage: prepare
     script:
-        - cmake -Hcgo/xmrstak/xmr-stak -Bbuild -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+        - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
         - make -C cgo/xmrstak/xmr-stak/build
     artifacts:
         untracked: true
