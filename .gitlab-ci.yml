@@ -6,7 +6,7 @@ variables:
   REPO_NAME: gitlab.com/jgilich/autominer
 
 before_script:
-  - dnf install -y @development-tools gcc-c++ go hwloc-devel swig
+  - dnf install -y @development-tools gcc-c++ go hwloc-devel openssl-devel swig cmake
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
@@ -15,6 +15,18 @@ stages:
     - prepare
     - test
     - build
+
+ethmimner:
+    stage: prepare
+    script:
+        - cmake -Hcgo/ethminer/ethminer -Bbuild
+        - make -C cgo/ethminer/ethminer/build
+
+xmrstak:
+    stage: prepare
+    script:
+        - cmake -Hcgo/xmrstak/xmr-stak -Bbuild
+        - make -C cgo/xmrstak/xmr-stak/build
     
 dep:
     stage: prepare
