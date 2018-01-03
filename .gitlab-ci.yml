@@ -1,6 +1,7 @@
 image: fedora:latest
 
 variables:
+  GIT_SUBMODULE_STRATEGY: normal
   GOPATH: /go
   REPO_NAME: gitlab.com/jgilich/autominer
 
