@@ -16,7 +16,7 @@ stages:
   - test
   - build
 
-ethmimner:
+ethminer:
   stage: prepare
   script:
     - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
