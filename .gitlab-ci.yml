@@ -53,8 +53,6 @@ compile:
     stage: build
     script:
       - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/autominer
-    dependencies:
-        - prepare
     artifacts:
       paths:
         - autominer
