@@ -9,7 +9,7 @@ environment:
 
 # scripts that run after cloning repository
 install:
-  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - set PATH=%GOPATH%\bin;c:\go\bin;C:\MinGW\bin;%PATH%
   - echo %PATH%
   - git submodule update --init --recursive
   - choco install swig
