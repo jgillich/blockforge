@@ -9,13 +9,13 @@ environment:
 
 # scripts that run after cloning repository
 install:
-  - set CPLUS_INCLUDE_PATH=c:\msys64\mingw64\include;%CPLUS_INCLUDE_PATH%
-  - set LIBRARY_PATH=c:\msys64\mingw64\lib;%LIBRARY_PATH%
   - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\usr\bin;%PATH%
   - set CGO_CPPFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib
   - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-boost"
   - git submodule update --init --recursive
   - choco install swig
+  - ps: Start-FileDownload "http://registrationcenter-download.intel.com/akdlm/irc_nas/8386/intel_sdk_for_opencl_2015_r3_x64_setup.msi"
+  - start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi /qn  /l*v msiexec.log
   - go version
   - go env
   - go get -u github.com/golang/dep/cmd/dep
