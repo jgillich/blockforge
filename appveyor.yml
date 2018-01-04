@@ -10,7 +10,7 @@ environment:
 # scripts that run after cloning repository
 install:
   - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\usr\bin;%PATH%
-  - bash -l -c "pacman -Sy mingw64/mingw-w64-x86_64-boost"
+  - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-boost"
   - ls C:\msys64\mingw64\lib
   - git submodule update --init --recursive
   - choco install swig
