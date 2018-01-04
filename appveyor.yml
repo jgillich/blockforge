@@ -9,9 +9,10 @@ environment:
 
 # scripts that run after cloning repository
 install:
+  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - echo $PATH
   - git submodule update --init --recursive
   - choco install swig
-  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - go version
   - go env
   - go get -u github.com/golang/dep/cmd/dep
