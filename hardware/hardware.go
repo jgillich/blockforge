@@ -21,12 +21,60 @@ type GPU struct {
 	CUDA   bool
 }
 
+type CUDA struct {
+
+}
+
 func NewHardware() (*Hardware, error) {
 	hw := Hardware{}
 
-	_, err := hwloc.NewTopology(hwloc.TopologyFlagWholeSystem)
+	h, err := hwloc.NewTopology(hwloc.TopologyFlagWholeSystem)
 	if err != nil {
 		return nil, err
+	}
+
+	//  n = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_OS_DEVICE);
+
+	num := h.GetNbobjsByType(hwloc.HWLOC_OBJ_OS_DEVICE)
+
+	for i := 0; i < num; i++ {
+		o := h.GetObjByType(hwloc.HWLOC_OBJ_OS_DEVICE, i)
+
+		backend := o.InfoByName("Backend")
+
+		if backend  == "CUDA" {
+
+		} else if backend == "OpenCL" {
+
+		}
+
+
+/*
+        assert(!strncmp(obj->name, "cuda", 4));
+        devid = atoi(obj->name + 4);
+        printf("CUDA device %d\n", devid);
+
+        s = hwloc_obj_get_info_by_name(obj, "GPUModel");
+        if (s)
+          printf("Model: %s\n", s);
+
+        s = hwloc_obj_get_info_by_name(obj, "CUDAGlobalMemorySize");
+        if (s)
+          printf("Memory: %s\n", s);
+
+        s = hwloc_obj_get_info_by_name(obj, "CUDAMultiProcessors");
+        if (s)
+        {
+          int mp = atoi(s);
+          s = hwloc_obj_get_info_by_name(obj, "CUDACoresPerMP");
+          if (s) {
+            int mp_cores = atoi(s);
+            printf("Cores: %d\n", mp * mp_cores);
+					}
+					*/
+}
+		}
+		//  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_OS_DEVICE, i);
 	}
 
 	return &hw, nil

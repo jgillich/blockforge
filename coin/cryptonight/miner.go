@@ -1,7 +1,6 @@
 package cryptonight
 
 import "gitlab.com/jgillich/autominer/coin"
-import "gitlab.com/jgillich/autominer/cgo/xmrstak"
 
 type Miner struct {
 	coin  string
@@ -15,7 +14,7 @@ func NewMiner(config coin.MinerConfig, light bool) (coin.Miner, error) {
 }
 
 func (m *Miner) Start() error {
-	xmrstak.ExecutorInst().Ex_start(true)
+	//xmrstak.ExecutorInst().Ex_start(true)
 
 	return nil
 }

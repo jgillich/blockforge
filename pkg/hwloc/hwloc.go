@@ -96,7 +96,6 @@ type Object interface {
 	Type() ObjectType
 	TypeString() string
 	InfoByName(string) string
-	CPUSet()
 }
 
 type object struct {
@@ -122,8 +121,4 @@ func (o *object) InfoByName(name string) string {
 	c := C.hwloc_obj_get_info_by_name(o.ptr, n)
 	C.free(unsafe.Pointer(n))
 	return C.GoString(c)
-}
-
-func (o *object) CPUSet() {
-
 }
