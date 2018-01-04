@@ -2,7 +2,7 @@ donate = 1
 
 cpu "Intel i5" {
   threads = 1
-  coin = "eth"
+  coin = "xmr"
 }
 
 gpu "RX 560" {

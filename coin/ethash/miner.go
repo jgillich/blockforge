@@ -34,12 +34,12 @@ func (m *Miner) Start() error {
 		return err
 	}
 
-	openclDevices := ethminer.NewUnsignedVector(len(config.GPUIndexes))
+	openclDevices := ethminer.NewUnsignedVector(int64(len(config.GPUIndexes)))
 	for _, idx := range config.GPUIndexes {
 		openclDevices.Add(uint(idx))
 	}
 
-	cudaDevices := ethminer.NewUnsignedVector(len(config.GPUIndexes))
+	cudaDevices := ethminer.NewUnsignedVector(int64(0))
 	// TODO
 	//for _, idx := range config.GPUIndexes {
 	//}
