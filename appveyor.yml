@@ -12,6 +12,7 @@ environment:
 
 # scripts that run after cloning repository
 install:
+  - choco install swig
   - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - go version
   - go env
