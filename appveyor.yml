@@ -12,6 +12,7 @@ install:
   - set CPLUS_INCLUDE_PATH=c:\msys64\mingw64\include;%CPLUS_INCLUDE_PATH%
   - set LIBRARY_PATH=c:\msys64\mingw64\lib;%LIBRARY_PATH%
   - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\usr\bin;%PATH%
+  - ls c:\msys64\mingw64\include
   - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-boost"
   - git submodule update --init --recursive
   - choco install swig
