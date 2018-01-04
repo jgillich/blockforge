@@ -14,7 +14,6 @@ install:
   - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\usr\bin;%PATH%
   - set CGO_CPPFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib
   - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-boost"
-  - ls c:\msys64\mingw64\include
   - git submodule update --init --recursive
   - choco install swig
   - go version
