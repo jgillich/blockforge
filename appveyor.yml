@@ -10,10 +10,8 @@ environment:
 # scripts that run after cloning repository
 install:
   - git submodule update --init --recursive
-  - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
-  - echo %PATH%
-  - set CXXFLAGS=-D__USE_W32_SOCKETS -D_WIN32_WINNT=0x060 -I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib # -L "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\lib\x64"
-  - set CGO_CXXFLAGS=%CXXFLAGS%
+  #- set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+  - set CGO_CXXFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib # -L "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\lib\x64"
   - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-swig mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-opencl-headers mingw64/mingw-w64-x86_64-jsoncpp"
   #- ps: Start-FileDownload "http://registrationcenter-download.intel.com/akdlm/irc_nas/8386/intel_sdk_for_opencl_2015_r3_x64_setup.msi"
   #- start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi /qn  /l*v msiexec.log
@@ -22,8 +20,7 @@ install:
   - go get -u github.com/golang/dep/cmd/dep
   - dep ensure -vendor-only
 
-# to run your custom scripts instead of automatic MSBuild
-build_script:
+before_build:
   # sh must not be in PATH for cmake MinGW to work
   - set PATH=C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
   #- set PATH=%PATH:;C:\msys64\usr\bin;=%
@@ -33,10 +30,6 @@ build_script:
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
   - make -C cgo/xmrstak/xmr-stak/build
+
+build_script:
   - go build
-
-# to disable automatic tests
-test: off
-
-# to disable deployment
-deploy: off
