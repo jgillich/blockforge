@@ -21,8 +21,11 @@ install:
   - go get -u github.com/golang/dep/cmd/dep
   - dep ensure -vendor-only
 
+  - C:\msys64\mingw64\usr\bin\cmake.exe
+
 # to run your custom scripts instead of automatic MSBuild
 build_script:
+  - ps: Get-Command cmake
   - cmake -G "MSYS Makefiles" -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DHUNTER_ENABLED=OFF -DBOOST_INCLUDEDIR=c:/msys64/mingw64/include -DBOOST_LIBRARYDIR=c:/msys64/mingw64/lib
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "MSYS Makefiles" -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
