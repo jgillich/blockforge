@@ -22,7 +22,7 @@ install:
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
-  - cmake -G "Unix Makefiles" -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DHUNTER_ENABLED=OFF -DBOOST_INCLUDEDIR=c:\msys64\mingw64\include
+  - cmake -G "Unix Makefiles" -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DHUNTER_ENABLED=OFF -DBOOST_INCLUDEDIR=c:\msys64\mingw64\include -DBOOST_LIBRARYDIR=c:\msys64\mingw64\lib
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "Unix Makefiles" -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
   - make -C cgo/xmrstak/xmr-stak/build
