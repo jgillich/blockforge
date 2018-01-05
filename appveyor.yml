@@ -20,6 +20,7 @@ install:
   - go env
   - go get -u github.com/golang/dep/cmd/dep
   - dep ensure -vendor-only
+  - ps: Get-Command cmake
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
