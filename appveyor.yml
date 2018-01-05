@@ -26,7 +26,7 @@ install:
 build_script:
   # sh must not be in PATH for cmake to work
   - set PATH=%PATH:;C:\msys64\usr\bin;=%
-  - ps: Get-Command cmake
+  - set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
   - cmake -G "MinGW Makefiles" -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "MinGW Makefiles" -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
