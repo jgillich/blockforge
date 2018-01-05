@@ -25,8 +25,9 @@ install:
 # to run your custom scripts instead of automatic MSBuild
 build_script:
   # sh must not be in PATH for cmake MinGW to work
-  - set PATH=%PATH:;C:\msys64\usr\bin;=%
-  - set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
+  - set PATH=C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
+  #- set PATH=%PATH:;C:\msys64\usr\bin;=%
+  #- set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
   - ps: Get-Command cmake
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
   - make -C cgo/ethminer/ethminer/build
