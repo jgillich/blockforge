@@ -16,11 +16,12 @@ install:
   - git submodule update --init --recursive
   - choco install swig
   - ps: Start-FileDownload "http://registrationcenter-download.intel.com/akdlm/irc_nas/8386/intel_sdk_for_opencl_2015_r3_x64_setup.msi"
-  - start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi INSTALLDIR="C:\OpenCL" /qn  /l*v msiexec.log
+  - start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi TARGETDIR="C:\OpenCL" INSTALLDIR="C:\OpenCL" /qn  /l*v msiexec.log
   - go version
   - go env
   - go get -u github.com/golang/dep/cmd/dep
   - dep ensure -vendor-only
+  - ls c:\OpenCL
   - ls c:\OpenCL\5.3\include
   - ls c:\OpenCL\5.3\lib\x64
 
