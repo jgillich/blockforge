@@ -6,6 +6,3 @@
 	path = cgo/ethminer/ethminer
 	url = https://github.com/ethereum-mining/ethminer.git
 	ignore = dirty
-[submodule "cgo/cl/OpenCL-Headers"]
-	path = cgo/cl/OpenCL-Headers
-	url = https://github.com/KhronosGroup/OpenCL-Headers
