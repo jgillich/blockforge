@@ -10,3 +10,6 @@
 	path = cgo/cpuminer/cpuminer-opt
 	url = https://github.com/JayDDee/cpuminer-opt
 	ignore = dirty
+[submodule "cgo/cl/OpenCL-Headers"]
+	path = cgo/cl/OpenCL-Headers
+	url = https://github.com/KhronosGroup/OpenCL-Headers
