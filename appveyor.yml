@@ -10,7 +10,7 @@ environment:
 # scripts that run after cloning repository
 install:
   - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\mingw64\usr\bin;C:\msys64\usr\bin;%PATH%
-  - set -D__USE_W32_SOCKETS -D_WIN32_WINNT=0x0601 CGO_CXXFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib # -L "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\lib\x64"
+  - set CGO_CXXFLAGS=-D__USE_W32_SOCKETS -D_WIN32_WINNT=0x060 -I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib # -L "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\lib\x64"
   - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-gcc mingw64/mingw-w64-x86_64-opencl-headers mingw64/mingw-w64-x86_64-jsoncpp"
   - git submodule update --init --recursive
   - choco install swig
