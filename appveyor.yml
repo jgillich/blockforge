@@ -11,18 +11,18 @@ environment:
 install:
   - set PATH=%GOPATH%\bin;c:\go\bin;C:\msys64\mingw64\usr\bin;C:\msys64\usr\bin;%PATH%
   - set CGO_CXXFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib
-  - set CGO_CXXFLAGS=-I "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\include" -L "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\lib\x64" %CGO_CPPFLAGS%
+  - set CGO_CXXFLAGS=-I c:\OpenCL\5.3\include -L c:\OpenCL\5.3\lib\x64 %CGO_CPPFLAGS%
   - bash -l -c "pacman -Sy --noconfirm mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-gcc"
   - git submodule update --init --recursive
   - choco install swig
   - ps: Start-FileDownload "http://registrationcenter-download.intel.com/akdlm/irc_nas/8386/intel_sdk_for_opencl_2015_r3_x64_setup.msi"
-  - start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi /qn  /l*v msiexec.log
+  - start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi TARGETDIR="C:\OpenCL" /qn  /l*v msiexec.log
   - go version
   - go env
   - go get -u github.com/golang/dep/cmd/dep
   - dep ensure -vendor-only
-  - ls "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\include"
-  - ls "%ProgramFiles(x86)%\Intel\OpenCL SDK\5.3\lib\x64"
+  - ls c:\OpenCL\5.3\include
+  - ls c:\OpenCL\5.3\lib\x64
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
