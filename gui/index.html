@@ -4,20 +4,61 @@
   <title>CoinStack</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.1/css/bulma.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-  <link rel="stylesheet" href="https://jenil.github.io/bulmaswatch/lux/bulmaswatch.min.css">
+  <link rel="stylesheet" href="https://cdn.rawgit.com/jenil/bulmaswatch/0.6.0/cosmo/bulmaswatch.min.css">
+  <link rel="stylesheet" href="https://cdn.rawgit.com/allienworks/cryptocoins/master/webfont/cryptocoins.css">
+  <link rel="stylesheet" href="app.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
-<app></app>
+<gui-main></gui-main>
 
-<script data-src="app.tag" type="riot/tag"></script>
-<script data-src="cpu.tag" type="riot/tag"></script>
+<script data-src="gui-main.html" type="riot/tag"></script>
+<script data-src="hardware-list.html" type="riot/tag"></script>
+<script data-src="coin-list.html" type="riot/tag"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/riot@3.8/riot+compiler.min.js"></script>
 <script>
-if (!window.miner) {
-  window.miner = {}
-  miner.data = { "config": { "donate": 1, "log_level": "", "coin": { "xmr": { "pool": { "url": "stratum+tcp://xmr.poolmining.org:3032", "user": "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr", "pass": "x" } } }, "cpu": { "Intel Core i5-6200U": { "coin": "xmr", "threads": 1 } }, "gpu": null } }
-}
+  if (!window.miner) {
+    window.miner = {}
+    miner.data = {
+      "config": {
+        "donate": 1,
+        "log_level": "",
+        "coin": {
+          "xmr": {
+            "pool": {
+              "url": "stratum+tcp://xmr.poolmining.org:3032",
+              "user": "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
+              "pass": "x"
+            }
+          },
+          "eth": {
+            "pool": {
+              "url": "stratum+tcp://eth.poolmining.org:3072",
+              "user": "0x25ae2cbddE36CfC9D959a4d1f76964EaE7517748",
+              "pass": "x"
+            }
+          }
+        },
+        "cpu": {
+          "Intel Core i5-6200U": {
+            "coin": "xmr",
+            "threads": 1
+          }
+        },
+        "gpu": {
+          "Radeon HD 570": {
+            "coin": "xmr",
+            "index": 0
+          },
+          "GeForce GTX 1080": {
+            "coin": "eth",
+            "index": 1
+          }
+        }
+      }
+    }
+  }
 
-riot.mount('app', { config: miner.data.config })
+  riot.mount('gui-main', { config: miner.data.config })
 </script>

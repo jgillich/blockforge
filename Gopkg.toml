@@ -37,7 +37,7 @@
   name = "github.com/buger/goterm"
 
 [[constraint]]
-  branch = "master"
+  branch = "gtk-webkit2"
   name = "github.com/zserge/webview"
 
 [[constraint]]

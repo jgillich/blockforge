@@ -92,14 +92,20 @@
   version = "v1.1"
 
 [[projects]]
+  branch = "gtk-webkit2"
+  name = "github.com/zserge/webview"
+  packages = ["."]
+  revision = "dc6c04f43b8fbeaaab401b853b8a799671e08650"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "83801418e1b59fb1880e363299581ee543af32ca"
+  revision = "dd9ec17814d5b1de388ebe438ec013d57d8b3779"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7027cd1ae0f453957e57e536fede3bfceccf57047cb8a9bd26a5c7e1575e5c46"
+  inputs-digest = "9c0a354100458ed22fa9b8cc298d4901f14de73846d7fa508f627726e2055220"
   solver-name = "gps-cdcl"
   solver-version = 1

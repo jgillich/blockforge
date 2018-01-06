@@ -1,0 +1,35 @@
+<coin-list>
+    <div class="card">
+      <div class="card-header">
+        <p class="card-header-title">
+          Coins
+        </p>
+      </div>
+      <div class="card-table">
+        <table class="table is-fullwidth is-striped">
+          <tbody>
+            <tr class="is-size-5" each={ coin, name in opts.items }>
+              <td>
+                <i class={"cc " + name.toUpperCase()}></i>
+              </td>
+              <td >{ name }</td>
+              <td>{ coin.pool.url }</td>
+              <td>{ coin.pool.user.substring(0, 10) }</td>
+              <td >
+                <a class="button is-small is-primary" href="#">Edit</a>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="card-footer">
+        <a href="#" class="card-footer-item">Add Coin</a>
+      </footer>
+
+
+    </div>
+
+  </div>
+</coin-list>
