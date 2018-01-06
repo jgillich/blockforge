@@ -18,6 +18,7 @@ install:
   - go version
   - go env
   - go get -u github.com/golang/dep/cmd/dep
+  - go get -u github.com/GeertJohan/go.rice/rice
   - dep ensure -vendor-only
 
 before_build:
@@ -26,10 +27,11 @@ before_build:
   #- set PATH=%PATH:;C:\msys64\usr\bin;=%
   #- set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
   - ps: Get-Command cmake
-  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF
+  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF -CMAKE_CXX_FLAGS=-w
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
   - make -C cgo/xmrstak/xmr-stak/build
 
 build_script:
+  - rice embed-go -i ./command
   - go build
