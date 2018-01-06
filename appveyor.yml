@@ -27,7 +27,7 @@ before_build:
   #- set PATH=%PATH:;C:\msys64\usr\bin;=%
   #- set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
   - ps: Get-Command cmake
-  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF -CMAKE_CXX_FLAGS=-w
+  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
   - make -C cgo/xmrstak/xmr-stak/build
