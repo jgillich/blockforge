@@ -42,6 +42,7 @@ dep:
   stage: prepare
   script:
     - go get -u github.com/golang/dep/cmd/dep
+    - go get -u github.com/GeertJohan/go.rice/rice
     - $GOPATH/bin/dep ensure -vendor-only
   artifacts:
     untracked: true
@@ -56,6 +57,7 @@ format:
 compile:
   stage: build
   script:
+    - rice embed-go -i ./command
     - go build -o $CI_PROJECT_DIR/autominer
   artifacts:
     paths:
