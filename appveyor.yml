@@ -12,7 +12,7 @@ install:
   - bash -l -c "pacman -Syu --noconfirm"
   - bash -l -c "pacman -S --noconfirm mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-swig mingw64/mingw-w64-x86_64-boost mingw64/mingw-w64-x86_64-opencl-headers mingw64/mingw-w64-x86_64-jsoncpp"
   # mingw64/mingw-w64-x86_64-headers-git causes issues, use old version
-  - bash -l -c "pacman -U pacman -U https://downloads.sourceforge.net/project/msys2/REPOS/MINGW/x86_64/mingw-w64-x86_64-headers-git-5.0.0.5002.34a7c1c0-1-any.pkg.tar.xz"
+  - bash -l -c "pacman -U https://downloads.sourceforge.net/project/msys2/REPOS/MINGW/x86_64/mingw-w64-x86_64-headers-git-5.0.0.5002.34a7c1c0-1-any.pkg.tar.xz"
   #- ps: Start-FileDownload "http://registrationcenter-download.intel.com/akdlm/irc_nas/8386/intel_sdk_for_opencl_2015_r3_x64_setup.msi"
   #- start /wait msiexec /i intel_sdk_for_opencl_2015_r3_x64_setup.msi /qn  /l*v msiexec.log
   - go version
