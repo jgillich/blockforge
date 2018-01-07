@@ -36,7 +36,7 @@ type GPU struct {
 type CUDA struct {
 }
 
-func NewHardware() (*Hardware, error) {
+func New() (*Hardware, error) {
 	hw := Hardware{}
 
 	h, err := hwloc.NewTopology(hwloc.TopologyFlagWholeSystem)
@@ -44,9 +44,21 @@ func NewHardware() (*Hardware, error) {
 		return nil, err
 	}
 
-	num := h.GetNbobjsByType(hwloc.ObjectTypeOsDevice)
+	for depth := uint(0); depth < uint(h.GetNbobjsByType(hwloc.ObjectTypePackage)); depth++ {
+		cpuObj := h.GetObjByType(hwloc.ObjectTypePackage, depth)
 
-	for i := 0; i < num; i++ {
+		cpu := CPU{
+			Model:         cpuObj.InfoByName("CPUModel"),
+			PhysicalCores: h.GetNbobjsInsideCPUSetByType(cpuObj.CPUSet(), hwloc.ObjectTypeCore),
+			VirtualCores:  h.GetNbobjsInsideCPUSetByType(cpuObj.CPUSet(), hwloc.ObjectTypePU),
+		}
+
+		hw.CPUs = append(hw.CPUs, cpu)
+	}
+
+	osDevices := h.GetNbobjsByType(hwloc.ObjectTypeOsDevice)
+
+	for i := uint(0); i < uint(osDevices); i++ {
 		o := h.GetObjByType(hwloc.ObjectTypeOsDevice, i)
 
 		gpu := GPU{
@@ -74,7 +86,6 @@ func NewHardware() (*Hardware, error) {
 			}
 			gpu.Index++
 
-			hw.GPUs = append(hw.GPUs, gpu)
 		} else if gpu.Backend == CUDABackend {
 			name := o.Name()[:4]
 
@@ -88,11 +99,11 @@ func NewHardware() (*Hardware, error) {
 				continue
 			}
 
-			hw.GPUs = append(hw.GPUs, gpu)
 		} else {
 			continue
 		}
 
+		hw.GPUs = append(hw.GPUs, gpu)
 	}
 
 	return &hw, nil
