@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 
+	"gitlab.com/jgillich/autominer/hardware"
+
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/hashicorp/hcl"
 	"github.com/mitchellh/cli"
@@ -35,18 +37,15 @@ func (c GuiCommand) Run(args []string) int {
 	buf, err := ioutil.ReadFile(*configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("Config file not found. Set '-config' argument or run 'coin miner -init' to generate.")
-			return 1
+			log.Fatal("Config file not found. Set '-config' argument or run 'coin miner -init' to generate.")
 		}
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	var config miner.Config
 	err = hcl.Decode(&config, string(buf))
 	if err != nil {
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	http.Handle("/", http.FileServer(rice.MustFindBox("../gui").HTTPBox()))
@@ -72,8 +71,13 @@ func (c GuiCommand) Run(args []string) int {
 	})
 	defer view.Exit()
 
+	hardware, err := hardware.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	view.Dispatch(func() {
-		view.Bind("miner", &GuiMiner{config})
+		view.Bind("miner", &GuiMiner{config, hardware})
 		view.Eval("init()")
 	})
 
@@ -101,7 +105,8 @@ func (c GuiCommand) Synopsis() string {
 }
 
 type GuiMiner struct {
-	Config miner.Config `json:"config"`
+	Config   miner.Config       `json:"config"`
+	Hardware *hardware.Hardware `json:"hardware"`
 }
 
 func (b *GuiMiner) Log(s string) {

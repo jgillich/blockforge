@@ -15,25 +15,22 @@ var (
 )
 
 type Hardware struct {
-	CPUs []CPU
-	GPUs []GPU
+	CPUs []CPU `json:"cpus"`
+	GPUs []GPU `json:"gpus"`
 }
 
 type CPU struct {
-	Model         string
-	PhysicalCores int
-	VirtualCores  int
+	Model         string `json:"model"`
+	PhysicalCores int    `json:"physical_cores"`
+	VirtualCores  int    `json:"virtual_cores"`
 }
 
 type GPU struct {
-	Model    string
-	Backend  GPUBackend
-	Memory   int
-	Platform int
-	Index    int
-}
-
-type CUDA struct {
+	Model    string     `json:"model"`
+	Backend  GPUBackend `json:"backend"`
+	Memory   int        `json:"memory"`
+	Platform int        `json:"platform"`
+	Index    int        `json:"index"`
 }
 
 func New() (*Hardware, error) {

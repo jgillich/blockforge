@@ -74,8 +74,7 @@
     }
     init()
   }
-
   function init() {
-    riot.mount('gui-main', { config: miner.data.config })
+    riot.mount('gui-main', miner.data)
   }
 </script>

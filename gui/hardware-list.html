@@ -1,10 +1,19 @@
 <hardware-list>
+  <script>
+    opts.hardware.cpus.forEach(function (cpu, i) {
+      var threads = []
+      for(var thread = 0; thread < cpu.virtual_cores; thread++) {
+        threads[thread] = thread+1
+      }
+      opts.hardware.cpus[i].threads = threads
+    })
+  </script>
   <div class="columns">
-    <div class="column is-4" each={ cpu, name in opts.config.cpu }>
+    <div class="column is-4" each={ opts.hardware.cpus }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
-            { name }
+            { model }
           </p>
           <div class="card-header-icon">
             <div class="field">
@@ -26,10 +35,7 @@
                   <p class="heading">Threads</p>
                   <p class="title">
                     <select class="select">
-                      <option>1</option>
-                      <option>2</option>
-                      <option>3</option>
-                      <option>4</option>
+                      <option each={i in threads}>{i}</option>
                     </select>
                   </p>
                 </div>
@@ -50,11 +56,11 @@
       </div>
     </div>
 
-    <div class="column is-4" each={ gpu, name in opts.config.gpu }>
+    <div class="column is-4" each={ opts.hardware.gpus }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
-            { name }
+            { model }
           </p>
           <div class="card-header-icon">
             <div class="field">
@@ -96,11 +102,10 @@
                 </div>
               </div>
             </nav>
-
-
           </div>
         </div>
       </div>
     </div>
   </div>
+
 </hardware-list>
