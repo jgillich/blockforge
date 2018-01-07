@@ -1,16 +1,20 @@
 <hardware-list>
-  <script>
-  console.log(opts)
-  </script>
   <div class="columns">
-    <div class="column is-4" each={ cpu, name in opts.cpu }>
+    <div class="column is-4" each={ cpu, name in opts.config.cpu }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
             { name }
           </p>
+          <div class="card-header-icon">
+            <div class="field">
+              <input id="switchRoundedDefault" type="checkbox" name="switchRoundedDefault" class="switch is-rounded" checked="checked">
+              <label for="switchRoundedDefault"></label>
+            </div>
+          </div>
         </div>
         <div class="card-content has-text-centered">
+
           <h3 class="title is-3">1234</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
@@ -27,7 +31,6 @@
                       <option>3</option>
                       <option>4</option>
                     </select>
-
                   </p>
                 </div>
               </div>
@@ -36,27 +39,29 @@
                   <p class="heading">Coin</p>
                   <p class="title">
                     <select class="select">
-                      <option>xmr</option>
-                      <option>eth</option>
+                      <option each={ coin, name in opts.config.coin }>{ name }</option>
                     </select>
-
                   </p>
                 </div>
               </div>
             </nav>
-
-
           </div>
         </div>
       </div>
     </div>
 
-    <div class="column is-4" each={ gpu, name in opts.gpu }>
+    <div class="column is-4" each={ gpu, name in opts.config.gpu }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
             { name }
           </p>
+          <div class="card-header-icon">
+            <div class="field">
+              <input id="asdasdasd" type="checkbox" class="switch is-rounded" checked="checked">
+              <label for="asdasdasd"></label>
+            </div>
+          </div>
         </div>
         <div class="card-content has-text-centered">
           <h3 class="title is-3">1234</h3>

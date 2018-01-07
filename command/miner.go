@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/buger/goterm"
+	"github.com/xlab/closer"
 
 	"github.com/hashicorp/hcl"
 	"gitlab.com/jgillich/autominer/coin"
@@ -17,6 +18,7 @@ import (
 
 	// import coins to initialize them
 	_ "gitlab.com/jgillich/autominer/coin/cryptonight"
+	_ "gitlab.com/jgillich/autominer/coin/demo"
 	_ "gitlab.com/jgillich/autominer/coin/ethash"
 
 	"github.com/mitchellh/cli"
@@ -28,13 +30,11 @@ func init() {
 	}
 }
 
-type MinerCommand struct {
-	Ui cli.Ui
-}
+type MinerCommand struct{}
 
 func (c MinerCommand) Run(args []string) int {
 	flags := flag.NewFlagSet("miner", flag.PanicOnError)
-	flags.Usage = func() { c.Ui.Output(c.Help()) }
+	flags.Usage = func() { ui.Output(c.Help()) }
 
 	var configPath = flags.String("config", "miner.hcl", "Config file path")
 
@@ -74,7 +74,7 @@ func (c MinerCommand) Run(args []string) int {
 
 			goterm.Flush()
 
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 2)
 		}
 	}()
 
@@ -83,6 +83,13 @@ func (c MinerCommand) Run(args []string) int {
 		fmt.Println(err)
 		return 1
 	}
+
+	closer.Bind(func() {
+		miner.Stop()
+	})
+
+	// hodl
+	closer.Hold()
 
 	return 0
 }

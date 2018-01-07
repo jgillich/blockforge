@@ -3,8 +3,6 @@ package miner
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/signal"
 	"runtime"
 
 	"gitlab.com/jgillich/autominer/coin"
@@ -52,6 +50,7 @@ func New(config Config) (*Miner, error) {
 			PoolURL:    coinConfig.Pool.URL,
 			PoolUser:   coinConfig.Pool.User,
 			PoolPass:   coinConfig.Pool.Pass,
+			PoolEmail:  coinConfig.Pool.Email,
 			Threads:    threads,
 			GPUIndexes: gpus,
 		}
@@ -73,21 +72,26 @@ func New(config Config) (*Miner, error) {
 }
 
 func (m *Miner) Start() error {
-
 	for _, miner := range m.miners {
 		err := miner.Start()
 		if err != nil {
-			return err
+			// shut down previously started miners and return error
+			for _, m := range m.miners {
+				if m == miner {
+					return err
+				}
+				m.Stop()
+			}
 		}
 	}
 
-	// wait for interrupt signal
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, os.Interrupt)
-	defer signal.Stop(sigc)
-	<-sigc
-
 	return nil
+}
+
+func (m *Miner) Stop() {
+	for _, miner := range m.miners {
+		miner.Stop()
+	}
 }
 
 func (m *Miner) Stats() []coin.MinerStats {

@@ -92,10 +92,16 @@
   version = "v1.1"
 
 [[projects]]
-  branch = "gtk-webkit2"
+  branch = "master"
+  name = "github.com/xlab/closer"
+  packages = ["."]
+  revision = "89cd22812c4fd5188746092cd10992caeffc75ab"
+
+[[projects]]
+  branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "dc6c04f43b8fbeaaab401b853b8a799671e08650"
+  revision = "bc7869dd752dc3196304cd7dcbbde6fc509e8366"
 
 [[projects]]
   branch = "master"
@@ -106,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9c0a354100458ed22fa9b8cc298d4901f14de73846d7fa508f627726e2055220"
+  inputs-digest = "4ffa6ec7cdeae292e4c88fd0005989b1035fbe814b2c7084afe551ea70556bd1"
   solver-name = "gps-cdcl"
   solver-version = 1

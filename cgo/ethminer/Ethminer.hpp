@@ -49,9 +49,8 @@ using namespace dev::eth;
 class Ethminer
 {
 public:
-  Ethminer(string url, string port, string user, string pass, vector<unsigned> openclDevices, vector<unsigned> cudaDevices)
+  Ethminer(string url, string port, string user, string pass, string email, vector<unsigned> openclDevices, vector<unsigned> cudaDevices)
   {
-
     // log errors only
     g_logVerbosity = 0;
 
@@ -113,6 +112,7 @@ public:
 #endif
     }
 
+
     map<string, Farm::SealerDescriptor> sealers;
 #if ETH_ETHASHCL
     sealers["opencl"] = Farm::SealerDescriptor{&CLMiner::instances, [](FarmFace &_farm, unsigned _index) { return new CLMiner(_farm, _index); }};
@@ -123,7 +123,7 @@ public:
 
     Farm f;
 
-    EthStratumClientV2 client(&f, minerType, url, port, user, pass, m_maxFarmRetries, m_worktimeout, STRATUM_PROTOCOL_STRATUM, m_email);
+    EthStratumClientV2 client(&f, minerType, url, port, user, pass, m_maxFarmRetries, m_worktimeout, STRATUM_PROTOCOL_STRATUM, email);
     f.setSealers(sealers);
 
     f.onSolutionFound([&](Solution sol) {
@@ -136,11 +136,14 @@ public:
 
     while (client.isRunning())
     {
+
       auto mp = f.miningProgress(false);
+
       if (client.isConnected())
       {
         m_hashrate = mp.rate();
       }
+
       this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
     }
   }
@@ -159,6 +162,4 @@ private:
   unsigned m_farmRecheckPeriod = 2000;
   bool m_farmRecheckSet = false;
   int m_worktimeout = 180;
-
-  string m_email = "";
 };

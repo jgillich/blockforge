@@ -44,7 +44,9 @@ func (m *Miner) Start() error {
 	//for _, idx := range config.GPUIndexes {
 	//}
 
-	m.ethminer = ethminer.NewEthminer(u.Hostname(), u.Port(), config.PoolUser, config.PoolPass, openclDevices, cudaDevices)
+	go func() {
+		m.ethminer = ethminer.NewEthminer(u.Hostname(), u.Port(), config.PoolUser, config.PoolPass, config.PoolEmail, openclDevices, cudaDevices)
+	}()
 
 	return nil
 }

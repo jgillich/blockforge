@@ -1,13 +1,17 @@
 package command
 
 import (
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 
 	rice "github.com/GeertJohan/go.rice"
+	"github.com/hashicorp/hcl"
 	"github.com/mitchellh/cli"
 	"github.com/zserge/webview"
 	"gitlab.com/jgillich/autominer/miner"
@@ -23,7 +27,27 @@ type GuiCommand struct {
 }
 
 func (c GuiCommand) Run(args []string) int {
-	fmt.Println("launching gui")
+	flags := flag.NewFlagSet("miner", flag.PanicOnError)
+	flags.Usage = func() { ui.Output(c.Help()) }
+
+	var configPath = flags.String("config", "miner.hcl", "Config file path")
+
+	buf, err := ioutil.ReadFile(*configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Println("Config file not found. Set '-config' argument or run 'coin miner -init' to generate.")
+			return 1
+		}
+		fmt.Println(err)
+		return 1
+	}
+
+	var config miner.Config
+	err = hcl.Decode(&config, string(buf))
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
 
 	http.Handle("/", http.FileServer(rice.MustFindBox("../gui").HTTPBox()))
 
@@ -41,31 +65,17 @@ func (c GuiCommand) Run(args []string) int {
 	view := webview.New(webview.Settings{
 		URL:       "http://" + listener.Addr().String(),
 		Title:     "CoinStack",
-		Width:     800,
-		Height:    600,
+		Width:     1024,
+		Height:    768,
 		Resizable: true,
 		Debug:     true,
 	})
-	config := miner.Config{
-		Donate: 1,
-		CPUs: map[string]miner.CPU{
-			"Intel Core i5-6200U": miner.CPU{
-				Coin:    "xmr",
-				Threads: 1,
-			},
-		},
-		Coins: map[string]miner.Coin{
-			"xmr": miner.Coin{
-				Pool: miner.Pool{
-					URL:  "stratum+tcp://xmr.poolmining.org:3032",
-					User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
-					Pass: "x",
-				},
-			},
-		},
-	}
+	defer view.Exit()
 
-	view.Bind("miner", &GuiMiner{config})
+	view.Dispatch(func() {
+		view.Bind("miner", &GuiMiner{config})
+		view.Eval("init()")
+	})
 
 	view.Run()
 
@@ -78,6 +88,10 @@ func (c GuiCommand) Help() string {
 Usage: coin miner [options]
 
 	Launch the graphical user interface.
+
+	General Options:
+
+	-config=<path>          Config file path.
 `
 	return strings.TrimSpace(helpText)
 }

@@ -7,12 +7,6 @@ type Coin interface {
 	//Info() CoinInfo
 }
 
-type Miner interface {
-	Start() error
-	Stop()
-	Stats() MinerStats
-}
-
 /*
 type CoinInfo struct {
 	SupportsCPU    bool
@@ -20,20 +14,3 @@ type CoinInfo struct {
 	SupportsCUDA   bool
 }
 */
-
-type CoinConfig struct{}
-
-type MinerConfig struct {
-	Coin       string
-	Donate     int
-	PoolURL    string
-	PoolUser   string
-	PoolPass   string
-	Threads    int
-	GPUIndexes []int
-}
-
-type MinerStats struct {
-	Coin     string
-	Hashrate float32
-}

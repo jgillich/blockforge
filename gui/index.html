@@ -6,11 +6,14 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="https://cdn.rawgit.com/jenil/bulmaswatch/0.6.0/cosmo/bulmaswatch.min.css">
   <link rel="stylesheet" href="https://cdn.rawgit.com/allienworks/cryptocoins/master/webfont/cryptocoins.css">
+  <link rel="stylesheet" href="https://cdn.rawgit.com/Wikiki/bulma-switch/9982897c/bulma-switch.css">
   <link rel="stylesheet" href="app.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
-<gui-main></gui-main>
+<body>
+  <gui-main></gui-main>
+</body>
 
 <script data-src="gui-main.html" type="riot/tag"></script>
 <script data-src="hardware-list.html" type="riot/tag"></script>
@@ -18,7 +21,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/riot@3.8/riot+compiler.min.js"></script>
 <script>
-  if (!window.miner) {
+
+  function isWebView() {
+    try {
+      window.external.invoke('');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+
+  if (!isWebView()) {
     window.miner = {}
     miner.data = {
       "config": {
@@ -58,7 +72,10 @@
         }
       }
     }
+    init()
   }
 
-  riot.mount('gui-main', { config: miner.data.config })
+  function init() {
+    riot.mount('gui-main', { config: miner.data.config })
+  }
 </script>
