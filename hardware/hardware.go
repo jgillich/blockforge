@@ -1,7 +1,17 @@
 package hardware
 
 import (
+	"strconv"
+	"strings"
+
 	"gitlab.com/jgillich/autominer/pkg/hwloc"
+)
+
+type GPUBackend string
+
+var (
+	OpenCLBackend GPUBackend = "OpenCL"
+	CUDABackend   GPUBackend = "CUDA"
 )
 
 type Hardware struct {
@@ -16,9 +26,11 @@ type CPU struct {
 }
 
 type GPU struct {
-	Model  string
-	OpenCL bool
-	CUDA   bool
+	Model    string
+	Backend  GPUBackend
+	Memory   int
+	Platform int
+	Index    int
 }
 
 type CUDA struct {
@@ -32,47 +44,56 @@ func NewHardware() (*Hardware, error) {
 		return nil, err
 	}
 
-	//  n = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_OS_DEVICE);
-
 	num := h.GetNbobjsByType(hwloc.ObjectTypeOsDevice)
 
 	for i := 0; i < num; i++ {
 		o := h.GetObjByType(hwloc.ObjectTypeOsDevice, i)
 
-		backend := o.InfoByName("Backend")
-
-		if backend == "CUDA" {
-
-		} else if backend == "OpenCL" {
-
+		gpu := GPU{
+			Model:   o.InfoByName("GPUModel"),
+			Backend: GPUBackend(o.InfoByName("Backend")),
 		}
 
-		/*
-		           assert(!strncmp(obj->name, "cuda", 4));
-		           devid = atoi(obj->name + 4);
-		           printf("CUDA device %d\n", devid);
+		if gpu.Backend == OpenCLBackend {
+			name := o.Name()[:6]
 
-		           s = hwloc_obj_get_info_by_name(obj, "GPUModel");
-		           if (s)
-		             printf("Model: %s\n", s);
+			gpu.Memory, err = strconv.Atoi(o.InfoByName("OpenCLGlobalMemorySize"))
+			if err != nil {
+				continue
+			}
 
-		           s = hwloc_obj_get_info_by_name(obj, "CUDAGlobalMemorySize");
-		           if (s)
-		             printf("Memory: %s\n", s);
+			gpu.Platform, err = strconv.Atoi(name)
+			if err != nil {
+				continue
+			}
 
-		           s = hwloc_obj_get_info_by_name(obj, "CUDAMultiProcessors");
-		           if (s)
-		           {
-		             int mp = atoi(s);
-		             s = hwloc_obj_get_info_by_name(obj, "CUDACoresPerMP");
-		             if (s) {
-		               int mp_cores = atoi(s);
-		               printf("Cores: %d\n", mp * mp_cores);
-		   					}
-		*/
+			i := strings.Index(name, "d")
+			gpu.Index, err = strconv.Atoi(name[:i])
+			if err != nil {
+				continue
+			}
+			gpu.Index++
+
+			hw.GPUs = append(hw.GPUs, gpu)
+		} else if gpu.Backend == CUDABackend {
+			name := o.Name()[:4]
+
+			gpu.Memory, err = strconv.Atoi(o.InfoByName("CUDAGlobalMemorySize"))
+			if err != nil {
+				continue
+			}
+
+			gpu.Index, err = strconv.Atoi(name)
+			if err != nil {
+				continue
+			}
+
+			hw.GPUs = append(hw.GPUs, gpu)
+		} else {
+			continue
+		}
+
 	}
-
-	//  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_OS_DEVICE, i);
 
 	return &hw, nil
 }
