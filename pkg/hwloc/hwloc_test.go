@@ -15,7 +15,7 @@ func TestCoreCount(t *testing.T) {
 	count := 0
 
 	for i := 0; i < width; i++ {
-		o := topology.GetObjByType(ObjectTypePU, i)
+		o := topology.GetObjByType(ObjectTypePU, uint(i))
 		if o.TypeString() != "PU" {
 			t.Fatalf("unexpected type '%s'", o.TypeString())
 		}
