@@ -1,8 +1,9 @@
 package ethash
 
 import (
-	"fmt"
 	"net/url"
+
+	"gitlab.com/jgillich/autominer/hardware"
 
 	"gitlab.com/jgillich/autominer/cgo/ethminer"
 	"gitlab.com/jgillich/autominer/coin"
@@ -14,38 +15,41 @@ type Miner struct {
 }
 
 func NewMiner(config coin.MinerConfig) (coin.Miner, error) {
-
-	if config.Threads > 0 {
-		return nil, fmt.Errorf("coin '%v' does not support cpu mining", config.Coin)
-	}
-
-	if len(config.GPUIndexes) == 0 {
-		return nil, fmt.Errorf("no gpus configured for coin '%v'", config.Coin)
-	}
-
 	return &Miner{config: config}, nil
 }
 
 func (m *Miner) Start() error {
 	config := m.config
 
-	u, err := url.Parse(config.PoolURL)
+	u, err := url.Parse(config.Pool.URL)
 	if err != nil {
 		return err
 	}
 
-	openclDevices := ethminer.NewUnsignedVector(int64(len(config.GPUIndexes)))
-	for _, idx := range config.GPUIndexes {
-		openclDevices.Add(uint(idx))
+	var openclDevices []coin.GPUConfig
+	for _, gpu := range config.GPUSet {
+		if gpu.GPU.Backend == hardware.OpenCLBackend {
+			openclDevices = append(openclDevices, gpu)
+		}
+	}
+	openclIndexes := ethminer.NewUnsignedVector(int64(len(openclDevices)))
+	for _, gpu := range openclDevices {
+		openclIndexes.Add(uint(gpu.GPU.Index))
 	}
 
-	cudaDevices := ethminer.NewUnsignedVector(int64(0))
-	// TODO
-	//for _, idx := range config.GPUIndexes {
-	//}
+	var cudaDevices []coin.GPUConfig
+	for _, gpu := range config.GPUSet {
+		if gpu.GPU.Backend == hardware.CUDABackend {
+			cudaDevices = append(cudaDevices, gpu)
+		}
+	}
+	cudaIndexes := ethminer.NewUnsignedVector(int64(len(cudaDevices)))
+	for _, gpu := range cudaDevices {
+		cudaIndexes.Add(uint(gpu.GPU.Index))
+	}
 
 	go func() {
-		m.ethminer = ethminer.NewEthminer(u.Hostname(), u.Port(), config.PoolUser, config.PoolPass, config.PoolEmail, openclDevices, cudaDevices)
+		m.ethminer = ethminer.NewEthminer(u.Hostname(), u.Port(), config.Pool.User, config.Pool.Pass, config.Pool.Email, openclIndexes, cudaIndexes)
 	}()
 
 	return nil

@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"gitlab.com/jgillich/autominer/hardware"
@@ -25,8 +26,7 @@ type HardwareCommand struct{}
 func (c HardwareCommand) Run(args []string) int {
 	hw, err := hardware.New()
 	if err != nil {
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	for _, cpu := range hw.CPUs {

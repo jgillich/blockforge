@@ -4,13 +4,11 @@ var Coins = map[string]Coin{}
 
 type Coin interface {
 	Miner(MinerConfig) (Miner, error)
-	//Info() CoinInfo
+	Info() Info
 }
 
-/*
-type CoinInfo struct {
+type Info struct {
 	SupportsCPU    bool
-	SupportsOpenGL bool
+	SupportsOpenCL bool
 	SupportsCUDA   bool
 }
-*/

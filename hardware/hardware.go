@@ -20,17 +20,18 @@ type Hardware struct {
 }
 
 type CPU struct {
+	Index         int    `json:"index"`
 	Model         string `json:"model"`
 	PhysicalCores int    `json:"physical_cores"`
 	VirtualCores  int    `json:"virtual_cores"`
 }
 
 type GPU struct {
+	Index    int        `json:"index"`
 	Model    string     `json:"model"`
 	Backend  GPUBackend `json:"backend"`
 	Memory   int        `json:"memory"`
 	Platform int        `json:"platform"`
-	Index    int        `json:"index"`
 }
 
 func New() (*Hardware, error) {
@@ -45,6 +46,7 @@ func New() (*Hardware, error) {
 		cpuObj := h.GetObjByType(hwloc.ObjectTypePackage, depth)
 
 		cpu := CPU{
+			Index:         int(depth),
 			Model:         cpuObj.InfoByName("CPUModel"),
 			PhysicalCores: h.GetNbobjsInsideCPUSetByType(cpuObj.CPUSet(), hwloc.ObjectTypeCore),
 			VirtualCores:  h.GetNbobjsInsideCPUSetByType(cpuObj.CPUSet(), hwloc.ObjectTypePU),

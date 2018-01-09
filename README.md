@@ -28,7 +28,7 @@ Next, build all miners:
 
     cd cgo/xmrstak/xmr-stak
     mkdir build && cd build
-    cmake .. -DCUDA_ENABLE=OFF -DOpenCL_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+    cmake .. -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
     cmake --build .
 
     cd cgo/ethminer/ethminer

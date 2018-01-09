@@ -1,11 +1,11 @@
 package miner
 
 import (
-	"errors"
 	"fmt"
-	"runtime"
+	"strconv"
 
 	"gitlab.com/jgillich/autominer/coin"
+	"gitlab.com/jgillich/autominer/hardware"
 )
 
 type Miner struct {
@@ -17,47 +17,107 @@ func New(config Config) (*Miner, error) {
 		miners: map[string]coin.Miner{},
 	}
 
+	hw, err := hardware.New()
+	if err != nil {
+		return nil, err
+	}
+
 	for coinName, coinConfig := range config.Coins {
 
-		threads := 0
-		for _, cpuConfig := range config.CPUs {
-			if cpuConfig.Coin == coinName {
-				if cpuConfig.Threads <= 0 {
-					return nil, errors.New("CPU threads must be 1 or larger")
-				}
-				threads += cpuConfig.Threads
+		var enabledCPUs []coin.CPUConfig
+		for index, cpuConfig := range config.CPUs {
+			if cpuConfig.Coin != coinName {
+				continue
 			}
-		}
-		if threads > runtime.NumCPU() {
-			return nil, errors.New("CPU threads cannot exceed total CPU cores")
+			if cpuConfig.Threads == 0 {
+				continue
+			}
+
+			cpuIndex, err := strconv.Atoi(index)
+			if err != nil {
+				return nil, fmt.Errorf("non numeric cpu index '%v'", index)
+			}
+
+			var cpu hardware.CPU
+			for _, c := range hw.CPUs {
+				if c.Index == cpuIndex {
+					cpu = c
+					break
+				}
+			}
+			if (cpu == hardware.CPU{}) {
+				return nil, fmt.Errorf("cpu with index '%v' not found", cpuIndex)
+			}
+
+			if cpu.VirtualCores < cpuConfig.Threads {
+				return nil, fmt.Errorf("thread count '%v' for cpu '%v' cannot be larger than number of virtual cores '%v'", cpuConfig.Threads, index, cpu.VirtualCores)
+			}
+
+			enabledCPUs = append(enabledCPUs, coin.CPUConfig{
+				CPU:     cpu,
+				Threads: cpuConfig.Threads,
+			})
 		}
 
-		var gpus []int
-		for _, gpuConfig := range config.GPUs {
-			if gpuConfig.Coin == coinName {
-				gpus = append(gpus, gpuConfig.Index)
+		var enabledGPUs []coin.GPUConfig
+		for index, gpuConfig := range config.GPUs {
+			if gpuConfig.Coin != coinName {
+				continue
 			}
+
+			gpuIndex, err := strconv.Atoi(index)
+			if err != nil {
+				return nil, fmt.Errorf("non numeric gpu index '%v'", index)
+			}
+
+			var gpu hardware.GPU
+			for _, c := range hw.GPUs {
+				if c.Index == gpuIndex {
+					gpu = c
+					break
+				}
+			}
+			if (gpu == hardware.GPU{}) {
+				return nil, fmt.Errorf("gpu with index '%v' not found", gpuIndex)
+			}
+
+			enabledGPUs = append(enabledGPUs, coin.GPUConfig{
+				GPU:       gpu,
+				Intensity: gpuConfig.Intensity,
+			})
 		}
 
 		// skip coins with no threads and gpus
-		if len(gpus) == 0 && threads == 0 {
+		if len(enabledGPUs) == 0 && len(enabledCPUs) == 0 {
 			continue
 		}
 
 		minerConfig := coin.MinerConfig{
-			Coin:       coinName,
-			Donate:     config.Donate,
-			PoolURL:    coinConfig.Pool.URL,
-			PoolUser:   coinConfig.Pool.User,
-			PoolPass:   coinConfig.Pool.Pass,
-			PoolEmail:  coinConfig.Pool.Email,
-			Threads:    threads,
-			GPUIndexes: gpus,
+			Coin:   coinName,
+			Donate: config.Donate,
+			Pool:   coinConfig.Pool,
+			CPUSet: enabledCPUs,
+			GPUSet: enabledGPUs,
 		}
 
 		coin, ok := coin.Coins[coinName]
 		if !ok {
 			return nil, fmt.Errorf("unsupported coin '%v'", coinName)
+		}
+
+		info := coin.Info()
+
+		if !info.SupportsCPU && len(enabledCPUs) > 0 {
+			return nil, fmt.Errorf("coin '%v' does not support cpus", coinName)
+		}
+
+		for _, gpu := range enabledGPUs {
+			if gpu.GPU.Backend == hardware.CUDABackend && !info.SupportsCUDA {
+				return nil, fmt.Errorf("coin '%v' does not support CUDA GPU '%v'", coinName, gpu.GPU.Index)
+			}
+			if gpu.GPU.Backend == hardware.OpenCLBackend && !info.SupportsOpenCL {
+				return nil, fmt.Errorf("coin '%v' does not support OpenCL GPU '%v'", coinName, gpu.GPU.Index)
+			}
 		}
 
 		m, err := coin.Miner(minerConfig)

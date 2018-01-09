@@ -1,5 +1,7 @@
 package miner
 
+import "gitlab.com/jgillich/autominer/stratum"
+
 type Config struct {
 	Donate   int             `hcl:"donate" json:"donate"`
 	LogLevel string          `hcl:"log_level" json:"log_level"`
@@ -9,14 +11,7 @@ type Config struct {
 }
 
 type Coin struct {
-	Pool Pool `hcl:"pool" json:"pool"`
-}
-
-type Pool struct {
-	URL   string `hcl:"url" json:"url"`
-	User  string `hcl:"user" json:"user"`
-	Pass  string `hcl:"pass" json:"pass"`
-	Email string `hcl:"email" json:"email"`
+	Pool stratum.Pool `hcl:"pool" json:"pool"`
 }
 
 type CPU struct {
@@ -25,6 +20,6 @@ type CPU struct {
 }
 
 type GPU struct {
-	Index int    `hcl:"index" json:"index"`
-	Coin  string `hcl:"coin" json:"coin"`
+	Intensity int    `hcl:"intensity" json:"intensity"`
+	Coin      string `hcl:"coin" json:"coin"`
 }

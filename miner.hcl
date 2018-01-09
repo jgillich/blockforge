@@ -1,14 +1,16 @@
 donate = 1
 
-cpu "Intel i5" {
+cpu "0" {
   threads = 1
   coin = "demo"
 }
 
-gpu "RX 560" {
+/*
+gpu "0" {
   index = 0
   coin = "eth"
 }
+*/
 
 coin "demo" {
 

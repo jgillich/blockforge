@@ -24,3 +24,11 @@ type Cryptonight struct {
 func (c *Cryptonight) Miner(config coin.MinerConfig) (coin.Miner, error) {
 	return NewMiner(config, c.light)
 }
+
+func (e *Cryptonight) Info() coin.Info {
+	return coin.Info{
+		SupportsCPU:    true,
+		SupportsOpenCL: true,
+		SupportsCUDA:   true,
+	}
+}

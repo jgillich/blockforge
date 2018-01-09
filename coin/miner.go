@@ -1,11 +1,8 @@
 package coin
 
-type Backend string
-
-var (
-	BackendCPU    Backend = "cpu"
-	BackendOpenCL Backend = "opencl"
-	BackendCUDA   Backend = "cuda"
+import (
+	"gitlab.com/jgillich/autominer/hardware"
+	"gitlab.com/jgillich/autominer/stratum"
 )
 
 type Miner interface {
@@ -20,12 +17,19 @@ type MinerStats struct {
 }
 
 type MinerConfig struct {
-	Coin       string
-	Donate     int
-	PoolURL    string
-	PoolUser   string
-	PoolPass   string
-	PoolEmail  string
-	Threads    int
-	GPUIndexes []int
+	Coin   string
+	Donate int
+	Pool   stratum.Pool
+	CPUSet []CPUConfig
+	GPUSet []GPUConfig
+}
+
+type CPUConfig struct {
+	Threads int
+	CPU     hardware.CPU
+}
+
+type GPUConfig struct {
+	Intensity int
+	GPU       hardware.GPU
 }

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -41,24 +42,20 @@ func (c MinerCommand) Run(args []string) int {
 	buf, err := ioutil.ReadFile(*configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("Config file not found. Set '-config' argument or run 'coin miner -init' to generate.")
-			return 1
+			log.Fatal("Config file not found. Set '-config' argument or run 'coin miner -init' to generate.")
 		}
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	var config miner.Config
 	err = hcl.Decode(&config, string(buf))
 	if err != nil {
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	miner, err := miner.New(config)
 	if err != nil {
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	go func() {
@@ -80,8 +77,7 @@ func (c MinerCommand) Run(args []string) int {
 
 	err = miner.Start()
 	if err != nil {
-		fmt.Println(err)
-		return 1
+		log.Fatal(err)
 	}
 
 	closer.Bind(func() {

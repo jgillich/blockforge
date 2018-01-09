@@ -16,3 +16,11 @@ type Demo struct {
 func (c *Demo) Miner(config coin.MinerConfig) (coin.Miner, error) {
 	return NewMiner(config)
 }
+
+func (e *Demo) Info() coin.Info {
+	return coin.Info{
+		SupportsCPU:    true,
+		SupportsOpenCL: true,
+		SupportsCUDA:   true,
+	}
+}

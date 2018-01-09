@@ -112,7 +112,6 @@ public:
 #endif
     }
 
-
     map<string, Farm::SealerDescriptor> sealers;
 #if ETH_ETHASHCL
     sealers["opencl"] = Farm::SealerDescriptor{&CLMiner::instances, [](FarmFace &_farm, unsigned _index) { return new CLMiner(_farm, _index); }};
@@ -137,11 +136,29 @@ public:
     while (client.isRunning())
     {
 
-      auto mp = f.miningProgress(false);
+      auto mp = f.miningProgress(true);
 
       if (client.isConnected())
       {
         m_hashrate = mp.rate();
+        /*
+        int gpuIndex = 0;
+        int numGpus = mp.minersHashes.size();
+        for (auto const &i : p.minersHashes)
+        {
+          detailedMhEth << std::fixed << std::setprecision(0) << (p.minerRate(i) / 1000.0f) << (((numGpus - 1) > gpuIndex) ? ";" : "");
+          detailedMhDcr << "off" << (((numGpus - 1) > gpuIndex) ? ";" : ""); // DualMining not supported
+          gpuIndex++;
+        }
+
+        gpuIndex = 0;
+        numGpus = p.minerMonitors.size();
+        for (auto const &i : p.minerMonitors)
+        {
+          tempAndFans << i.tempC << ";" << i.fanP << (((numGpus - 1) > gpuIndex) ? "; " : ""); // Fetching Temp and Fans
+          gpuIndex++;
+        }
+        */
       }
 
       this_thread::sleep_for(chrono::milliseconds(m_farmRecheckPeriod));
@@ -154,7 +171,9 @@ public:
   }
 
 private:
-  int m_hashrate = 0;
+  //vector<uint64_t> m_hashrate;
+   int m_hashrate;
+
 
   unsigned m_openclPlatform = 0;
   unsigned m_openclThreadsPerHash = 8;
