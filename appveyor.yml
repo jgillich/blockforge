@@ -25,7 +25,7 @@ install:
 before_build:
   # sh must not be in PATH for cmake MinGW to work
   - set PATH=C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
-  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF
+  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF -DWIN32=true
   - cmake --build cgo/ethminer/ethminer/build
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
   - cmake --build cgo/xmrstak/xmr-stak/build
