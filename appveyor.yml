@@ -4,6 +4,8 @@ clone_folder: c:\gopath\src\gitlab.com\jgillich\autominer
 
 environment:
   GOPATH: c:\gopath
+  # force hunter's OpenCL-ICD-Loader to load mingw dx headers
+  DXSDK_DIR: ""
 
 install:
   - git submodule update --init --recursive
@@ -19,8 +21,6 @@ install:
   - go get -u github.com/golang/dep/cmd/dep
   - go get -u github.com/GeertJohan/go.rice/rice
   - dep ensure -vendor-only
-  # force hunter's OpenCL-ICD-Loader to load mingw dx headers
-  - ren %DXSDK_DIR%/Include Include.bak
 
 before_build:
   # sh must not be in PATH for cmake MinGW to work
