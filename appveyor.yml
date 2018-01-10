@@ -26,7 +26,8 @@ before_build:
   - set PATH=C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
   #- set PATH=%PATH:;C:\msys64\usr\bin;=%
   #- set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
-  - touch foo.c bar.cpp
+  - copy NUL foo.c
+  - copy NUL bar.cpp
   - gcc -v -c foo.c
   - g++ -v -c bar.cpp
   - ps: Get-Command cmake
