@@ -20,11 +20,13 @@ type Coin struct {
 }
 
 type CPU struct {
+	Model   string `hcl:"model" json:"model"`
 	Coin    string `hcl:"coin" json:"coin"`
 	Threads int    `hcl:"threads" json:"threads"`
 }
 
 type GPU struct {
+	Model     string `hcl:"model" json:"model"`
 	Intensity int    `hcl:"intensity" json:"intensity"`
 	Coin      string `hcl:"coin" json:"coin"`
 }
@@ -54,6 +56,7 @@ func GenerateConfig() (Config, error) {
 		config.CPUs[strconv.Itoa(cpu.Index)] = CPU{
 			Coin:    "xmr",
 			Threads: cpu.PhysicalCores - 1,
+			Model:   cpu.Model,
 		}
 	}
 
@@ -61,6 +64,7 @@ func GenerateConfig() (Config, error) {
 		config.GPUs[strconv.Itoa(gpu.Index)] = GPU{
 			Coin:      "xmr",
 			Intensity: 1,
+			Model:     gpu.Model,
 		}
 	}
 
