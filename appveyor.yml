@@ -26,12 +26,8 @@ before_build:
   - set PATH=C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
   #- set PATH=%PATH:;C:\msys64\usr\bin;=%
   #- set PATH=%PATH:;C:\Program Files\Git\usr\bin;=%
-  - copy NUL foo.c
-  - copy NUL bar.cpp
-  - gcc -v -c foo.c
-  - g++ -v -c bar.cpp
   - ps: Get-Command cmake
-  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF
+  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DAPICORE=OFF -DCMAKE_CXX_FLAGS="-v"
   - make -C cgo/ethminer/ethminer/build
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
   - make -C cgo/xmrstak/xmr-stak/build
