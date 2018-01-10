@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,10 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	jsonParser "github.com/hashicorp/hcl/json/parser"
+
+	"github.com/hashicorp/hcl/hcl/printer"
 
 	"github.com/buger/goterm"
 	"github.com/xlab/closer"
@@ -38,6 +43,39 @@ func (c MinerCommand) Run(args []string) int {
 	flags.Usage = func() { ui.Output(c.Help()) }
 
 	var configPath = flags.String("config", "miner.hcl", "Config file path")
+	var init = flags.Bool("init", false, "Generate config file")
+
+	if err := flags.Parse(args); err != nil {
+		return 1
+	}
+
+	if *init {
+		config, err := miner.GenerateConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// TODO find a better way do serialize to hcl
+		json, err := json.Marshal(config)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ast, err := jsonParser.Parse(json)
+
+		file, err := os.Create(*configPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = printer.Fprint(file, ast)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		file.Close()
+		fmt.Printf("Wrote config file to '%v'\n", *configPath)
+		return 0
+	}
 
 	buf, err := ioutil.ReadFile(*configPath)
 	if err != nil {
