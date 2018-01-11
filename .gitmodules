@@ -4,5 +4,5 @@
 	ignore = dirty
 [submodule "cgo/ethminer/ethminer"]
 	path = cgo/ethminer/ethminer
-	url = https://github.com/jgillich/ethminer.git
+	url = https://github.com/ethereum-mining/ethminer.git
 	ignore = dirty
