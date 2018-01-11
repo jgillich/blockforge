@@ -18,6 +18,7 @@
 <script data-src="gui-main.html" type="riot/tag"></script>
 <script data-src="hardware-list.html" type="riot/tag"></script>
 <script data-src="coin-list.html" type="riot/tag"></script>
+<script data-src="coin-edit.html" type="riot/tag"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/riot@3.8/riot+compiler.min.js"></script>
 <script>
@@ -35,6 +36,15 @@
   if (!isWebView()) {
     window.miner = {}
     miner.data = {
+      "hardware": {
+        "cpus": [
+          {
+            "model": "Intel(R) Core(TM) i5-6200U CPU @ 2.30GHz",
+            "virtual_cores": 4,
+          }
+        ],
+        "gpus": [],
+      },
       "config": {
         "donate": 1,
         "log_level": "",
@@ -74,6 +84,7 @@
     }
     init()
   }
+
   function init() {
     riot.mount('gui-main', miner.data)
   }

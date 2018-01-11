@@ -1,39 +1,43 @@
 <gui-main>
-  <div>
-    <nav class="navbar is-primary">
-      <div class="container">
-        <div class="navbar-brand">
-          <div class="navbar-start">
-            <div class="navbar-item">
-              <img src="https://bulma.io/images/bulma-logo.png" width="112" height="28">
-            </div>
-          </div>
-        </div>
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <div class="field is-grouped">
-              <p class="control">
-                <a class="button is-success">
-                  <span class="icon">
-                    <i class="fa fa-play"></i>
-                  </span>
-                  &nbsp;Start
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
+  <section class="hero is-primary">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+        <a class={"button is-large " + (started ? "is-warning" : "is-success") } onclick={started ? stop : start}>
+          <span class="icon">
+            <i class={"fa " +(started ? "fa-pause" : "fa-play")}></i>
+          </span>
+         <span>
+            { started ? "Stop mining" : "Start mining"}
+         </span>
+        </a>
       </div>
-    </nav>
-  </div>
+    </div>
+  </section>
 
   <div class="container">
-
     <section class="section">
       <hardware-list config={opts.config} hardware={opts.hardware}></cpu-list>
     </section>
-    <section class="section">
+    <section class="section" style="padding-top: 0">
       <coin-list items={opts.config.coin}></coin-list>
     </section>
   </div>
+
+  <script>
+    this.started = false
+    this.updateInterval
+
+    start() {
+      miner.start()
+      this.updateInterval = setInterval(miner.stats, 1000)
+      this.started = true
+    }
+
+    stop() {
+      clearInterval(this.updateInterval)
+      miner.stop()
+      this.started = false
+    }
+
+  </script>
 </gui-main>

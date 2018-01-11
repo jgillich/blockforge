@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -77,7 +78,7 @@ func (c GuiCommand) Run(args []string) int {
 	}
 
 	view.Dispatch(func() {
-		view.Bind("miner", &GuiMiner{config, hardware})
+		view.Bind("miner", &GuiMiner{view, config, hardware, nil})
 		view.Eval("init()")
 	})
 
@@ -105,10 +106,38 @@ func (c GuiCommand) Synopsis() string {
 }
 
 type GuiMiner struct {
+	webview  webview.WebView
 	Config   miner.Config       `json:"config"`
 	Hardware *hardware.Hardware `json:"hardware"`
+	//Stats    []coin.MinerStats  `json:"stats"`
+	miner *miner.Miner
 }
 
-func (b *GuiMiner) Log(s string) {
-	fmt.Println(s)
+func (g *GuiMiner) Start() {
+	miner, err := miner.New(g.Config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = miner.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.miner = miner
+}
+
+func (g *GuiMiner) Stop() {
+	if g.miner != nil {
+		g.miner.Stop()
+		g.miner = nil
+	}
+}
+
+func (g *GuiMiner) Stats() {
+	if g.miner != nil {
+		buf, err := json.Marshal(g.miner.Stats())
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.webview.Eval(fmt.Sprintf("window.updateStats(%v)", string(buf)))
+	}
 }

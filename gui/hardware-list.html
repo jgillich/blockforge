@@ -24,7 +24,7 @@
         </div>
         <div class="card-content has-text-centered">
 
-          <h3 class="title is-3">1234</h3>
+          <h3 class="title is-3">{ stats.length ? stats[0].hashrate : 0 }</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
         <div class="card-footer">
@@ -107,5 +107,14 @@
       </div>
     </div>
   </div>
+
+  <script>
+    this.stats = []
+    window.updateStats = function(stats) {
+      this.stats = stats
+      this.update()
+    }.bind(this)
+
+  </script>
 
 </hardware-list>

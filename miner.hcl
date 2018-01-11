@@ -15,9 +15,11 @@
 "cpu" "0" {
   "model" = "Intel(R) Core(TM) i5-6200U CPU @ 2.30GHz"
 
-  "coin" = "xmr"
+  "coin" = "demo"
 
   "threads" = 1
 }
+
+coin "demo" {}
 
 "gpu" = {}

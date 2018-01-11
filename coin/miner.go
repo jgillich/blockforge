@@ -12,8 +12,8 @@ type Miner interface {
 }
 
 type MinerStats struct {
-	Coin     string
-	Hashrate float32
+	Coin     string  `json:"coin"`
+	Hashrate float32 `json:"hashrate"`
 }
 
 type MinerConfig struct {
