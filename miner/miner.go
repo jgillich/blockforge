@@ -154,11 +154,23 @@ func (m *Miner) Stop() {
 	}
 }
 
-func (m *Miner) Stats() []coin.MinerStats {
-	stats := make([]coin.MinerStats, 0)
+func (m *Miner) Stats() coin.MinerStats {
+	stats := coin.MinerStats{
+		CPUStats: []coin.CPUStats{},
+		GPUStats: []coin.GPUStats{},
+	}
 
 	for _, miner := range m.miners {
-		stats = append(stats, miner.Stats())
+		s := miner.Stats()
+
+		for _, cpuStat := range s.CPUStats {
+			stats.CPUStats = append(stats.CPUStats, cpuStat)
+		}
+
+		for _, gpuStat := range s.GPUStats {
+			stats.GPUStats = append(stats.GPUStats, gpuStat)
+		}
+
 	}
 
 	return stats

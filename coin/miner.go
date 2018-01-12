@@ -12,7 +12,17 @@ type Miner interface {
 }
 
 type MinerStats struct {
-	Coin     string  `json:"coin"`
+	CPUStats []CPUStats `json:"cpu_stats"`
+	GPUStats []GPUStats `json:"gpu_stats"`
+}
+
+type CPUStats struct {
+	Index    int     `json:"index"`
+	Hashrate float32 `json:"hashrate"`
+}
+
+type GPUStats struct {
+	Index    int     `json:"index"`
 	Hashrate float32 `json:"hashrate"`
 }
 

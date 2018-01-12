@@ -103,8 +103,12 @@ func (c MinerCommand) Run(args []string) int {
 			goterm.MoveCursor(0, 0)
 			goterm.Flush()
 
-			for _, stat := range stats {
-				fmt.Fprintf(goterm.Output, "%v: %v H/s\t", stat.Coin, stat.Hashrate)
+			for _, stat := range stats.CPUStats {
+				fmt.Fprintf(goterm.Output, "CPU %v: %v H/s\n", stat.Index, stat.Hashrate)
+			}
+
+			for _, stat := range stats.GPUStats {
+				fmt.Fprintf(goterm.Output, "GPU %v: %v H/s\n", stat.Index, stat.Hashrate)
 			}
 
 			goterm.Flush()

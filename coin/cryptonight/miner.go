@@ -1,14 +1,18 @@
 package cryptonight
 
-import "gitlab.com/jgillich/autominer/coin"
+import (
+	"math/rand"
+
+	"gitlab.com/jgillich/autominer/coin"
+)
 
 type Miner struct {
-	coin  string
-	light bool
+	config coin.MinerConfig
+	light  bool
 }
 
 func NewMiner(config coin.MinerConfig, light bool) (coin.Miner, error) {
-	miner := Miner{coin: config.Coin, light: light}
+	miner := Miner{config, light}
 
 	return &miner, nil
 }
@@ -24,9 +28,24 @@ func (m *Miner) Stop() {
 }
 
 func (m *Miner) Stats() coin.MinerStats {
-	hashrate := 0
+	var cpuStats []coin.CPUStats
+	for _, cpu := range m.config.CPUSet {
+		cpuStats = append(cpuStats, coin.CPUStats{
+			Index:    cpu.CPU.Index,
+			Hashrate: float32(100 * (rand.Intn(9) + 1)),
+		})
+	}
+
+	var gpuStats []coin.GPUStats
+	for _, gpu := range m.config.GPUSet {
+		gpuStats = append(gpuStats, coin.GPUStats{
+			Index:    gpu.GPU.Index,
+			Hashrate: float32(100 * (rand.Intn(9) + 1)),
+		})
+	}
+
 	return coin.MinerStats{
-		Coin:     m.coin,
-		Hashrate: float32(hashrate),
+		GPUStats: gpuStats,
+		CPUStats: cpuStats,
 	}
 }

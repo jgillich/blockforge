@@ -1,6 +1,7 @@
 package ethash
 
 import (
+	"math/rand"
 	"net/url"
 
 	"gitlab.com/jgillich/autominer/hardware"
@@ -63,13 +64,24 @@ func (m *Miner) Stop() {
 }
 
 func (m *Miner) Stats() coin.MinerStats {
-	hashrate := 0
-	if m.ethminer != nil {
-		hashrate = m.ethminer.Hashrate()
+	var cpuStats []coin.CPUStats
+	for _, cpu := range m.config.CPUSet {
+		cpuStats = append(cpuStats, coin.CPUStats{
+			Index:    cpu.CPU.Index,
+			Hashrate: float32(100 * (rand.Intn(9) + 1)),
+		})
+	}
+
+	var gpuStats []coin.GPUStats
+	for _, gpu := range m.config.GPUSet {
+		gpuStats = append(gpuStats, coin.GPUStats{
+			Index:    gpu.GPU.Index,
+			Hashrate: float32(100 * (rand.Intn(9) + 1)),
+		})
 	}
 
 	return coin.MinerStats{
-		Coin:     m.config.Coin,
-		Hashrate: float32(hashrate),
+		GPUStats: gpuStats,
+		CPUStats: cpuStats,
 	}
 }

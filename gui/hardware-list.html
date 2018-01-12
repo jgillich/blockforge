@@ -23,8 +23,7 @@
           </div>
         </div>
         <div class="card-content has-text-centered">
-
-          <h3 class="title is-3">{ stats.length ? stats[0].hashrate : 0 }</h3>
+          <h3 class="title is-3">{ cpuHashrate(index) }</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
         <div class="card-footer">
@@ -114,6 +113,20 @@
       this.stats = stats
       this.update()
     }.bind(this)
+
+    cpuHashrate(index) {
+      if (this.stats.length == 0) {
+        return 0
+      }
+
+      var cpuStat = this.stats.cpu_stats.find((s) => s.index == index)
+
+      if(!cpuStat) {
+        return 0
+      }
+
+      return cpuStat.hashrate
+    }
 
   </script>
 

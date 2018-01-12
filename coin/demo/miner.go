@@ -25,8 +25,24 @@ func (m *Miner) Stop() {
 }
 
 func (m *Miner) Stats() coin.MinerStats {
+	var cpuStats []coin.CPUStats
+	for _, cpu := range m.config.CPUSet {
+		cpuStats = append(cpuStats, coin.CPUStats{
+			Index:    cpu.CPU.Index,
+			Hashrate: float32(100 * (rand.Intn(9) + 1)),
+		})
+	}
+
+	var gpuStats []coin.GPUStats
+	for _, gpu := range m.config.GPUSet {
+		gpuStats = append(gpuStats, coin.GPUStats{
+			Index:    gpu.GPU.Index,
+			Hashrate: float32(100 * (rand.Intn(9) + 1)),
+		})
+	}
+
 	return coin.MinerStats{
-		Coin:     m.config.Coin,
-		Hashrate: float32(rand.Intn(100) * 10),
+		GPUStats: gpuStats,
+		CPUStats: cpuStats,
 	}
 }
