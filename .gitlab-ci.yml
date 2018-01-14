@@ -20,7 +20,7 @@ stages:
 ethminer:
   stage: prepare
   script:
-    - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
+    - cmake3 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
     - make -C cgo/ethminer/ethminer/build
   artifacts:
     # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
@@ -31,7 +31,7 @@ ethminer:
 xmrstak:
   stage: prepare
   script:
-    - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+    - cmake3 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
     - make -C cgo/xmrstak/xmr-stak/build
   artifacts:
     # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
