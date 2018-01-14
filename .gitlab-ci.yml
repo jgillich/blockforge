@@ -13,6 +13,8 @@ before_script:
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
   - source /opt/rh/devtoolset-7/enable
+  # fix jsoncpp include path
+  - ln -s /usr/include/jsoncpp/json /usr/include/json
 
 stages:
   - prepare
