@@ -8,6 +8,8 @@ import (
 	"net"
 )
 
+var agent = "coinstack/1.0.0"
+
 type Client struct {
 	conn net.Conn
 	pool Pool
@@ -15,11 +17,13 @@ type Client struct {
 }
 
 type Message struct {
-	Id     int         `json:"id"`
-	Method string      `json:"method"`
-	Params interface{} `json:"params"`
-	Result interface{} `json:"result"`
-	Error  *Error      `json:"error"`
+	Id      int         `json:"id"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
+	Result  interface{} `json:"result"`
+	Error   *Error      `json:"error"`
+	Status  string      `json:"status"`
+	Jsonrpc string      `json:"jsonrpc"`
 }
 
 type Error struct {
@@ -28,6 +32,10 @@ type Error struct {
 }
 
 func NewClient(pool Pool) (*Client, error) {
+	if pool.Protocol == "" {
+		pool.Protocol = ProtocolStandard
+	}
+
 	conn, err := net.Dial("tcp", pool.URL)
 	if err != nil {
 		return nil, err
@@ -41,11 +49,7 @@ func NewClient(pool Pool) (*Client, error) {
 
 func (c Client) Connect() error {
 
-	if err := c.subscribe(); err != nil {
-		return err
-	}
-
-	if err := c.authorize(); err != nil {
+	if err := c.login(); err != nil {
 		return err
 	}
 
@@ -95,56 +99,80 @@ func (c *Client) read() (*Message, error) {
 	return &message, nil
 }
 
-func (c *Client) subscribe() error {
-	subscribe := &Message{
-		Id:     1,
-		Method: "mining.subscribe",
-		Params: []string{
-			"coinstack/1.0.0",
-			"EthereumStratum/1.0.0",
-		},
+func (c *Client) login() error {
+
+	if c.pool.Protocol == ProtocolNicehash {
+
+		subscribe := &Message{
+			Id:     1,
+			Method: "mining.subscribe",
+			Params: []string{
+				agent,
+				"EthereumStratum/1.0.0",
+			},
+		}
+
+		if err := c.send(subscribe); err != nil {
+			return err
+		}
+
+		message, err := c.read()
+		if err != nil {
+			return err
+		}
+
+		if message.Id != subscribe.Id {
+			return fmt.Errorf("expected message id '%v' but got '%v'", subscribe.Id, message.Id)
+		}
+
+		// TODO validate message
+
+		authorize := &Message{
+			Id:     2,
+			Method: "mining.authorize",
+			Params: []string{c.pool.User, c.pool.Pass},
+		}
+
+		if err := c.send(authorize); err != nil {
+			return err
+		}
+
+		message, err = c.read()
+		if err != nil {
+			return err
+		}
+
+		if message.Id != authorize.Id {
+			return fmt.Errorf("expected message id '%v' but got '%v'", authorize.Id, message.Id)
+		}
+		// TODO check result: true
+
+	} else {
+
+		login := &Message{
+			Id:     2,
+			Method: "login",
+			Params: map[string]string{
+				"login": c.pool.User,
+				"pass":  c.pool.Pass,
+				"agent": agent,
+			},
+		}
+
+		if err := c.send(login); err != nil {
+			return err
+		}
+
+		message, err := c.read()
+		if err != nil {
+			return err
+		}
+
+		if message.Id != login.Id {
+			return fmt.Errorf("expected message id '%v' but got '%v'", login.Id, message.Id)
+		}
+
 	}
-
-	if err := c.send(subscribe); err != nil {
-		return err
-	}
-
-	message, err := c.read()
-	if err != nil {
-		return err
-	}
-
-	if message.Id != subscribe.Id {
-		return fmt.Errorf("expected message id '%v' but got '%v'", subscribe.Id, message.Id)
-	}
-
-	// TODO validate message
-
-	return nil
-}
-
-func (c *Client) authorize() error {
-
-	authorize := &Message{
-		Id:     2,
-		Method: "mining.authorize",
-		Params: []string{c.pool.User, c.pool.Pass},
-	}
-
-	if err := c.send(authorize); err != nil {
-		return err
-	}
-
-	message, err := c.read()
-	if err != nil {
-		return err
-	}
-
-	if message.Id != authorize.Id {
-		return fmt.Errorf("expected message id '%v' but got '%v'", authorize.Id, message.Id)
-	}
-
-	// TODO check result: true
 
 	return nil
 }

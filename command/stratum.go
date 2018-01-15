@@ -20,8 +20,8 @@ type StratumCommand struct{}
 func (c StratumCommand) Run(args []string) int {
 
 	pool := stratum.Pool{
-		URL:  "eth.poolmining.org:3072",
-		User: "0x25ae2cbddE36CfC9D959a4d1f76964EaE7517748",
+		URL:  "xmr.poolmining.org:3032",
+		User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
 		Pass: "x",
 	}
 
