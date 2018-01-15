@@ -1,4 +1,4 @@
-image: fedora:latest
+image: centos:7
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
@@ -6,10 +6,15 @@ variables:
   REPO_NAME: gitlab.com/jgillich/autominer
 
 before_script:
-  - dnf install -y @development-tools which gcc-c++ go boost-devel hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel jsoncpp-devel webkitgtk4-devel swig cmake
+  - yum install -y epel-release centos-release-scl yum-plugin-copr
+  - yum copr enable -y nickoe/swig_for_epel7
+  - yum install -y devtoolset-7 git which go boost-devel hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel jsoncpp-devel webkitgtk4-devel swig cmake3
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
+  - source /opt/rh/devtoolset-7/enable
+  # fix jsoncpp include path
+  - ln -s /usr/include/jsoncpp/json /usr/include/json
 
 stages:
   - prepare
@@ -19,7 +24,7 @@ stages:
 ethminer:
   stage: prepare
   script:
-    - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
+    - cmake3 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DHUNTER_ENABLED=OFF
     - make -C cgo/ethminer/ethminer/build
   artifacts:
     # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
@@ -30,7 +35,7 @@ ethminer:
 xmrstak:
   stage: prepare
   script:
-    - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
+    - cmake3 -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
     - make -C cgo/xmrstak/xmr-stak/build
   artifacts:
     # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
