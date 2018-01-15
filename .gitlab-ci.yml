@@ -24,7 +24,7 @@ stages:
 ethminer:
   stage: prepare
   script:
-    - cmake3 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
+    - cmake3 -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build -DHUNTER_ENABLED=OFF
     - make -C cgo/ethminer/ethminer/build
   artifacts:
     # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
