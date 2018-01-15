@@ -10,6 +10,7 @@ before_script:
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
+  - export PATH="$GOPATH/bin:$PATH"
 
 stages:
   - prepare
@@ -43,7 +44,7 @@ dep:
   script:
     - go get -u github.com/golang/dep/cmd/dep
     - go get -u github.com/GeertJohan/go.rice/rice
-    - $GOPATH/bin/dep ensure -vendor-only
+    - dep ensure -vendor-only
   artifacts:
     untracked: true
 
