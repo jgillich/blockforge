@@ -47,3 +47,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/xlab/closer"
+
+[[constraint]]
+  name = "github.com/Jeffail/gabs"
+  version = "1.0.0"

@@ -11,6 +11,12 @@
   revision = "c02ca9a983da5807ddf7d796784928f5be4afd09"
 
 [[projects]]
+  name = "github.com/Jeffail/gabs"
+  packages = ["."]
+  revision = "2a3aa15961d5fee6047b8151b67ac2f08ba2c48c"
+  version = "1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/armon/go-radix"
   packages = ["."]
@@ -53,6 +59,7 @@
     ".",
     "hcl/ast",
     "hcl/parser",
+    "hcl/printer",
     "hcl/scanner",
     "hcl/strconv",
     "hcl/token",
@@ -78,7 +85,7 @@
   branch = "master"
   name = "github.com/mitchellh/cli"
   packages = ["."]
-  revision = "33edc47170b5df54d2588696d590c5e20ee583fe"
+  revision = "518dc677a1e1222682f4e7db06721942cb8e9e4c"
 
 [[projects]]
   name = "github.com/posener/complete"
@@ -101,17 +108,17 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "bc7869dd752dc3196304cd7dcbbde6fc509e8366"
+  revision = "fa2728aa215d44edf13a4a7855a3f0279473bc1f"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "dd9ec17814d5b1de388ebe438ec013d57d8b3779"
+  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4ffa6ec7cdeae292e4c88fd0005989b1035fbe814b2c7084afe551ea70556bd1"
+  inputs-digest = "b39e4340acbdc7bf5086ac1b3152fa9fa2ae594b879ce54f5b972b0f735dbaee"
   solver-name = "gps-cdcl"
   solver-version = 1

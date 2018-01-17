@@ -6,15 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/Jeffail/gabs"
 )
 
 var agent = "coinstack/1.0.0"
-
-type Client struct {
-	conn net.Conn
-	pool Pool
-	id   int
-}
 
 type Message struct {
 	Id      int         `json:"id"`
@@ -22,13 +18,34 @@ type Message struct {
 	Params  interface{} `json:"params"`
 	Result  interface{} `json:"result"`
 	Error   *Error      `json:"error"`
-	Status  string      `json:"status"`
 	Jsonrpc string      `json:"jsonrpc"`
 }
 
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+}
+
+type Job struct {
+	MinerId string
+	JobId   string
+	Blob    string
+	Target  string
+}
+
+type Share struct {
+	MinerId string `json:"id"`
+	JobId   string `json:"job_id"`
+	Nonce   string `json:"nonce"`
+	Result  string `json:"result"`
+}
+
+type Client struct {
+	Jobs    chan Job
+	conn    net.Conn
+	pool    Pool
+	id      int
+	minerId string
 }
 
 func NewClient(pool Pool) (*Client, error) {
@@ -42,23 +59,43 @@ func NewClient(pool Pool) (*Client, error) {
 	}
 	log.Printf("connected to %v", pool.URL)
 	return &Client{
+		Jobs: make(chan Job, 10),
+		id:   1,
 		pool: pool,
 		conn: conn,
 	}, nil
 }
 
-func (c Client) Connect() error {
+func (c *Client) SubmitShare(share *Share) {
+	c.send(&Message{
+		Method: "submit",
+		Params: share,
+	})
+}
+
+func (c *Client) Connect() error {
 
 	if err := c.login(); err != nil {
 		return err
 	}
 
-	for {
-		_, err := c.read()
-		if err != nil {
-			return err
+	go func() {
+		for {
+			message, err := c.read()
+			if err != nil {
+				panic(err)
+			}
+
+			if message.Method == "job" {
+				params, err := gabs.Consume(message.Params)
+				if err != nil {
+					panic(err)
+				}
+				c.parseJob(params)
+			}
+
 		}
-	}
+	}()
 
 	return nil
 }
@@ -68,6 +105,12 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) send(message *Message) error {
+
+	if message.Id == 0 {
+		message.Id = c.id
+		c.id = c.id + 1
+	}
+
 	msg, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -104,7 +147,6 @@ func (c *Client) login() error {
 	if c.pool.Protocol == ProtocolNicehash {
 
 		subscribe := &Message{
-			Id:     1,
 			Method: "mining.subscribe",
 			Params: []string{
 				agent,
@@ -128,7 +170,6 @@ func (c *Client) login() error {
 		// TODO validate message
 
 		authorize := &Message{
-			Id:     2,
 			Method: "mining.authorize",
 			Params: []string{c.pool.User, c.pool.Pass},
 		}
@@ -150,7 +191,6 @@ func (c *Client) login() error {
 	} else {
 
 		login := &Message{
-			Id:     2,
 			Method: "login",
 			Params: map[string]string{
 				"login": c.pool.User,
@@ -172,7 +212,57 @@ func (c *Client) login() error {
 			return fmt.Errorf("expected message id '%v' but got '%v'", login.Id, message.Id)
 		}
 
+		result, err := gabs.Consume(message.Result)
+		if err != nil {
+			return err
+		}
+
+		log.Print("authenticated")
+
+		if result.Exists("job") {
+			container := result.Path("job")
+			minerId, ok := result.Path("id").Data().(string)
+			if !ok {
+				panic("missing id")
+			}
+			c.minerId = minerId
+
+			c.parseJob(container)
+		}
+	}
+	return nil
+}
+
+func (c *Client) parseJob(data *gabs.Container) {
+	jobId, ok := data.Path("job_id").Data().(string)
+	if !ok {
+		log.Printf("job_id not ok")
+		return
 	}
 
-	return nil
+	blob, ok := data.Path("blob").Data().(string)
+	if !ok {
+		log.Printf("blob not ok")
+		return
+	}
+
+	target, ok := data.Path("target").Data().(string)
+	if !ok {
+		log.Printf("target not ok")
+		return
+	}
+
+	job := Job{
+		MinerId: c.minerId,
+		JobId:   jobId,
+		Blob:    blob,
+		Target:  target,
+	}
+
+	log.Printf("got job '%+v'", jobId)
+
+	go func() {
+		c.Jobs <- job
+	}()
+
 }
