@@ -13,10 +13,9 @@ install:
   - go get -u github.com/golang/dep/cmd/dep
   - go get -u github.com/GeertJohan/go.rice/rice
   - dep ensure -vendor-only
+  - set PATH=C:\go;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
 
 before_build:
-  # sh must not be in PATH for cmake MinGW to work
-  - set PATH=C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
   - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hhash -Bhash/build
   - cmake --build hash/build
 
