@@ -36,7 +36,6 @@
 
 #if defined(_WIN32)
   #include <malloc.h>
-  #define alloca(size) _alloca(size)
 #elif !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__)
  #include <alloca.h>
 #else
