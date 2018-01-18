@@ -17,7 +17,7 @@ stages:
   - test
   - build
 
-ethminer:
+libhash:
   stage: prepare
   script:
     - cmake -Hhash -Bhash/build

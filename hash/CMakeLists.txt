@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(hash)
+project(hash C)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes")
 
