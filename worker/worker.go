@@ -14,7 +14,7 @@ type workerFactory func(Config) Worker
 func New(coin string, config Config) (Worker, error) {
 	factory, ok := workers[coin]
 	if !ok {
-		return nil, fmt.Errorf("worker for coin '%v' does not exist")
+		return nil, fmt.Errorf("worker for coin '%v' does not exist", coin)
 	}
 
 	return factory(config), nil
