@@ -5,14 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"gitlab.com/jgillich/autominer/hardware"
-
-	// import coins to initialize them
-	_ "gitlab.com/jgillich/autominer/coin/cryptonight"
-	_ "gitlab.com/jgillich/autominer/coin/demo"
-	_ "gitlab.com/jgillich/autominer/coin/ethash"
-
 	"github.com/mitchellh/cli"
+	"gitlab.com/jgillich/autominer/hardware"
 )
 
 func init() {

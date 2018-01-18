@@ -6,7 +6,7 @@ variables:
   REPO_NAME: gitlab.com/jgillich/autominer
 
 before_script:
-  - dnf install -y @development-tools which gcc-c++ go boost-devel hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel jsoncpp-devel webkitgtk4-devel swig cmake
+  - dnf install -y @development-tools go hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
@@ -20,24 +20,10 @@ stages:
 ethminer:
   stage: prepare
   script:
-    - cmake -Hcgo/ethminer/ethminer -Bcgo/ethminer/ethminer/build
-    - make -C cgo/ethminer/ethminer/build
+    - cmake -Hhash -Bhash/build
+    - cmake --build hash/build
   artifacts:
-    # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
-    # untracked: true
-    paths:
-      - cgo/ethminer/ethminer/build
-
-xmrstak:
-  stage: prepare
-  script:
-    - cmake -Hcgo/xmrstak/xmr-stak -Bcgo/xmrstak/xmr-stak/build -DCUDA_ENABLE=OFF -DMICROHTTPD_ENABLE=OFF
-    - make -C cgo/xmrstak/xmr-stak/build
-  artifacts:
-    # https://gitlab.com/gitlab-org/gitlab-runner/issues/2457
-    # untracked: true
-    paths:
-      - cgo/xmrstak/xmr-stak/build
+    untracked: true
 
 dep:
   stage: prepare

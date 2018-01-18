@@ -19,13 +19,8 @@ import (
 	"github.com/xlab/closer"
 
 	"github.com/hashicorp/hcl"
-	"gitlab.com/jgillich/autominer/coin"
 	"gitlab.com/jgillich/autominer/miner"
-
-	// import coins to initialize them
-	_ "gitlab.com/jgillich/autominer/coin/cryptonight"
-	_ "gitlab.com/jgillich/autominer/coin/demo"
-	_ "gitlab.com/jgillich/autominer/coin/ethash"
+	"gitlab.com/jgillich/autominer/worker"
 
 	"github.com/mitchellh/cli"
 )
@@ -133,9 +128,9 @@ func (c MinerCommand) Run(args []string) int {
 }
 
 func (c MinerCommand) Help() string {
-	coins := make([]string, 0, len(coin.Coins))
-	for c := range coin.Coins {
-		coins = append(coins, c)
+	coins := []string{}
+	for name := range worker.List() {
+		coins = append(coins, name)
 	}
 	sort.Strings(coins)
 

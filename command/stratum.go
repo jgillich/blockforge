@@ -38,7 +38,14 @@ func (c StratumCommand) Run(args []string) int {
 		log.Fatal(err)
 	}
 
-	worker := worker.NewMoneroWorker(stratum)
+	config := worker.Config{
+		Stratum: stratum,
+	}
+
+	worker, err := worker.New("xmr", config)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		err := worker.Work()

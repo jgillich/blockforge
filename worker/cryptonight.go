@@ -11,17 +11,34 @@ import (
 	"gitlab.com/jgillich/autominer/stratum"
 )
 
-type MoneroWorker struct {
+func init() {
+	for _, c := range []string{"xmr", "etn", "itns", "sumo"} {
+		workers[c] = func(config Config) Worker {
+			return NewCryptonight(config, false)
+		}
+	}
+	for _, c := range []string{"aeon"} {
+		workers[c] = func(config Config) Worker {
+			return NewCryptonight(config, true)
+		}
+	}
+}
+
+type cryptonight struct {
 	stratum *stratum.Client
+	light   bool
 }
 
-func NewMoneroWorker(stratum *stratum.Client) MoneroWorker {
-	return MoneroWorker{stratum}
+func NewCryptonight(config Config, light bool) Worker {
+	return &cryptonight{
+		stratum: config.Stratum,
+		light:   light,
+	}
 }
 
-func (w *MoneroWorker) Work() error {
-
+func (w *cryptonight) Work() error {
 	job := <-w.stratum.Jobs
+
 	for {
 		log.Printf("working on new job '%v'", job.JobId)
 		target, err := strconv.ParseUint(fmt.Sprintf("0x%v", job.Target), 0, 64)
@@ -59,5 +76,13 @@ func (w *MoneroWorker) Work() error {
 		}
 
 		return fmt.Errorf("nounce space exhausted")
+	}
+}
+
+func (e *cryptonight) Capabilities() Capabilities {
+	return Capabilities{
+		CPU:    true,
+		OpenCL: false,
+		CUDA:   false,
 	}
 }
