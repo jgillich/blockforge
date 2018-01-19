@@ -11,9 +11,11 @@ import (
 	"gitlab.com/jgillich/autominer/stratum"
 )
 
-// nonce location in blob
-var NONCE_INDEX = 78
-var NONCE_WIDTH = 8
+// NonceIndex is the starting location of nonce in blob
+var NonceIndex = 78
+
+// NonceWidth is the char width of nonce in blob
+var NonceWidth = 8
 
 func init() {
 	for _, c := range []string{"xmr", "etn", "itns", "sumo"} {
@@ -41,16 +43,18 @@ func NewCryptonight(config Config, light bool) Worker {
 }
 
 func (w *cryptonight) Work() error {
-	job := <-w.stratum.Jobs()
 
 	for {
+		job := <-w.stratum.Jobs()
+
 		log.Printf("working on new job '%v'", job.JobId)
+
 		blob := []byte(job.Blob)
 
 		target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
 
-		for nonce := hexUint32(blob[NONCE_INDEX : NONCE_INDEX+NONCE_WIDTH]); nonce < math.MaxUint32; nonce++ {
-			blob := fmt.Sprintf("%v%v%v", job.Blob[:NONCE_INDEX], fmtNonce(nonce), job.Blob[NONCE_INDEX+NONCE_WIDTH:])
+		for nonce := hexUint32(blob[NonceIndex : NonceIndex+NonceWidth]); nonce < math.MaxUint32; nonce++ {
+			blob := fmt.Sprintf("%v%v%v", job.Blob[:NonceIndex], fmtNonce(nonce), job.Blob[NonceIndex+NonceWidth:])
 
 			input, err := hex.DecodeString(blob)
 			if err != nil {
@@ -73,13 +77,10 @@ func (w *cryptonight) Work() error {
 			}
 
 			if len(w.stratum.Jobs()) > 0 {
-				job = <-w.stratum.Jobs()
-				continue
+				break
 			}
-
 		}
 
-		return fmt.Errorf("nounce space exhausted")
 	}
 }
 

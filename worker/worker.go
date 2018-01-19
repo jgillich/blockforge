@@ -99,22 +99,3 @@ func hexUint64LE(hex []byte) uint64 {
 func fmtNonce(nonce uint32) string {
 	return fmt.Sprintf("%08x", nonce)
 }
-
-/*
-func HexToUint64(hex str) uint64 {
-	result := uint64(0)
-	for i := 0; i < len(hex); i += 2 {
-
-	}
-}
-
-pub fn hex2_u64_le(hex: &str) -> u64 {
-	let mut result : u64 = 0;
-	for k in (0..hex.len()).step_by(2) {
-			let p = u64::from_str_radix(&hex[(hex.len()-k-2)..(hex.len()-k)], 16).unwrap();
-			result <<= 8;
-			result |= p;
-	}
-	return result;
-}
-*/
