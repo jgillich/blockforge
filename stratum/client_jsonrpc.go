@@ -2,10 +2,11 @@ package stratum
 
 import (
 	"fmt"
-	"log"
 	"net"
 
 	"github.com/Jeffail/gabs"
+
+	"gitlab.com/jgillich/autominer/log"
 )
 
 func init() {
@@ -74,15 +75,15 @@ func NewJsonrpcClient(pool Pool) (Client, error) {
 		for {
 			message, err := readMessage(c.conn)
 			if err != nil {
-				log.Print(err)
-				panic(err)
+				log.Error(err)
+				continue
 			}
 
 			if message.Method == "job" {
 				params, err := gabs.Consume(message.Params)
 				if err != nil {
-					log.Print(err)
-					panic(err)
+					log.Error(err)
+					continue
 				}
 				c.parseJob(params)
 			}
@@ -112,19 +113,19 @@ func (c *JsonrpcClient) Close() error {
 func (c *JsonrpcClient) parseJob(data *gabs.Container) {
 	jobId, ok := data.Path("job_id").Data().(string)
 	if !ok {
-		log.Printf("job_id not ok")
+		log.Error("job_id missing or malformed")
 		return
 	}
 
 	blob, ok := data.Path("blob").Data().(string)
 	if !ok {
-		log.Printf("blob not ok")
+		log.Error("blob missing or malformed")
 		return
 	}
 
 	target, ok := data.Path("target").Data().(string)
 	if !ok {
-		log.Printf("target not ok")
+		log.Error("target missing or malformed")
 		return
 	}
 
@@ -135,7 +136,7 @@ func (c *JsonrpcClient) parseJob(data *gabs.Container) {
 		Target:  target,
 	}
 
-	log.Printf("got job '%+v'", jobId)
+	log.Debugf("got job '%+v'", jobId)
 
 	go func() {
 		c.jobs <- job

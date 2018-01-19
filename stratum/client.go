@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
+
+	"gitlab.com/jgillich/autominer/log"
 )
 
 var clients = map[string]clientFactory{}
@@ -62,7 +63,7 @@ func sendMessage(conn net.Conn, message *Message) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("sending message %v", string(msg))
+	log.Debugf("sending message %v", string(msg))
 
 	_, err = fmt.Fprintf(conn, "%v\n", string(msg))
 	return err
@@ -74,7 +75,7 @@ func readMessage(conn net.Conn) (*Message, error) {
 		return nil, err
 	}
 
-	log.Printf("received message %v", string(s))
+	log.Debugf("received message %v", string(s))
 
 	var message Message
 	err = json.Unmarshal([]byte(s), &message)

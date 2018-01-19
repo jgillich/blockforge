@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/hashicorp/hcl"
 	"github.com/mitchellh/cli"
 	"github.com/zserge/webview"
+	"gitlab.com/jgillich/autominer/log"
 	"gitlab.com/jgillich/autominer/miner"
 )
 

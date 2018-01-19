@@ -2,11 +2,11 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/mitchellh/cli"
 	"gitlab.com/jgillich/autominer/hardware"
+	"gitlab.com/jgillich/autominer/log"
 )
 
 func init() {

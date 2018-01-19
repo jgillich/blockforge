@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	"github.com/xlab/closer"
 
 	"github.com/hashicorp/hcl"
+	"gitlab.com/jgillich/autominer/log"
 	"gitlab.com/jgillich/autominer/miner"
 	"gitlab.com/jgillich/autominer/worker"
 

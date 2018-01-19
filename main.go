@@ -1,11 +1,12 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
 	"gitlab.com/jgillich/autominer/command"
+	"gitlab.com/jgillich/autominer/log"
 )
 
 func main() {
@@ -14,9 +15,18 @@ func main() {
 
 	c.Commands = command.Commands
 
+	debug := false
+	for _, arg := range c.Args {
+		fmt.Println(arg)
+		if arg == "-debug" {
+			debug = true
+		}
+	}
+	log.Initialize(debug)
+
 	exitStatus, err := c.Run()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 
 	os.Exit(exitStatus)

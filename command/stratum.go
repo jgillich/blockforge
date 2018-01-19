@@ -1,12 +1,11 @@
 package command
 
 import (
-	"log"
 	"strings"
 
-	"gitlab.com/jgillich/autominer/worker"
-
+	"gitlab.com/jgillich/autominer/log"
 	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/jgillich/autominer/worker"
 
 	"github.com/mitchellh/cli"
 )
@@ -42,12 +41,12 @@ func (c StratumCommand) Run(args []string) int {
 		log.Fatal(err)
 	}
 
-	for {
-		err := worker.Work()
-		if err != nil {
-			log.Fatal(err)
-		}
+	err = worker.Work()
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	return 0
 }
 
 func (c StratumCommand) Help() string {
