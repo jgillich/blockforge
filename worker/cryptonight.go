@@ -1,15 +1,19 @@
 package worker
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math"
-	"strconv"
 
 	"gitlab.com/jgillich/autominer/hash"
 
 	"gitlab.com/jgillich/autominer/stratum"
 )
+
+// nonce location in blob
+var NONCE_INDEX = 78
+var NONCE_WIDTH = 8
 
 func init() {
 	for _, c := range []string{"xmr", "etn", "itns", "sumo"} {
@@ -25,7 +29,7 @@ func init() {
 }
 
 type cryptonight struct {
-	stratum *stratum.Client
+	stratum stratum.Client
 	light   bool
 }
 
@@ -37,42 +41,42 @@ func NewCryptonight(config Config, light bool) Worker {
 }
 
 func (w *cryptonight) Work() error {
-	job := <-w.stratum.Jobs
+	job := <-w.stratum.Jobs()
 
 	for {
 		log.Printf("working on new job '%v'", job.JobId)
-		target, err := strconv.ParseUint(fmt.Sprintf("0x%v", job.Target), 0, 64)
-		if err != nil {
-			return err
-		}
+		blob := []byte(job.Blob)
 
-		for i := uint(0); i < math.MaxUint32; i++ {
-			nonce := fmt.Sprintf("%x", i)
-			input := fmt.Sprintf("%v%v%v", job.Blob[78:], nonce, job.Blob[:86])
+		target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
 
-			result := hash.Cryptonight([]byte(input))
-			val, err := strconv.ParseUint("0x"+fmt.Sprintf("%x", result)[48:], 0, 64)
+		for nonce := hexUint32(blob[NONCE_INDEX : NONCE_INDEX+NONCE_WIDTH]); nonce < math.MaxUint32; nonce++ {
+			blob := fmt.Sprintf("%v%v%v", job.Blob[:NONCE_INDEX], fmtNonce(nonce), job.Blob[NONCE_INDEX+NONCE_WIDTH:])
+
+			input, err := hex.DecodeString(blob)
 			if err != nil {
 				return err
 			}
+
+			hash := hash.Cryptonight(input)
+
+			val := hexUint64LE([]byte(hex.EncodeToString(hash)[48:]))
 
 			if val < target {
 				share := stratum.Share{
 					MinerId: job.MinerId,
 					JobId:   job.JobId,
-					Result:  fmt.Sprintf("%x", result),
-					Nonce:   nonce,
+					Result:  fmt.Sprintf("%x", hash),
+					Nonce:   fmtNonce(nonce),
 				}
 
 				w.stratum.SubmitShare(&share)
-				log.Printf("found share %+v", share)
+			}
+
+			if len(w.stratum.Jobs()) > 0 {
+				job = <-w.stratum.Jobs()
 				continue
 			}
 
-			if len(w.stratum.Jobs) > 0 {
-				job = <-w.stratum.Jobs
-				continue
-			}
 		}
 
 		return fmt.Errorf("nounce space exhausted")

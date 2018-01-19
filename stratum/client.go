@@ -6,19 +6,36 @@ import (
 	"fmt"
 	"log"
 	"net"
-
-	"github.com/Jeffail/gabs"
 )
+
+var clients = map[string]clientFactory{}
+
+type clientFactory func(Pool) (Client, error)
+
+func NewClient(protocol string, pool Pool) (Client, error) {
+	factory, ok := clients[protocol]
+	if !ok {
+		return nil, fmt.Errorf("client for protocol '%v' does not exist", protocol)
+	}
+
+	return factory(pool)
+}
+
+type Client interface {
+	Close() error
+	Jobs() chan Job
+	SubmitShare(*Share)
+}
 
 var agent = "coinstack/1.0.0"
 
 type Message struct {
-	Id      int         `json:"id"`
-	Method  string      `json:"method"`
-	Params  interface{} `json:"params"`
-	Result  interface{} `json:"result"`
-	Error   *Error      `json:"error"`
-	Jsonrpc string      `json:"jsonrpc"`
+	Id      int         `json:"id,omitempty"`
+	Method  string      `json:"method,omitempty"`
+	Params  interface{} `json:"params,omitempty"`
+	Result  interface{} `json:"result,omitempty"`
+	Error   *Error      `json:"error,omitempty"`
+	Jsonrpc string      `json:"jsonrpc,omitempty"`
 }
 
 type Error struct {
@@ -40,89 +57,19 @@ type Share struct {
 	Result  string `json:"result"`
 }
 
-type Client struct {
-	Jobs    chan Job
-	conn    net.Conn
-	pool    Pool
-	id      int
-	minerId string
-}
-
-func NewClient(pool Pool) (*Client, error) {
-	if pool.Protocol == "" {
-		pool.Protocol = ProtocolStandard
-	}
-
-	conn, err := net.Dial("tcp", pool.URL)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("connected to %v", pool.URL)
-	return &Client{
-		Jobs: make(chan Job, 10),
-		id:   1,
-		pool: pool,
-		conn: conn,
-	}, nil
-}
-
-func (c *Client) SubmitShare(share *Share) {
-	c.send(&Message{
-		Method: "submit",
-		Params: share,
-	})
-}
-
-func (c *Client) Connect() error {
-
-	if err := c.login(); err != nil {
-		return err
-	}
-
-	go func() {
-		for {
-			message, err := c.read()
-			if err != nil {
-				panic(err)
-			}
-
-			if message.Method == "job" {
-				params, err := gabs.Consume(message.Params)
-				if err != nil {
-					panic(err)
-				}
-				c.parseJob(params)
-			}
-
-		}
-	}()
-
-	return nil
-}
-
-func (c *Client) Close() error {
-	return c.conn.Close()
-}
-
-func (c *Client) send(message *Message) error {
-
-	if message.Id == 0 {
-		message.Id = c.id
-		c.id = c.id + 1
-	}
-
+func sendMessage(conn net.Conn, message *Message) error {
 	msg, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
 	log.Printf("sending message %v", string(msg))
 
-	_, err = fmt.Fprintf(c.conn, "%v\n", string(msg))
+	_, err = fmt.Fprintf(conn, "%v\n", string(msg))
 	return err
 }
 
-func (c *Client) read() (*Message, error) {
-	s, err := bufio.NewReader(c.conn).ReadString('\n')
+func readMessage(conn net.Conn) (*Message, error) {
+	s, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		return nil, err
 	}
@@ -142,6 +89,7 @@ func (c *Client) read() (*Message, error) {
 	return &message, nil
 }
 
+/*
 func (c *Client) login() error {
 
 	if c.pool.Protocol == ProtocolNicehash {
@@ -232,37 +180,4 @@ func (c *Client) login() error {
 	}
 	return nil
 }
-
-func (c *Client) parseJob(data *gabs.Container) {
-	jobId, ok := data.Path("job_id").Data().(string)
-	if !ok {
-		log.Printf("job_id not ok")
-		return
-	}
-
-	blob, ok := data.Path("blob").Data().(string)
-	if !ok {
-		log.Printf("blob not ok")
-		return
-	}
-
-	target, ok := data.Path("target").Data().(string)
-	if !ok {
-		log.Printf("target not ok")
-		return
-	}
-
-	job := Job{
-		MinerId: c.minerId,
-		JobId:   jobId,
-		Blob:    blob,
-		Target:  target,
-	}
-
-	log.Printf("got job '%+v'", jobId)
-
-	go func() {
-		c.Jobs <- job
-	}()
-
-}
+*/

@@ -22,18 +22,13 @@ type StratumCommand struct{}
 func (c StratumCommand) Run(args []string) int {
 
 	pool := stratum.Pool{
-		//URL: "xmr.poolmining.org:3032",
-		URL:  "pool.minexmr.com:4444",
-		User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
+		URL: "xmr.poolmining.org:3032",
+		//URL:  "pool.minexmr.com:4444",
+		User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr.coinstack",
 		Pass: "x",
 	}
 
-	stratum, err := stratum.NewClient(pool)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = stratum.Connect()
+	stratum, err := stratum.NewClient("jsonrpc", pool)
 	if err != nil {
 		log.Fatal(err)
 	}

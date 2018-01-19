@@ -6,10 +6,10 @@ import (
 )
 
 func TestCryptonote(t *testing.T) {
-	blob, _ := hex.DecodeString("01009091e4aa05ff5fe4801727ed0c1b8b339e1a0054d75568fec6ba9c4346e88b10d59edbf6858b2b00008a63b2865b65b84d28bb31feb057b16a21e2eda4bf6cc6377e3310af04debe4a01")
+	blob, _ := hex.DecodeString("0606fcfc85d305d5f238078d3eaf897b43bc2548024c4c753c15584cd30a9323be296e1554ecb50000001bd9286f6d087f92749e8f094090af879f8bc16ddce6db71e5ed745e7ed806a98e09")
 	hashBytes := Cryptonight(blob)
 	hash := hex.EncodeToString(hashBytes)
-	if hash != "a70a96f64a266f0f59e4f67c4a92f24fe8237c1349f377fd2720c9e1f2970400" {
+	if hash != "03deef54ac208e5c4c41b608fa3c37436c5350858766d332fffbd8b06efc0700" {
 		t.Error("Invalid hash")
 	}
 }

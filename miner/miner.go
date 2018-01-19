@@ -94,7 +94,7 @@ func New(config Config) (*Miner, error) {
 			continue
 		}
 
-		stratum, err := stratum.NewClient(coinConfig.Pool)
+		stratum, err := stratum.NewClient("jsonrpc", coinConfig.Pool)
 		if err != nil {
 			return nil, err
 		}
