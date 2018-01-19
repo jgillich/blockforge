@@ -3,7 +3,6 @@ package worker
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math"
 
 	"gitlab.com/jgillich/autominer/hash"
@@ -46,11 +45,7 @@ func (w *cryptonight) Work() error {
 
 	for {
 		job := <-w.stratum.Jobs()
-
-		log.Printf("working on new job '%v'", job.JobId)
-
 		blob := []byte(job.Blob)
-
 		target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
 
 		for nonce := hexUint32(blob[NonceIndex : NonceIndex+NonceWidth]); nonce < math.MaxUint32; nonce++ {
@@ -62,7 +57,6 @@ func (w *cryptonight) Work() error {
 			}
 
 			hash := hash.Cryptonight(input)
-
 			val := hexUint64LE([]byte(hex.EncodeToString(hash)[48:]))
 
 			if val < target {
@@ -80,7 +74,6 @@ func (w *cryptonight) Work() error {
 				break
 			}
 		}
-
 	}
 }
 
