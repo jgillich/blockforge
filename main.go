@@ -1,34 +1,10 @@
 package main
 
-import (
-	"fmt"
-	"os"
-
-	"github.com/mitchellh/cli"
-	"gitlab.com/jgillich/autominer/command"
-	"gitlab.com/jgillich/autominer/log"
-)
+import "gitlab.com/jgillich/autominer/cmd"
 
 func main() {
-	c := cli.NewCLI("coin", "1.0.0")
-	c.Args = os.Args[1:]
-
-	c.Commands = command.Commands
-
-	debug := false
-	for _, arg := range c.Args {
-		fmt.Println(arg)
-		if arg == "-debug" {
-			debug = true
-		}
-	}
-	log.Initialize(debug)
-
-	exitStatus, err := c.Run()
+	err := cmd.Execute()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-
-	os.Exit(exitStatus)
-
 }
