@@ -66,6 +66,10 @@ func (w *cryptonight) Work() error {
 			numThreads += cpu.Threads
 		}
 
+		if numThreads == 0 {
+			return fmt.Errorf("no threads configured")
+		}
+
 		nounceStepping := uint32(math.MaxUint32 / numThreads)
 		nonce := uint32(0)
 
