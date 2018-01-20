@@ -11,6 +11,9 @@ func TestCryptonote(t *testing.T) {
 
 	worker := NewCryptonight(Config{
 		Stratum: stratumClient,
+		CPUSet: []CPUConfig{
+			CPUConfig{Threads: 1},
+		},
 	}, false)
 
 	go worker.Work()
