@@ -24,5 +24,5 @@ before_build:
 build_script:
   - go version
   - go env
-  - rice embed-go -i ./command
+  - rice embed-go -i ./cmd
   - go build
