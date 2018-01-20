@@ -118,10 +118,6 @@ func (g *GuiMiner) Start() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = miner.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
 	g.miner = miner
 }
 

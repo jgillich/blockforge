@@ -32,16 +32,18 @@ func init() {
 }
 
 type cryptonight struct {
-	config  Config
-	stratum stratum.Client
-	light   bool
+	config   Config
+	stratum  stratum.Client
+	light    bool
+	cpuStats map[int]map[int]float32
 }
 
 func NewCryptonight(config Config, light bool) Worker {
 	return &cryptonight{
-		stratum: config.Stratum,
-		config:  config,
-		light:   light,
+		stratum:  config.Stratum,
+		config:   config,
+		light:    light,
+		cpuStats: map[int]map[int]float32{},
 	}
 }
 
@@ -68,10 +70,11 @@ func (w *cryptonight) Work() error {
 		nonce := uint32(0)
 
 		for _, cpu := range w.config.CPUSet {
+			w.cpuStats[cpu.CPU.Index] = map[int]float32{}
 			for i := 0; i < cpu.Threads; i++ {
 				log.Debugf("starting thread for job '%v'", job.JobId)
 				log.Debugf("nonce start '%v' end '%v'", nonce, nonce+nounceStepping)
-				go w.cpuThread(job, nonce, nonce+nounceStepping, closer)
+				go w.cpuThread(cpu.CPU.Index, i, job, nonce, nonce+nounceStepping, closer)
 				nonce += nounceStepping
 			}
 		}
@@ -79,13 +82,13 @@ func (w *cryptonight) Work() error {
 	}
 }
 
-func (w *cryptonight) cpuThread(job stratum.Job, nonceStart uint32, nonceEnd uint32, closer chan int) {
+func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceStart uint32, nonceEnd uint32, closer chan int) {
 	target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
-	hashes := float64(0)
+	hashes := float32(0)
 	startTime := time.Now()
 
 	defer func() {
-		log.Infof("thread hashes: %.0f H/s", hashes/time.Since(startTime).Seconds())
+		w.cpuStats[cpu][threadNum] = hashes / float32(time.Since(startTime).Seconds())
 	}()
 
 	for nonce := nonceStart; nonce < nonceEnd; nonce++ {
@@ -118,6 +121,26 @@ func (w *cryptonight) cpuThread(job stratum.Job, nonceStart uint32, nonceEnd uin
 			return
 		}
 	}
+}
+
+func (w *cryptonight) Stats() Stats {
+	stats := Stats{
+		CPUStats: []CPUStats{},
+		GPUStats: []GPUStats{},
+	}
+
+	for cpu, stat := range w.cpuStats {
+		hashrate := float32(0)
+		for _, hps := range stat {
+			hashrate += hps
+		}
+		stats.CPUStats = append(stats.CPUStats, CPUStats{
+			Hashrate: hashrate,
+			Index:    cpu,
+		})
+	}
+
+	return stats
 }
 
 func (w *cryptonight) Capabilities() Capabilities {

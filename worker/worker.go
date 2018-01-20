@@ -34,6 +34,7 @@ func List() map[string]Capabilities {
 type Worker interface {
 	Work() error
 	Capabilities() Capabilities
+	Stats() Stats
 }
 
 type Capabilities struct {

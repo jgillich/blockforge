@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"strings"
 
 	"gitlab.com/jgillich/autominer/log"
 )
@@ -75,7 +76,7 @@ func readMessage(conn net.Conn) (*Message, error) {
 		return nil, err
 	}
 
-	log.Debugf("received message %v", string(s))
+	log.Debugf("received message %v", strings.TrimRight(string(s), "\n"))
 
 	var message Message
 	err = json.Unmarshal([]byte(s), &message)

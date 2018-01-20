@@ -2,6 +2,7 @@ package miner
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"gitlab.com/jgillich/autominer/stratum"
@@ -11,12 +12,14 @@ import (
 )
 
 type Miner struct {
-	workers map[string]worker.Worker
+	stratums map[string]stratum.Client
+	workers  map[string]worker.Worker
 }
 
 func New(config Config) (*Miner, error) {
 	miner := Miner{
-		workers: map[string]worker.Worker{},
+		stratums: map[string]stratum.Client{},
+		workers:  map[string]worker.Worker{},
 	}
 
 	hw, err := hardware.New()
@@ -126,37 +129,24 @@ func New(config Config) (*Miner, error) {
 			}
 		}
 
+		go func() {
+			err := worker.Work()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		miner.stratums[coinName] = stratum
 		miner.workers[coinName] = worker
 	}
 
 	return &miner, nil
 }
 
-func (m *Miner) Start() error {
-	for _, worker := range m.workers {
-		err := worker.Work()
-		if err != nil {
-			// TODO
-			// shut down previously started miners and return error
-			/*for _, m := range m.miners {
-				if m == miner {
-					return err
-				}
-				m.Stop()
-			}*/
-		}
-	}
-
-	return nil
-}
-
 func (m *Miner) Stop() {
-	// TODO
-	/*
-		for _, miner := range m.miners {
-			miner.Stop()
-		}
-	*/
+	for _, stratum := range m.stratums {
+		stratum.Close()
+	}
 }
 
 func (m *Miner) Stats() worker.Stats {
@@ -165,20 +155,17 @@ func (m *Miner) Stats() worker.Stats {
 		GPUStats: []worker.GPUStats{},
 	}
 
-	// TODO
-	/*
-		for _, worker := range m.workers {
-			s := miner.Stats()
+	for _, worker := range m.workers {
+		s := worker.Stats()
 
-			for _, cpuStat := range s.CPUStats {
-				stats.CPUStats = append(stats.CPUStats, cpuStat)
-			}
-
-			for _, gpuStat := range s.GPUStats {
-				stats.GPUStats = append(stats.GPUStats, gpuStat)
-			}
+		for _, cpuStat := range s.CPUStats {
+			stats.CPUStats = append(stats.CPUStats, cpuStat)
 		}
-	*/
+
+		for _, gpuStat := range s.GPUStats {
+			stats.GPUStats = append(stats.GPUStats, gpuStat)
+		}
+	}
 
 	return stats
 }

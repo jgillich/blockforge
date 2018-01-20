@@ -14,7 +14,6 @@ import (
 
 	"github.com/hashicorp/hcl/hcl/printer"
 
-	"github.com/buger/goterm"
 	"github.com/xlab/closer"
 
 	"github.com/hashicorp/hcl"
@@ -37,6 +36,7 @@ func (c MinerCommand) Run(args []string) int {
 	flags := flag.NewFlagSet("miner", flag.PanicOnError)
 	flags.Usage = func() { ui.Output(c.Help()) }
 
+	var _ = flags.Bool("debug", false, "Enable debug logging")
 	var configPath = flags.String("config", "miner.hcl", "Config file path")
 	var init = flags.Bool("init", false, "Generate config file")
 
@@ -86,6 +86,8 @@ func (c MinerCommand) Run(args []string) int {
 		log.Fatal(err)
 	}
 
+	log.Debugf("%+v", config)
+
 	miner, err := miner.New(config)
 	if err != nil {
 		log.Fatal(err)
@@ -94,28 +96,18 @@ func (c MinerCommand) Run(args []string) int {
 	go func() {
 		for {
 			stats := miner.Stats()
-			goterm.Clear()
-			goterm.MoveCursor(0, 0)
-			goterm.Flush()
 
 			for _, stat := range stats.CPUStats {
-				fmt.Fprintf(goterm.Output, "CPU %v: %v H/s\n", stat.Index, stat.Hashrate)
+				log.Infof("CPU %v: %v H/s\n", stat.Index, stat.Hashrate)
 			}
 
 			for _, stat := range stats.GPUStats {
-				fmt.Fprintf(goterm.Output, "GPU %v: %v H/s\n", stat.Index, stat.Hashrate)
+				log.Infof("GPU %v: %v H/s\n", stat.Index, stat.Hashrate)
 			}
 
-			goterm.Flush()
-
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second * 10)
 		}
 	}()
-
-	err = miner.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	closer.Bind(func() {
 		miner.Stop()

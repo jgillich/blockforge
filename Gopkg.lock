@@ -30,12 +30,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/buger/goterm"
-  packages = ["."]
-  revision = "ef0fa5b75d0fa2b31323463783a6e90353771116"
-
-[[projects]]
-  branch = "master"
   name = "github.com/daaku/go.zipexe"
   packages = ["."]
   revision = "a5fe2436ffcb3236e175e5149162b41cd28bd27d"
@@ -144,6 +138,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5f7f4b88a5911f3fd7868cefa1c080b197f66cde0dbf9311b15ceb0c2d280f34"
+  inputs-digest = "a01ca50b78a19db69ea5814aa24a14a5349426e9ebccbdff65a4f19833e9ca28"
   solver-name = "gps-cdcl"
   solver-version = 1
