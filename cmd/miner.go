@@ -102,6 +102,8 @@ Supported coins: ` + coinList()),
 			log.Fatal(err)
 		}
 
+		log.Info("miner started")
+
 		go func() {
 			for {
 				time.Sleep(time.Second * 60)
