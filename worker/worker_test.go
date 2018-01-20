@@ -39,7 +39,7 @@ func TestNonce(t *testing.T) {
 	formatted := fmtNonce(num)
 
 	if nonce != formatted {
-		t.Errorf("Failed to parse/format nonce, expected '%v' got '%v'", num, formatted)
+		t.Errorf("Failed to parse/format nonce, expected '%v' got '%v'", nonce, formatted)
 	}
 
 }

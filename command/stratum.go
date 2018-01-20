@@ -34,6 +34,11 @@ func (c StratumCommand) Run(args []string) int {
 
 	config := worker.Config{
 		Stratum: stratum,
+		CPUSet: []worker.CPUConfig{
+			worker.CPUConfig{
+				Threads: 2,
+			},
+		},
 	}
 
 	worker, err := worker.New("xmr", config)

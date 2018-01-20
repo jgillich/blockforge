@@ -18,6 +18,7 @@ type JsonrpcClient struct {
 	jobs    chan Job
 	minerId string
 	pool    Pool
+	closed  bool
 }
 
 func NewJsonrpcClient(pool Pool) (Client, error) {
@@ -75,6 +76,9 @@ func NewJsonrpcClient(pool Pool) (Client, error) {
 		for {
 			message, err := readMessage(c.conn)
 			if err != nil {
+				if c.closed {
+					return
+				}
 				log.Error(err)
 				continue
 			}
@@ -107,6 +111,8 @@ func (c *JsonrpcClient) SubmitShare(share *Share) {
 }
 
 func (c *JsonrpcClient) Close() error {
+	c.closed = true
+	close(c.jobs)
 	return c.conn.Close()
 }
 
