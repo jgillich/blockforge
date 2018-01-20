@@ -95,17 +95,18 @@ func (c MinerCommand) Run(args []string) int {
 
 	go func() {
 		for {
+			time.Sleep(time.Second * 60)
+
 			stats := miner.Stats()
 
 			for _, stat := range stats.CPUStats {
-				log.Infof("CPU %v: %v H/s\n", stat.Index, stat.Hashrate)
+				log.Infof("CPU %v: %v H/s", stat.Index, stat.Hashrate)
 			}
 
 			for _, stat := range stats.GPUStats {
-				log.Infof("GPU %v: %v H/s\n", stat.Index, stat.Hashrate)
+				log.Infof("GPU %v: %v H/s", stat.Index, stat.Hashrate)
 			}
 
-			time.Sleep(time.Second * 10)
 		}
 	}()
 

@@ -1,7 +1,10 @@
 package log
 
 import (
+	"time"
+
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var logger *zap.SugaredLogger
@@ -11,18 +14,31 @@ func init() {
 }
 
 func Initialize(debug bool) {
-	options := []zap.Option{
-		zap.AddCallerSkip(1),
+	var config zap.Config
+	if debug {
+		config = zap.NewDevelopmentConfig()
+	} else {
+		config = zap.NewProductionConfig()
+		config.Encoding = "console"
+		config.EncoderConfig.EncodeCaller = NopCallerEncoder
 	}
 
-	var l *zap.Logger
-	if debug {
-		l, _ = zap.NewDevelopment(options...)
-	} else {
-		l, _ = zap.NewProduction(options...)
+	config.EncoderConfig.EncodeTime = ShortTimeEncoder
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
+	l, err := config.Build(zap.AddCallerSkip(1))
+	if err != nil {
+		panic(err)
 	}
-	defer l.Sync()
+
 	logger = l.Sugar()
+}
+
+func ShortTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(t.Format("15:04:05"))
+}
+
+func NopCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 }
 
 func Info(args ...interface{}) {

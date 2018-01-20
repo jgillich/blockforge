@@ -5,7 +5,7 @@
 "coin" "xmr" "pool" {
   "url" = "xmr.poolmining.org:3032"
 
-  "user" = "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr"
+  "user" = "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr.coinstack"
 
   "pass" = "x"
 
@@ -17,7 +17,7 @@
 
   "coin" = "xmr"
 
-  "threads" = 1
+  "threads" = 2
 }
 
 "gpu" = {}
