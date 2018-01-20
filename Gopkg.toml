@@ -19,22 +19,9 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/mitchellh/cli"
-
 [[constraint]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/golang-ui/nuklear"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/buger/goterm"
 
 [[constraint]]
   branch = "master"
@@ -57,8 +44,8 @@
   version = "1.7.1"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/spf13/cobra"
-  version = "0.0.1"
 
 [[constraint]]
   branch = "master"

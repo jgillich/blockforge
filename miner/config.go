@@ -55,7 +55,7 @@ func GenerateConfig() (Config, error) {
 	for _, cpu := range hw.CPUs {
 		config.CPUs[strconv.Itoa(cpu.Index)] = CPU{
 			Coin:    "xmr",
-			Threads: cpu.PhysicalCores - 1,
+			Threads: cpu.PhysicalCores,
 			Model:   cpu.Model,
 		}
 	}
