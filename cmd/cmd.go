@@ -26,7 +26,6 @@ graphical user interface.
 }
 
 func init() {
-
 	configDirs := configdir.New("", "coinstack")
 	defaultPath := path.Join(configDirs.QueryFolders(configdir.Global)[0].Path, "config.hcl")
 

@@ -3,7 +3,7 @@ package stratum
 type Protocol string
 
 var (
-	ProtocolStandard Protocol = "standard"
+	ProtocolJsonrpc Protocol = "jsonrpc"
 	// Implements the NiceHash stratum protocol
 	// https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
 	ProtocolNicehash Protocol = "nicehash"

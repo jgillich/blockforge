@@ -10,11 +10,11 @@ import (
 	"gitlab.com/jgillich/autominer/log"
 )
 
-var clients = map[string]clientFactory{}
+var clients = map[Protocol]clientFactory{}
 
 type clientFactory func(Pool) (Client, error)
 
-func NewClient(protocol string, pool Pool) (Client, error) {
+func NewClient(protocol Protocol, pool Pool) (Client, error) {
 	factory, ok := clients[protocol]
 	if !ok {
 		return nil, fmt.Errorf("client for protocol '%v' does not exist", protocol)

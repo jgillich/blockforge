@@ -3,6 +3,7 @@ package stratum
 import (
 	"fmt"
 	"net"
+	"net/url"
 
 	"github.com/Jeffail/gabs"
 
@@ -10,7 +11,7 @@ import (
 )
 
 func init() {
-	clients["jsonrpc"] = NewJsonrpcClient
+	clients[ProtocolJsonrpc] = NewJsonrpcClient
 }
 
 type JsonrpcClient struct {
@@ -22,7 +23,12 @@ type JsonrpcClient struct {
 }
 
 func NewJsonrpcClient(pool Pool) (Client, error) {
-	conn, err := net.Dial("tcp", pool.URL)
+	url, err := url.Parse(pool.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := net.Dial("tcp", url.Host)
 	if err != nil {
 		return nil, err
 	}
