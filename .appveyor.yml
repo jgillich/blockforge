@@ -14,7 +14,7 @@ install:
   - go get -u github.com/GeertJohan/go.rice/rice
   - dep ensure -vendor-only
   - curl http://www.open-mpi.de/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.9.zip -o c:\hwloc.zip
-  - 7z x c:\hwloc.zip -o c:\msys64\mingw64
+  - 7z x c:\hwloc.zip -oc:\msys64\mingw64
   - set PATH=C:\go\bin;%GOPATH%\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
 
 before_build:
