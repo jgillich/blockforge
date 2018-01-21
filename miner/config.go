@@ -36,7 +36,7 @@ func GenerateConfig() (Config, error) {
 		Coins: map[string]Coin{
 			"XMR": Coin{
 				Pool: stratum.Pool{
-					URL:  "stratum+tcp://xmr.poolmining.org:3032",
+					URL:  "stratum+tcp://xmr.coinfoundry.org:3032",
 					User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
 					Pass: "x",
 				},
