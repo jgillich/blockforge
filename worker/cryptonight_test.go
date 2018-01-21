@@ -8,6 +8,7 @@ import (
 
 func TestCryptonote(t *testing.T) {
 	stratumClient := NewStratumTestClient()
+	defer stratumClient.Close()
 
 	worker := NewCryptonight(Config{
 		Stratum: stratumClient,
@@ -32,6 +33,7 @@ func TestCryptonote(t *testing.T) {
 
 func TestCryptonoteLite(t *testing.T) {
 	stratumClient := NewStratumTestClient()
+	defer stratumClient.Close()
 
 	worker := NewCryptonight(Config{
 		Stratum: stratumClient,
@@ -42,7 +44,6 @@ func TestCryptonoteLite(t *testing.T) {
 
 	go worker.Work()
 
-	// nonce 0000001b
 	stratumClient.Jobs() <- stratum.Job{
 		Blob:   "0100c1ee92d3057df2467aa8ad2a8be661a38259a86c2aaf3018b5baffe99e23a335a90633e948000000003557aac2d2b4e74cddaee41c734a65a5d257175761a0cce0a453e4b386cbd87802",
 		Target: "26310800",
