@@ -29,9 +29,9 @@ build_script:
   - go build
 
 test_script:
-  - go fmt $(go list ./... | grep -v /vendor/)
-  - go vet $(go list ./... | grep -v /vendor/)
-  - go test -race $(go list ./... | grep -v /vendor/)
+  - ps: go fmt $(go list ./... | sls -NotMatch '/vendor/')
+  - ps: go vet $(go list ./... | sls -NotMatch '/vendor/')
+  - ps: go test -race $(go list ./... | sls -NotMatch '/vendor/')
 
 artifacts:
   - path: autominer.exe
