@@ -24,7 +24,6 @@ func Initialize(debug bool) {
 	}
 
 	config.EncoderConfig.EncodeTime = ShortTimeEncoder
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
 	l, err := config.Build(zap.AddCallerSkip(1))
 	if err != nil {
