@@ -36,7 +36,7 @@ Install the following dependencies: MSYS2, Go
 Use the MSYS2 shell to install the rest of the dependencies:
 
 ```
-pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git
+pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make
 ```
 
 Download [hwloc](https://www.open-mpi.org/software/hwloc/v1.11/) and extract it to `C:\msys64\mingw64`.
