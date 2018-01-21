@@ -28,6 +28,11 @@ build_script:
   - rice embed-go -i ./cmd
   - go build
 
+test_script:
+  - go fmt $(go list ./... | grep -v /vendor/)
+  - go vet $(go list ./... | grep -v /vendor/)
+  - go test -race $(go list ./... | grep -v /vendor/)
+
 artifacts:
   - path: autominer.exe
     name: autominer
