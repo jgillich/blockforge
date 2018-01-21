@@ -64,6 +64,11 @@ var guiCmd = &cobra.Command{
 			log.Fatal(http.Serve(listener, nil))
 		}()
 
+		hardware, err := hardware.New()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		view := webview.New(webview.Settings{
 			URL:       "http://" + listener.Addr().String(),
 			Title:     "CoinStack",
@@ -71,24 +76,22 @@ var guiCmd = &cobra.Command{
 			Height:    768,
 			Resizable: true,
 			Debug:     true,
+			ExternalInvokeCallback: func(view webview.WebView, data string) {
+				if data == "__app_js_loaded__" {
+
+					view.Bind("backend", &GuiBackend{
+						webview:  view,
+						miner:    nil,
+						Config:   config,
+						Hardware: hardware,
+						Coins:    worker.List(),
+					})
+
+					view.Eval("init()")
+				}
+			},
 		})
 		defer view.Exit()
-
-		hardware, err := hardware.New()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		view.Dispatch(func() {
-			view.Bind("backend", &GuiBackend{
-				webview:  view,
-				miner:    nil,
-				Config:   config,
-				Hardware: hardware,
-				Coins:    worker.List(),
-			})
-			view.Eval("init()")
-		})
 
 		view.Run()
 	},
