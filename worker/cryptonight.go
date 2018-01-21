@@ -106,14 +106,20 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 				return
 			}
 
-			hash := hash.Cryptonight(input)
-			val := hexUint64LE([]byte(hex.EncodeToString(hash)[48:]))
+			var result []byte
+			if w.light {
+				result = hash.CryptonightLite(input)
+			} else {
+				result = hash.Cryptonight(input)
+			}
+
+			val := hexUint64LE([]byte(hex.EncodeToString(result)[48:]))
 
 			if val < target {
 				share := stratum.Share{
 					MinerId: job.MinerId,
 					JobId:   job.JobId,
-					Result:  fmt.Sprintf("%x", hash),
+					Result:  fmt.Sprintf("%x", result),
 					Nonce:   fmtNonce(nonce),
 				}
 
