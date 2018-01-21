@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"os"
 
+	"gopkg.in/yaml.v2"
+
 	"gitlab.com/jgillich/autominer/hardware"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/hashicorp/hcl"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
 	"gitlab.com/jgillich/autominer/log"
@@ -30,21 +31,28 @@ var guiCmd = &cobra.Command{
 		buf, err := ioutil.ReadFile(configPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				log.Fatal("Config file not found. Set '-config' argument or run 'coin miner -init' to generate.")
+				err := initConfig()
+				if err != nil {
+					log.Fatal(err)
+				}
+				buf, err = ioutil.ReadFile(configPath)
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				log.Fatal(err)
 			}
-			log.Fatal(err)
 		}
 
 		var config miner.Config
-		err = hcl.Decode(&config, string(buf))
+		err = yaml.Unmarshal(buf, &config)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		http.Handle("/", http.FileServer(rice.MustFindBox("../gui").HTTPBox()))
 
-		listener, err := net.Listen("tcp", "127.0.0.1:3333")
-		//listener, err := net.Listen("tcp", "127.0.0.1:0")
+		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -82,8 +90,7 @@ type GuiMiner struct {
 	webview  webview.WebView
 	Config   miner.Config       `json:"config"`
 	Hardware *hardware.Hardware `json:"hardware"`
-	//Stats    []coin.MinerStats  `json:"stats"`
-	miner *miner.Miner
+	miner    *miner.Miner
 }
 
 func (g *GuiMiner) Start() {

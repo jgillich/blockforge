@@ -8,27 +8,26 @@ import (
 )
 
 type Config struct {
-	Donate   int             `hcl:"donate" json:"donate"`
-	LogLevel string          `hcl:"log_level" json:"log_level"`
-	Coins    map[string]Coin `hcl:"coin" json:"coin"`
-	CPUs     map[string]CPU  `hcl:"cpu" json:"cpu"`
-	GPUs     map[string]GPU  `hcl:"gpu" json:"gpu"`
+	Donate int             `yaml:"donate" json:"donate"`
+	Coins  map[string]Coin `yaml:"coin" json:"coin"`
+	CPUs   map[string]CPU  `yaml:"cpus" json:"cpus"`
+	GPUs   map[string]GPU  `yaml:"gpus" json:"gpus"`
 }
 
 type Coin struct {
-	Pool stratum.Pool `hcl:"pool" json:"pool"`
+	Pool stratum.Pool `yaml:"pool" json:"pool"`
 }
 
 type CPU struct {
-	Model   string `hcl:"model" json:"model"`
-	Coin    string `hcl:"coin" json:"coin"`
-	Threads int    `hcl:"threads" json:"threads"`
+	Model   string `yaml:"model" json:"model"`
+	Coin    string `yaml:"coin" json:"coin"`
+	Threads int    `yaml:"threads" json:"threads"`
 }
 
 type GPU struct {
-	Model     string `hcl:"model" json:"model"`
-	Intensity int    `hcl:"intensity" json:"intensity"`
-	Coin      string `hcl:"coin" json:"coin"`
+	Model     string `yaml:"model" json:"model"`
+	Intensity int    `yaml:"intensity" json:"intensity"`
+	Coin      string `yaml:"coin" json:"coin"`
 }
 
 func GenerateConfig() (Config, error) {

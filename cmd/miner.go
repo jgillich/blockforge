@@ -1,23 +1,19 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
-	jsonParser "github.com/hashicorp/hcl/json/parser"
-	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 
-	"github.com/hashicorp/hcl/hcl/printer"
+	"github.com/spf13/cobra"
 
 	"github.com/xlab/closer"
 
-	"github.com/hashicorp/hcl"
 	"gitlab.com/jgillich/autominer/log"
 	"gitlab.com/jgillich/autominer/miner"
 	"gitlab.com/jgillich/autominer/worker"
@@ -49,34 +45,10 @@ Mine coins.
 Supported coins: ` + coinList()),
 	Run: func(cmd *cobra.Command, args []string) {
 		if initArg {
-			config, err := miner.GenerateConfig()
+			err := initConfig()
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			// TODO find a better way do serialize to hcl
-			json, err := json.Marshal(config)
-			if err != nil {
-				log.Fatal(err)
-			}
-			ast, err := jsonParser.Parse(json)
-
-			err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			file, err := os.Create(configPath)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			err = printer.Fprint(file, ast)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			file.Close()
 			fmt.Printf("Wrote config file to '%v'\n", configPath)
 			return
 		}
@@ -90,7 +62,7 @@ Supported coins: ` + coinList()),
 		}
 
 		var config miner.Config
-		err = hcl.Decode(&config, string(buf))
+		err = yaml.Unmarshal(buf, &config)
 		if err != nil {
 			log.Fatal(err)
 		}

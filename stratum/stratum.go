@@ -10,9 +10,9 @@ var (
 )
 
 type Pool struct {
-	URL      string   `hcl:"url" json:"url"`
-	User     string   `hcl:"user" json:"user"`
-	Pass     string   `hcl:"pass" json:"pass"`
-	Email    string   `hcl:"email" json:"email"`
-	Protocol Protocol `hcl:"protocol" json:"protocol"`
+	URL      string   `yaml:"url" json:"url"`
+	User     string   `yaml:"user" json:"user"`
+	Pass     string   `yaml:"pass" json:"pass"`
+	Email    string   `yaml:"email,omitempty" json:"email"`
+	Protocol Protocol `yaml:"protocol,omitempty" json:"protocol"`
 }
