@@ -30,6 +30,8 @@ var guiCmd = &cobra.Command{
 	Short: "Launch the graphical user interface",
 	Long:  `Launch the graphical user interface.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		hideConsoleWindow()
+
 		buf, err := ioutil.ReadFile(configPath)
 		if err != nil {
 			if os.IsNotExist(err) {

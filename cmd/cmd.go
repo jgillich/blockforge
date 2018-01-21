@@ -8,6 +8,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/inconshreveable/mousetrap"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/cobra"
 	"gitlab.com/jgillich/autominer/log"
@@ -29,6 +30,13 @@ var cmd = &cobra.Command{
 CoinStack is a next generation miner for many cryptocurrencies
 that features automatic hardware detection and a optional
 graphical user interface.`),
+	Run: func(cmd *cobra.Command, args []string) {
+		if mousetrap.StartedByExplorer() {
+			guiCmd.Execute()
+		} else {
+			cmd.Help()
+		}
+	},
 }
 
 func init() {

@@ -1,7 +1,9 @@
 package main
 
-import "gitlab.com/jgillich/autominer/cmd"
-import 	"github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"gitlab.com/jgillich/autominer/cmd"
+)
 
 func main() {
 	cobra.MousetrapHelpText = ""
