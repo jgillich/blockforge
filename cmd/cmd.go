@@ -32,7 +32,7 @@ that features automatic hardware detection and a optional
 graphical user interface.`),
 	Run: func(cmd *cobra.Command, args []string) {
 		if mousetrap.StartedByExplorer() {
-			guiCmd.Execute()
+			guiCmd.Run(cmd, args)
 		} else {
 			cmd.Help()
 		}

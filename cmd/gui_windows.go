@@ -4,7 +4,7 @@ package cmd
 
 /*
 #include <windows.h>
-void hideWindow(g) {
+void hideWindow() {
   ShowWindow(GetConsoleWindow(), SW_HIDE);
 }
 */
