@@ -55,7 +55,7 @@
       this.running = true
       updateInterval = setInterval(function() {
         backend.stats()
-      }, 1000 * 30)
+      }, 1000 * 10)
     })
 
     this.on('stop', function() {

@@ -117,7 +117,7 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 					Nonce:   fmtNonce(nonce),
 				}
 
-				w.stratum.SubmitShare(&share)
+				go w.stratum.SubmitShare(&share)
 			}
 			hashes++
 		case <-closer:

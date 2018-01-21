@@ -82,13 +82,12 @@ Supported coins: ` + coinList()),
 
 				stats := miner.Stats()
 
-				// TODO when Go 1.10 comes out we will finally have math.Round
 				for _, stat := range stats.CPUStats {
-					log.Infof("CPU %v: %.0f H/s", stat.Index, stat.Hashrate)
+					log.Infof("CPU %v: %.2f H/s", stat.Index, stat.Hashrate)
 				}
 
 				for _, stat := range stats.GPUStats {
-					log.Infof("GPU %v: %.0f H/s", stat.Index, stat.Hashrate)
+					log.Infof("GPU %v: %.2f H/s", stat.Index, stat.Hashrate)
 				}
 
 			}

@@ -14,7 +14,7 @@
           </div>
         </div>
         <div class="card-content has-text-centered">
-          <h3 class="title is-3">{ cpuHashrate(index) }</h3>
+          <h3 class="title is-3">{ cpuHashrate(index).toFixed(2) }</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
         <div class="card-footer">
@@ -131,7 +131,7 @@
         return 0
       }
 
-      return Math.round(cpuStat.hashrate)
+      return cpuStat.hashrate
     }
 
     updateThreads(e) {
