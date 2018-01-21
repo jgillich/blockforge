@@ -5,3 +5,9 @@ html, body {
 .card-table .table {
   margin-bottom: 0;
 }
+
+/* IE11 compat */
+@media screen and (min-width: 779px){
+  .modal.is-active { display: -webkit-box; display: -ms-flexbox; display: inline-block; }
+  .modal-card{ margin-top: 5%; }
+}

@@ -15,6 +15,7 @@ import (
 	"gitlab.com/jgillich/autominer/hardware"
 
 	rice "github.com/GeertJohan/go.rice"
+	"github.com/inconshreveable/mousetrap"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
 	"gitlab.com/jgillich/autominer/log"
@@ -30,7 +31,9 @@ var guiCmd = &cobra.Command{
 	Short: "Launch the graphical user interface",
 	Long:  `Launch the graphical user interface.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		hideConsoleWindow()
+		if mousetrap.StartedByExplorer() {
+			hideConsoleWindow()
+		}
 
 		buf, err := ioutil.ReadFile(configPath)
 		if err != nil {

@@ -9,10 +9,7 @@ void hideWindow() {
 }
 */
 import "C"
-import "github.com/inconshreveable/mousetrap"
 
 func hideConsoleWindow() {
-	if mousetrap.StartedByExplorer() {
-		C.hideWindow()
-	}
+	C.hideWindow()
 }
