@@ -17,6 +17,7 @@
             <td>{ coin.pool.user.substring(0, 20) }</td>
             <td>
               <a class="button is-small is-primary" data-coin={name} onclick={edit}>Edit</a>
+              <a class="button is-small is-danger" data-coin={name} onclick={deleteCoin}>Delete</a>
             </td>
           </tr>
 
@@ -53,6 +54,12 @@
     closeEdit() {
       this.showEdit = false
       this.update()
+    }
+
+    // TODO go through hardware and reset coin
+    deleteCoin(e) {
+      delete opts.miner.config.coins[e.target.dataset.coin]
+      opts.miner.trigger('update')
     }
   </script>
 </coin-list>

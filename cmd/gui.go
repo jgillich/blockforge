@@ -80,7 +80,7 @@ var guiCmd = &cobra.Command{
 			Width:     1024,
 			Height:    768,
 			Resizable: true,
-			Debug:     true,
+			Debug:     debug,
 			ExternalInvokeCallback: func(view webview.WebView, data string) {
 				if data == "__app_js_loaded__" {
 

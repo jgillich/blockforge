@@ -63,7 +63,7 @@
           pass: this.refs.pass.value,
         }
       }
-      opts.miner.trigger('update', opts.miner.config)
+      opts.miner.trigger('update')
       opts.close()
     }
 

@@ -6,12 +6,14 @@
           <p class="card-header-title">
             { cpu.model }
           </p>
+          <!--
           <div class="card-header-icon">
             <div class="field">
               <input id="switchRoundedDefault" type="checkbox" name="switchRoundedDefault" class="switch is-rounded" checked="checked">
               <label for="switchRoundedDefault"></label>
             </div>
           </div>
+          -->
         </div>
         <div class="card-content has-text-centered">
           <h3 class="title is-3">{ cpuHashrate(index).toFixed(2) }</h3>
@@ -138,13 +140,13 @@
       var index = parseInt(e.srcElement.dataset.index)
       var threads = parseInt(e.srcElement.value)
       opts.miner.config.cpus[index].threads = threads
-      opts.miner.trigger('update', opts.miner.config)
+      opts.miner.trigger('update')
     }
 
     updateCoin(e) {
       var index = parseInt(e.srcElement.dataset.index)
       opts.miner.config.cpus[index].coin = e.srcElement.value
-      opts.miner.trigger('update', opts.miner.config)
+      opts.miner.trigger('update')
     }
 
   </script>

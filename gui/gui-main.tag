@@ -64,9 +64,7 @@
       this.running = false
     })
 
-    this.on('update', function(config) {
-      this.config = config
-      console.log(backend)
+    this.on('update', function() {
       backend.updateConfig(JSON.stringify(this.config))
       this.trigger('updated')
     })
