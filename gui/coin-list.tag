@@ -10,7 +10,7 @@
         <tbody>
           <tr class="is-size-5" each={ coin, name in miner.config.coins }>
             <td>
-              <i class={ "cc " + name.toUpperCase()}></i>
+              <i class={ "cc " + name}></i>
             </td>
             <td>{ name }</td>
             <td>{ coin.pool.url }</td>

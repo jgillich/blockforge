@@ -1,5 +1,5 @@
 <hardware-list>
-  <div class="columns">
+  <div class="columns is-centered">
     <div class="column is-4" each={ cpu, index in miner.config.cpus }>
       <div class="card">
         <div class="card-header">
