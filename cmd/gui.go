@@ -80,7 +80,13 @@ var guiCmd = &cobra.Command{
 		}
 
 		view.Dispatch(func() {
-			view.Bind("backend", &GuiBackend{view, config, hardware, nil, worker.List()})
+			view.Bind("backend", &GuiBackend{
+				webview:  view,
+				miner:    nil,
+				Config:   config,
+				Hardware: hardware,
+				Coins:    worker.List(),
+			})
 			view.Eval("init()")
 		})
 
@@ -90,14 +96,13 @@ var guiCmd = &cobra.Command{
 
 type GuiBackend struct {
 	webview  webview.WebView
-	Config   miner.Config       `json:"config"`
-	Hardware *hardware.Hardware `json:"hardware"`
 	miner    *miner.Miner
+	Config   miner.Config                   `json:"config"`
+	Hardware *hardware.Hardware             `json:"hardware"`
 	Coins    map[string]worker.Capabilities `json:"coins"`
 }
 
 func (g *GuiBackend) Start() {
-	log.Debugf("%+v", g.Config)
 	miner, err := miner.New(g.Config)
 	if err != nil {
 		log.Fatal(err)
