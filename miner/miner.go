@@ -2,8 +2,9 @@ package miner
 
 import (
 	"fmt"
-	"log"
 	"strconv"
+
+	"gitlab.com/jgillich/autominer/log"
 
 	"gitlab.com/jgillich/autominer/stratum"
 
@@ -140,6 +141,7 @@ func New(config Config) (*Miner, error) {
 		miner.workers[coinName] = worker
 	}
 
+	log.Debug("miner started")
 	return &miner, nil
 }
 
@@ -147,6 +149,7 @@ func (m *Miner) Stop() {
 	for _, stratum := range m.stratums {
 		stratum.Close()
 	}
+	log.Debug("miner stopped")
 }
 
 func (m *Miner) Stats() worker.Stats {

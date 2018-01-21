@@ -15,77 +15,14 @@
   <gui-main></gui-main>
 </body>
 
-<script data-src="gui-main.html" type="riot/tag"></script>
-<script data-src="hardware-list.html" type="riot/tag"></script>
-<script data-src="coin-list.html" type="riot/tag"></script>
-<script data-src="coin-edit.html" type="riot/tag"></script>
+<script data-src="gui-main.tag" type="riot/tag"></script>
+<script data-src="hardware-list.tag" type="riot/tag"></script>
+<script data-src="coin-list.tag" type="riot/tag"></script>
+<script data-src="coin-edit.tag" type="riot/tag"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/riot@3.8/riot+compiler.min.js"></script>
 <script>
-
-  function isWebView() {
-    try {
-      window.external.invoke('');
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-
-  if (!isWebView()) {
-    window.miner = {}
-    miner.data = {
-      "hardware": {
-        "cpus": [
-          {
-            "model": "Intel(R) Core(TM) i5-6200U CPU @ 2.30GHz",
-            "virtual_cores": 4,
-          }
-        ],
-        "gpus": [],
-      },
-      "config": {
-        "donate": 1,
-        "log_level": "",
-        "coin": {
-          "xmr": {
-            "pool": {
-              "url": "stratum+tcp://xmr.poolmining.org:3032",
-              "user": "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
-              "pass": "x"
-            }
-          },
-          "eth": {
-            "pool": {
-              "url": "stratum+tcp://eth.poolmining.org:3072",
-              "user": "0x25ae2cbddE36CfC9D959a4d1f76964EaE7517748",
-              "pass": "x"
-            }
-          }
-        },
-        "cpus": {
-          "Intel Core i5-6200U": {
-            "coin": "xmr",
-            "threads": 1
-          }
-        },
-        "gpus": {
-          "Radeon HD 570": {
-            "coin": "xmr",
-            "index": 0
-          },
-          "GeForce GTX 1080": {
-            "coin": "eth",
-            "index": 1
-          }
-        }
-      }
-    }
-    init()
-  }
-
   function init() {
-    riot.mount('gui-main', miner.data)
+    riot.mount('gui-main', { backend: backend })
   }
 </script>

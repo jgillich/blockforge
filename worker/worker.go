@@ -38,9 +38,9 @@ type Worker interface {
 }
 
 type Capabilities struct {
-	CPU    bool
-	OpenCL bool
-	CUDA   bool
+	CPU    bool `json:"cpu"`
+	OpenCL bool `json:"opencl"`
+	CUDA   bool `json:"cuda"`
 }
 
 type Config struct {

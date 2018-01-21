@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Donate int             `yaml:"donate" json:"donate"`
-	Coins  map[string]Coin `yaml:"coin" json:"coin"`
+	Coins  map[string]Coin `yaml:"coins" json:"coins"`
 	CPUs   map[string]CPU  `yaml:"cpus" json:"cpus"`
 	GPUs   map[string]GPU  `yaml:"gpus" json:"gpus"`
 }
@@ -34,7 +34,7 @@ func GenerateConfig() (Config, error) {
 	config := Config{
 		Donate: 5,
 		Coins: map[string]Coin{
-			"xmr": Coin{
+			"XMR": Coin{
 				Pool: stratum.Pool{
 					URL:  "stratum+tcp://xmr.poolmining.org:3032",
 					User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
@@ -53,19 +53,21 @@ func GenerateConfig() (Config, error) {
 
 	for _, cpu := range hw.CPUs {
 		config.CPUs[strconv.Itoa(cpu.Index)] = CPU{
-			Coin:    "xmr",
+			Coin:    "XMR",
 			Threads: cpu.PhysicalCores,
 			Model:   cpu.Model,
 		}
 	}
 
+	/* TODO uncomment when GPU support is added
 	for _, gpu := range hw.GPUs {
 		config.GPUs[strconv.Itoa(gpu.Index)] = GPU{
-			Coin:      "xmr",
+			Coin:      "XMR",
 			Intensity: 1,
 			Model:     gpu.Model,
 		}
 	}
+	*/
 
 	return config, nil
 }

@@ -1,19 +1,10 @@
 <hardware-list>
-  <script>
-    opts.hardware.cpus.forEach(function (cpu, i) {
-      var threads = []
-      for(var thread = 0; thread < cpu.virtual_cores; thread++) {
-        threads[thread] = thread+1
-      }
-      opts.hardware.cpus[i].threads = threads
-    })
-  </script>
   <div class="columns">
-    <div class="column is-4" each={ opts.hardware.cpus }>
+    <div class="column is-4" each={ cpu, index in miner.config.cpus }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
-            { model }
+            { cpu.model }
           </p>
           <div class="card-header-icon">
             <div class="field">
@@ -33,8 +24,8 @@
                 <div>
                   <p class="heading">Threads</p>
                   <p class="title">
-                    <select class="select">
-                      <option each={i in threads}>{i}</option>
+                    <select class="select" data-index={index} onchange={updateThreads}>
+                      <option each={i in threadNums[index]} value={i} selected={cpu.threads == i}>{i}</option>
                     </select>
                   </p>
                 </div>
@@ -43,8 +34,8 @@
                 <div>
                   <p class="heading">Coin</p>
                   <p class="title">
-                    <select class="select">
-                      <option each={ coin, name in opts.config.coin }>{ name }</option>
+                    <select class="select" data-index={index} onchange={updateCoin}>
+                      <option each={ coin, name in miner.config.coins } value={name} selected={cpu.coin == name}>{ name }</option>
                     </select>
                   </p>
                 </div>
@@ -55,7 +46,8 @@
       </div>
     </div>
 
-    <div class="column is-4" each={ opts.hardware.gpus }>
+<!--
+    <div class="column is-4" each={ miner.hardware.gpus }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
@@ -105,27 +97,54 @@
         </div>
       </div>
     </div>
+  -->
+
   </div>
 
   <script>
+    this.miner = opts.miner
+
+    this.threadNums = []
+    this.miner.hardware.cpus.forEach(function (cpu) {
+      var threads = []
+      for(var thread = 0; thread < cpu.virtual_cores; thread++) {
+        threads[thread] = thread+1
+      }
+      this.threadNums[cpu.index] = threads
+    }.bind(this))
+
+
     this.stats = []
-    window.updateStats = function(stats) {
+    this.miner.on('stats', function(stats) {
       this.stats = stats
       this.update()
-    }.bind(this)
+    }.bind(this))
 
     cpuHashrate(index) {
       if (this.stats.length == 0) {
         return 0
       }
 
-      var cpuStat = this.stats.cpu_stats.find((s) => s.index == index)
+      var cpuStat = this.stats.cpu_stats.find(function (s) { return s.index == index })
 
       if(!cpuStat) {
         return 0
       }
 
-      return cpuStat.hashrate
+      return Math.round(cpuStat.hashrate)
+    }
+
+    updateThreads(e) {
+      var index = parseInt(e.srcElement.dataset.index)
+      var threads = parseInt(e.srcElement.value)
+      opts.miner.config.cpus[index].threads = threads
+      opts.miner.trigger('update', opts.miner.config)
+    }
+
+    updateCoin(e) {
+      var index = parseInt(e.srcElement.dataset.index)
+      opts.miner.config.cpus[index].coin = e.srcElement.value
+      opts.miner.trigger('update', opts.miner.config)
     }
 
   </script>

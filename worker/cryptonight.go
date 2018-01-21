@@ -19,12 +19,12 @@ var NonceIndex = 78
 var NonceWidth = 8
 
 func init() {
-	for _, c := range []string{"xmr", "etn", "itns", "sumo"} {
+	for _, c := range []string{"XMR", "ETN", "ITNS", "SUMO"} {
 		workers[c] = func(config Config) Worker {
 			return NewCryptonight(config, false)
 		}
 	}
-	for _, c := range []string{"aeon"} {
+	for _, c := range []string{"AEON"} {
 		workers[c] = func(config Config) Worker {
 			return NewCryptonight(config, true)
 		}

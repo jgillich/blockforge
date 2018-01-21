@@ -20,13 +20,15 @@ var (
 )
 
 var cmd = &cobra.Command{
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		log.Initialize(debug)
+	},
 	Use:   "coinstack",
 	Short: "CoinStack is a miner for cryptocurrencies",
 	Long: strings.TrimSpace(`
 CoinStack is a next generation miner for many cryptocurrencies
 that features automatic hardware detection and a optional
-graphical user interface.
-								`),
+graphical user interface.`),
 }
 
 func init() {
@@ -35,8 +37,6 @@ func init() {
 
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logging")
 	cmd.PersistentFlags().StringVar(&configPath, "config", defaultPath, "config file path")
-
-	log.Initialize(debug)
 }
 
 func Execute() error {

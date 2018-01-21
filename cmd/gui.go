@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 
+	"gitlab.com/jgillich/autominer/worker"
+
 	"gopkg.in/yaml.v2"
 
 	"gitlab.com/jgillich/autominer/hardware"
@@ -78,7 +80,7 @@ var guiCmd = &cobra.Command{
 		}
 
 		view.Dispatch(func() {
-			view.Bind("miner", &GuiMiner{view, config, hardware, nil})
+			view.Bind("backend", &GuiBackend{view, config, hardware, nil, worker.List()})
 			view.Eval("init()")
 		})
 
@@ -86,14 +88,16 @@ var guiCmd = &cobra.Command{
 	},
 }
 
-type GuiMiner struct {
+type GuiBackend struct {
 	webview  webview.WebView
 	Config   miner.Config       `json:"config"`
 	Hardware *hardware.Hardware `json:"hardware"`
 	miner    *miner.Miner
+	Coins    map[string]worker.Capabilities `json:"coins"`
 }
 
-func (g *GuiMiner) Start() {
+func (g *GuiBackend) Start() {
+	log.Debugf("%+v", g.Config)
 	miner, err := miner.New(g.Config)
 	if err != nil {
 		log.Fatal(err)
@@ -101,19 +105,44 @@ func (g *GuiMiner) Start() {
 	g.miner = miner
 }
 
-func (g *GuiMiner) Stop() {
+func (g *GuiBackend) Stop() {
 	if g.miner != nil {
 		g.miner.Stop()
 		g.miner = nil
 	}
 }
 
-func (g *GuiMiner) Stats() {
+func (g *GuiBackend) Stats() {
 	if g.miner != nil {
 		buf, err := json.Marshal(g.miner.Stats())
 		if err != nil {
 			log.Fatal(err)
 		}
-		g.webview.Eval(fmt.Sprintf("window.updateStats(%v)", string(buf)))
+		g.webview.Eval(fmt.Sprintf("miner.trigger('stats', %v)", string(buf)))
+	}
+}
+
+func (g *GuiBackend) UpdateConfig(s string) {
+	var config miner.Config
+	err := json.Unmarshal([]byte(s), &config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out, err := yaml.Marshal(&config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile(configPath, []byte(out), os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	g.Config = config
+
+	if g.miner != nil {
+		g.Stop()
+		g.Start()
 	}
 }
