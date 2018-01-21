@@ -1,0 +1,55 @@
+{{ partial "header.html" . }}
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container has-text-centered">
+      <h1 class="title">
+        Some catchphrase
+      </h1>
+      <h2 class="subtitle">
+        Some subtitle
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-primary">
+  <div class="hero-body">
+    <div class="container is-size-1 has-text-centered">
+      <h2 class="title is-h2">Supported Coins</h2>
+      <i class="cc XMR" title="Monero"></i>
+      <i class="cc AEON" title="Aeon"></i>
+    </div>
+  </div>
+</section>
+
+{{ $paginator := .Paginate (where .Data.Pages "Type" "in" "blog") }}
+
+<section class="section">
+  <div class="container">
+
+    {{ range .Paginator.Pages }}
+    <div class="columns is-centered">
+
+      <div class="column is-half content">
+        <h1 class="post-title">
+          <a href="{{ .Permalink }}">{{ .Title }}</a>
+        </h1>
+        <span class="post-date">{{ .Date.Format "Jan 2 2006" }}</span>
+
+      </div>
+    </div>
+
+    {{ end }}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+  </div>
+</section>
+
+
+{{ partial "footer.html" . }}
