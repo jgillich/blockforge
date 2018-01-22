@@ -26,7 +26,7 @@ build_script:
   - go version
   - go env
   - rice embed-go -i ./cmd
-  - go build -ldflags '-linkmode external -extldflags "-static"'
+  - ps: go build -ldflags '-linkmode external -extldflags "-static"'
 
 test_script:
   - ps: go fmt $(go list ./... | sls -NotMatch '/vendor/')
