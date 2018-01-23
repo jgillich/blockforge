@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"gitlab.com/jgillich/autominer/hash/opencl"
+
 	"github.com/spf13/cobra"
 	"gitlab.com/jgillich/autominer/hardware"
 	"gitlab.com/jgillich/autominer/log"
@@ -17,6 +19,7 @@ var hardwareCmd = &cobra.Command{
 	Short: "List hardware",
 	Long:  `List hardware.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("hwloc")
 		hw, err := hardware.New()
 		if err != nil {
 			log.Fatal(err)
@@ -30,5 +33,10 @@ var hardwareCmd = &cobra.Command{
 		for _, gpu := range hw.GPUs {
 			fmt.Printf("gpu %+v \n", gpu)
 		}
+
+		fmt.Println("opencl")
+
+		opencl.New()
+
 	},
 }

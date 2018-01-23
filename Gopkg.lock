@@ -30,6 +30,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/jgillich/go-opencl"
+  packages = ["cl"]
+  revision = "c6b569a07d1646e12de8b6ed3158f0cb838498d7"
+
+[[projects]]
+  branch = "master"
   name = "github.com/kardianos/osext"
   packages = ["."]
   revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
@@ -62,7 +68,7 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "5a16d3335bbc2178e3f3adae3e17f1cd06bf71aa"
+  revision = "a00f78470369f751da377e41cf22b757eb4e63ff"
 
 [[projects]]
   name = "go.uber.org/atomic"
@@ -98,6 +104,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "25786c4da6320746325f0b69a802d20613802ebbfd7305038b84370b9ccb6bed"
+  inputs-digest = "f5dd748a89c7bb6db8d6766cfe25c33979ecd7c83221097da8cab9b6efc0df96"
   solver-name = "gps-cdcl"
   solver-version = 1
