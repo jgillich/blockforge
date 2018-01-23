@@ -32,7 +32,7 @@
   branch = "master"
   name = "github.com/jgillich/go-opencl"
   packages = ["cl"]
-  revision = "c6b569a07d1646e12de8b6ed3158f0cb838498d7"
+  revision = "03cb464ca2fdbbfe9c9067f7d48408b8beee8b95"
 
 [[projects]]
   branch = "master"
