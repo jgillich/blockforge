@@ -28,7 +28,7 @@ before_build:
 build_script:
   - go version
   - go env
-  - ps: go build -ldflags '-linkmode external -extldflags "-static"'
+  - ps: go build -x -ldflags '-linkmode external -extldflags "-static"'
 
 test_script:
   - ps: go fmt $(go list ./... | sls -NotMatch '/vendor/')
