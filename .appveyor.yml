@@ -30,7 +30,7 @@ build_script:
   - ps: |
       go version
       go env
-      go build -x -ldflags '-linkmode external -extldflags "-static"' 2>&1 | %{ "$_" }
+      go build -ldflags '-linkmode external -extldflags "-static"' 2>&1 | %{ "$_" }
 
 test_script:
   - ps: |
