@@ -44,6 +44,7 @@ compile:
   stage: build
   script:
     - go get -u github.com/GeertJohan/go.rice/rice
+    - go generate
     - go build -o $CI_PROJECT_DIR/autominer
   artifacts:
     paths:

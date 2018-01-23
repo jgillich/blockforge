@@ -5,6 +5,8 @@ import (
 	"gitlab.com/jgillich/autominer/cmd"
 )
 
+//go:generate rice embed-go -i ./cmd
+
 func main() {
 	cobra.MousetrapHelpText = ""
 	err := cmd.Execute()

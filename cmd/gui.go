@@ -22,8 +22,6 @@ import (
 	"gitlab.com/jgillich/autominer/miner"
 )
 
-//go:generate rice embed-go
-
 func init() {
 	cmd.AddCommand(guiCmd)
 }
