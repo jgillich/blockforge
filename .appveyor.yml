@@ -6,34 +6,38 @@ environment:
   GOPATH: c:\gopath
 
 install:
-  - git submodule update --init --recursive
-  - set PATH=%GOPATH%\bin;C:\msys64\usr\bin;%PATH%
-  - set CGO_CFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib
-  - bash -l -c "pacman -S --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make"
-  - go get -u github.com/golang/dep/cmd/dep
-  - go get -u github.com/GeertJohan/go.rice/rice
-  - dep ensure -vendor-only
-  - curl http://www.open-mpi.de/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.9.zip -o c:\hwloc.zip
-  - 7z x c:\hwloc.zip -oc:\hwloc
-  - ps: Copy-Item -Force -Recurse c:\hwloc\hwloc-win64-build-1.11.9\* c:\msys64\mingw64
-  - curl -L https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/files/1406216/lightOCLSDK.zip -o c:\ocl.zip
-  - 7z x c:\ocl.zip -oc:\ocl
-  - ps: Copy-Item -Force -Recurse c:\ocl\lib\x86_64\* c:\msys64\mingw64\lib
-  - set PATH=C:\go\bin;%GOPATH%\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
+  - ps: |
+      git submodule update --init --recursive
+      set PATH=%GOPATH%\bin;C:\msys64\usr\bin;%PATH%
+      set CGO_CFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib
+      bash -l -c "pacman -S --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make"
+      go get -u github.com/golang/dep/cmd/dep
+      go get -u github.com/GeertJohan/go.rice/rice
+      dep ensure -vendor-only
+      curl http://www.open-mpi.de/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.9.zip -o c:\hwloc.zip
+      7z x c:\hwloc.zip -oc:\hwloc
+      Copy-Item -Force -Recurse c:\hwloc\hwloc-win64-build-1.11.9\* c:\msys64\mingw64
+      curl -L https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/files/1406216/lightOCLSDK.zip -o c:\ocl.zip
+      7z x c:\ocl.zip -oc:\ocl
+      Copy-Item -Force -Recurse c:\ocl\lib\x86_64\* c:\msys64\mingw64\lib
+      set PATH=C:\go\bin;%GOPATH%\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
 
 before_build:
-  - cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hhash -Bhash/build
-  - cmake --build hash/build
+  - ps: |
+      cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hhash -Bhash/build
+      cmake --build hash/build
 
 build_script:
-  - go version
-  - go env
-  - ps: go build -x -ldflags '-linkmode external -extldflags "-static"'
+  - ps: |
+      go version
+      go env
+      go build -x -ldflags '-linkmode external -extldflags "-static"'
 
 test_script:
-  - ps: go fmt $(go list ./... | sls -NotMatch '/vendor/')
-  - ps: go vet $(go list ./... | sls -NotMatch '/vendor/')
-  - ps: go test -race $(go list ./... | sls -NotMatch '/vendor/')
+  - ps: |
+      go fmt $(go list ./... | sls -NotMatch '/vendor/')
+      go vet $(go list ./... | sls -NotMatch '/vendor/')
+      go test -race $(go list ./... | sls -NotMatch '/vendor/')
 
 artifacts:
   - path: autominer.exe
