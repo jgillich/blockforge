@@ -62,7 +62,7 @@ func (w *cryptonight) Work() error {
 
 		numThreads := 0
 
-		for _, cpu := range w.config.CPUSet {
+		for _, cpu := range w.config.Processors {
 			numThreads += cpu.Threads
 		}
 
@@ -73,12 +73,12 @@ func (w *cryptonight) Work() error {
 		nounceStepping := uint32(math.MaxUint32 / numThreads)
 		nonce := uint32(0)
 
-		for _, cpu := range w.config.CPUSet {
-			w.cpuStats[cpu.CPU.Index] = map[int]float32{}
-			for i := 0; i < cpu.Threads; i++ {
+		for _, conf := range w.config.Processors {
+			w.cpuStats[conf.Processor.Index] = map[int]float32{}
+			for i := 0; i < conf.Threads; i++ {
 				log.Debugf("starting thread for job '%v'", job.JobId)
 				log.Debugf("nonce start '%v' end '%v'", nonce, nonce+nounceStepping)
-				go w.cpuThread(cpu.CPU.Index, i, job, nonce, nonce+nounceStepping, closer)
+				go w.cpuThread(conf.Processor.Index, i, job, nonce, nonce+nounceStepping, closer)
 				nonce += nounceStepping
 			}
 		}

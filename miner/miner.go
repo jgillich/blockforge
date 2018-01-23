@@ -2,13 +2,13 @@ package miner
 
 import (
 	"fmt"
-	"strconv"
 
+	"gitlab.com/jgillich/autominer/hardware/opencl"
+	"gitlab.com/jgillich/autominer/hardware/processor"
 	"gitlab.com/jgillich/autominer/log"
 
 	"gitlab.com/jgillich/autominer/stratum"
 
-	"gitlab.com/jgillich/autominer/hardware"
 	"gitlab.com/jgillich/autominer/worker"
 )
 
@@ -23,111 +23,99 @@ func New(config Config) (*Miner, error) {
 		workers:  map[string]worker.Worker{},
 	}
 
-	hw, err := hardware.New()
+	processors, err := processor.GetProcessors()
 	if err != nil {
 		return nil, err
 	}
 
-	for coinName, coinConfig := range config.Coins {
+	clPlatforms, err := opencl.GetPlatforms()
+	if err != nil {
+		return nil, err
+	}
 
-		var enabledCPUs []worker.CPUConfig
-		for index, cpuConfig := range config.CPUs {
-			if cpuConfig.Coin != coinName {
+	for name, coin := range config.Coins {
+
+		var pConf []worker.ProcessorConfig
+		for _, conf := range config.Processors {
+			if !conf.Enable || conf.Coin != name {
 				continue
 			}
-			if cpuConfig.Threads == 0 {
-				continue
-			}
 
-			cpuIndex, err := strconv.Atoi(index)
-			if err != nil {
-				return nil, fmt.Errorf("non numeric cpu index '%v'", index)
-			}
-
-			var cpu hardware.CPU
-			for _, c := range hw.CPUs {
-				if c.Index == cpuIndex {
-					cpu = c
+			var processor *processor.Processor
+			for _, p := range processors {
+				if p.Index == conf.Index {
+					processor = &p
 					break
 				}
 			}
-			if (cpu == hardware.CPU{}) {
-				return nil, fmt.Errorf("cpu with index '%v' not found", cpuIndex)
+
+			if processor == nil {
+				return nil, fmt.Errorf("cpu index '%v' does not exist", conf.Index)
 			}
 
-			if cpu.VirtualCores < cpuConfig.Threads {
-				return nil, fmt.Errorf("thread count '%v' for cpu '%v' cannot be larger than number of virtual cores '%v'", cpuConfig.Threads, index, cpu.VirtualCores)
+			if conf.Threads > processor.VirtualCores {
+				return nil, fmt.Errorf("threads for cpu '%v' cannot be higher than virtual cores (%v > %v)", conf.Index, conf.Threads, processor.VirtualCores)
 			}
 
-			enabledCPUs = append(enabledCPUs, worker.CPUConfig{
-				CPU:     cpu,
-				Threads: cpuConfig.Threads,
-			})
+			pConf = append(pConf, worker.ProcessorConfig{conf.Threads, *processor})
 		}
 
-		var enabledGPUs []worker.GPUConfig
-		for index, gpuConfig := range config.GPUs {
-			if gpuConfig.Coin != coinName {
+		var clConf []worker.CLDeviceConfig
+		for _, conf := range config.OpenCL {
+			if !conf.Enable || conf.Coin != name {
 				continue
 			}
 
-			gpuIndex, err := strconv.Atoi(index)
-			if err != nil {
-				return nil, fmt.Errorf("non numeric gpu index '%v'", index)
-			}
-
-			var gpu hardware.GPU
-			for _, c := range hw.GPUs {
-				if c.Index == gpuIndex {
-					gpu = c
+			var device *opencl.Device
+			for _, p := range clPlatforms {
+				if p.Index == conf.Platform {
+					for _, d := range p.Devices {
+						if d.Index == conf.Index {
+							device = &d
+							break
+						}
+					}
 					break
 				}
 			}
-			if (gpu == hardware.GPU{}) {
-				return nil, fmt.Errorf("gpu with index '%v' not found", gpuIndex)
+
+			if device == nil {
+				return nil, fmt.Errorf("opencl device platform '%v' index '%v' does not exist", conf.Platform, conf.Index)
 			}
 
-			enabledGPUs = append(enabledGPUs, worker.GPUConfig{
-				GPU:       gpu,
-				Intensity: gpuConfig.Intensity,
-			})
+			clConf = append(clConf, worker.CLDeviceConfig{conf.Intensity, *device})
 		}
 
-		// skip coins with no threads and gpus
-		if len(enabledGPUs) == 0 && len(enabledCPUs) == 0 {
+		// skip coins without workers
+		if (len(pConf) + len(clConf)) == 0 {
 			continue
 		}
 
-		stratum, err := stratum.NewClient("jsonrpc", coinConfig.Pool)
+		stratum, err := stratum.NewClient("jsonrpc", coin.Pool)
 		if err != nil {
 			return nil, err
 		}
 
 		workerConfig := worker.Config{
-			Stratum: stratum,
-			Donate:  config.Donate,
-			CPUSet:  enabledCPUs,
-			GPUSet:  enabledGPUs,
+			Stratum:    stratum,
+			Donate:     config.Donate,
+			Processors: pConf,
+			CLDevices:  clConf,
 		}
 
-		worker, err := worker.New(coinName, workerConfig)
+		worker, err := worker.New(name, workerConfig)
 		if err != nil {
 			return nil, err
 		}
 
 		capabilities := worker.Capabilities()
 
-		if !capabilities.CPU && len(enabledCPUs) > 0 {
-			return nil, fmt.Errorf("coin '%v' does not support cpus", coinName)
+		if !capabilities.CPU && len(pConf) > 0 {
+			return nil, fmt.Errorf("coin '%v' does not support processors", name)
 		}
 
-		for _, gpu := range enabledGPUs {
-			if gpu.GPU.Backend == hardware.CUDABackend && !capabilities.CUDA {
-				return nil, fmt.Errorf("coin '%v' does not support CUDA GPU '%v'", coinName, gpu.GPU.Index)
-			}
-			if gpu.GPU.Backend == hardware.OpenCLBackend && !capabilities.OpenCL {
-				return nil, fmt.Errorf("coin '%v' does not support OpenCL GPU '%v'", coinName, gpu.GPU.Index)
-			}
+		if !capabilities.OpenCL && len(clConf) > 0 {
+			return nil, fmt.Errorf("coin '%v' does not support opencl devices", name)
 		}
 
 		go func() {
@@ -137,8 +125,8 @@ func New(config Config) (*Miner, error) {
 			}
 		}()
 
-		miner.stratums[coinName] = stratum
-		miner.workers[coinName] = worker
+		miner.stratums[name] = stratum
+		miner.workers[name] = worker
 	}
 
 	log.Debug("miner started")

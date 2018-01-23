@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 
-	"gitlab.com/jgillich/autominer/hash/opencl"
+	"gitlab.com/jgillich/autominer/hardware/opencl"
+	"gitlab.com/jgillich/autominer/hardware/processor"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/jgillich/autominer/hardware"
 	"gitlab.com/jgillich/autominer/log"
 )
 
@@ -19,24 +19,26 @@ var hardwareCmd = &cobra.Command{
 	Short: "List hardware",
 	Long:  `List hardware.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("hwloc")
-		hw, err := hardware.New()
+		processors, err := processor.GetProcessors()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		for _, cpu := range hw.CPUs {
-			fmt.Printf("cpu %+v \n", cpu)
-
+		for _, p := range processors {
+			fmt.Printf("Processor %v\n", p.Name)
 		}
 
-		for _, gpu := range hw.GPUs {
-			fmt.Printf("gpu %+v \n", gpu)
+		platforms, err := opencl.GetPlatforms()
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		fmt.Println("opencl")
+		for _, p := range platforms {
+			fmt.Printf("OpenCL Platform %v\n", p.Name)
 
-		opencl.New()
-
+			for _, d := range p.Devices {
+				fmt.Printf("\tOpenCL Device %v\n", d.Name)
+			}
+		}
 	},
 }

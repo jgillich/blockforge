@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"os"
 
+	"gitlab.com/jgillich/autominer/hardware/processor"
+
 	"gitlab.com/jgillich/autominer/worker"
 
 	"gopkg.in/yaml.v2"
-
-	"gitlab.com/jgillich/autominer/hardware"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/inconshreveable/mousetrap"
@@ -69,7 +69,7 @@ var guiCmd = &cobra.Command{
 			log.Fatal(http.Serve(listener, nil))
 		}()
 
-		hardware, err := hardware.New()
+		processors, err := processor.GetProcessors()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -85,11 +85,11 @@ var guiCmd = &cobra.Command{
 				if data == "__app_js_loaded__" {
 
 					view.Bind("backend", &GuiBackend{
-						webview:  view,
-						miner:    nil,
-						Config:   config,
-						Hardware: hardware,
-						Coins:    worker.List(),
+						webview:    view,
+						miner:      nil,
+						Config:     config,
+						Processors: processors,
+						Coins:      worker.List(),
 					})
 
 					view.Eval("init()")
@@ -103,11 +103,11 @@ var guiCmd = &cobra.Command{
 }
 
 type GuiBackend struct {
-	webview  webview.WebView
-	miner    *miner.Miner
-	Config   miner.Config                   `json:"config"`
-	Hardware *hardware.Hardware             `json:"hardware"`
-	Coins    map[string]worker.Capabilities `json:"coins"`
+	webview    webview.WebView
+	miner      *miner.Miner
+	Config     miner.Config                   `json:"config"`
+	Processors []processor.Processor          `json:"processors"`
+	Coins      map[string]worker.Capabilities `json:"coins"`
 }
 
 func (g *GuiBackend) Start() {

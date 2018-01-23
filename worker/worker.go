@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"gitlab.com/jgillich/autominer/hardware"
+	"gitlab.com/jgillich/autominer/hardware/opencl"
+	"gitlab.com/jgillich/autominer/hardware/processor"
+
 	"gitlab.com/jgillich/autominer/stratum"
 )
 
@@ -44,20 +46,20 @@ type Capabilities struct {
 }
 
 type Config struct {
-	Stratum stratum.Client
-	Donate  int
-	CPUSet  []CPUConfig
-	GPUSet  []GPUConfig
+	Stratum    stratum.Client
+	Donate     int
+	Processors []ProcessorConfig
+	CLDevices  []CLDeviceConfig
 }
 
-type CPUConfig struct {
-	Threads int
-	CPU     hardware.CPU
+type ProcessorConfig struct {
+	Threads   int
+	Processor processor.Processor
 }
 
-type GPUConfig struct {
+type CLDeviceConfig struct {
 	Intensity int
-	GPU       hardware.GPU
+	Device    opencl.Device
 }
 
 type Stats struct {

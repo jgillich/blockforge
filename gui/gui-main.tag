@@ -47,7 +47,7 @@
 
     this.config = backend.data.config
     this.availableCoins = backend.data.coins
-    this.hardware = backend.data.hardware
+    this.processors = backend.data.processors
     this.running = false
 
     this.on('start', function() {

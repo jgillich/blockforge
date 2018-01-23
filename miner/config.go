@@ -1,38 +1,47 @@
 package miner
 
 import (
-	"strconv"
+	"strings"
 
-	"gitlab.com/jgillich/autominer/hardware"
+	"gitlab.com/jgillich/autominer/hardware/opencl"
+	"gitlab.com/jgillich/autominer/hardware/processor"
 	"gitlab.com/jgillich/autominer/stratum"
 )
 
 type Config struct {
-	Donate int             `yaml:"donate" json:"donate"`
-	Coins  map[string]Coin `yaml:"coins" json:"coins"`
-	CPUs   map[string]CPU  `yaml:"cpus" json:"cpus"`
-	GPUs   map[string]GPU  `yaml:"gpus" json:"gpus"`
+	Version    int             `yaml:"version" json:"version"`
+	Donate     int             `yaml:"donate" json:"donate"`
+	Coins      map[string]Coin `yaml:"coins" json:"coins"`
+	Processors []Processor     `yaml:"processors" json:"processors"`
+	OpenCL     []OpenCLDevice  `yaml:"opencl" json:"opencl"`
 }
 
 type Coin struct {
 	Pool stratum.Pool `yaml:"pool" json:"pool"`
 }
 
-type CPU struct {
-	Model   string `yaml:"model" json:"model"`
+type Processor struct {
+	Enable  bool   `yaml:"enable" json:"enable"`
+	Index   int    `yaml:"index" json:"index"`
+	Name    string `yaml:"name" json:"name"`
 	Coin    string `yaml:"coin" json:"coin"`
 	Threads int    `yaml:"threads" json:"threads"`
 }
 
-type GPU struct {
-	Model     string `yaml:"model" json:"model"`
+type OpenCLDevice struct {
+	Enable    bool   `yaml:"enable" json:"enable"`
+	Platform  int    `yaml:"platform" json:"platform"`
+	Index     int    `yaml:"index" json:"index"`
+	Name      string `yaml:"name" json:"name"`
 	Intensity int    `yaml:"intensity" json:"intensity"`
 	Coin      string `yaml:"coin" json:"coin"`
 }
 
-func GenerateConfig() (Config, error) {
+func GenerateConfig() (*Config, error) {
+
 	config := Config{
-		Donate: 5,
+		Version: 1,
+		Donate:  5,
 		Coins: map[string]Coin{
 			"XMR": Coin{
 				Pool: stratum.Pool{
@@ -42,32 +51,42 @@ func GenerateConfig() (Config, error) {
 				},
 			},
 		},
-		CPUs: map[string]CPU{},
-		GPUs: map[string]GPU{},
+		Processors: []Processor{},
+		OpenCL:     []OpenCLDevice{},
 	}
 
-	hw, err := hardware.New()
+	processors, err := processor.GetProcessors()
 	if err != nil {
-		return config, err
+		return nil, err
 	}
 
-	for _, cpu := range hw.CPUs {
-		config.CPUs[strconv.Itoa(cpu.Index)] = CPU{
+	for _, processor := range processors {
+		config.Processors = append(config.Processors, Processor{
+			Enable:  true,
 			Coin:    "XMR",
-			Threads: cpu.PhysicalCores,
-			Model:   cpu.Model,
+			Index:   processor.Index,
+			Name:    processor.Name,
+			Threads: processor.PhysicalCores,
+		})
+	}
+
+	clPlatforms, err := opencl.GetPlatforms()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, platform := range clPlatforms {
+		for _, device := range platform.Devices {
+			config.OpenCL = append(config.OpenCL, OpenCLDevice{
+				Enable:    strings.Contains(device.Platform.Name, "Advanced Micro Devices"),
+				Coin:      "XMR",
+				Index:     device.Index,
+				Platform:  platform.Index,
+				Name:      device.Name,
+				Intensity: 1,
+			})
 		}
 	}
 
-	/* TODO uncomment when GPU support is added
-	for _, gpu := range hw.GPUs {
-		config.GPUs[strconv.Itoa(gpu.Index)] = GPU{
-			Coin:      "XMR",
-			Intensity: 1,
-			Model:     gpu.Model,
-		}
-	}
-	*/
-
-	return config, nil
+	return &config, nil
 }
