@@ -25,7 +25,6 @@ before_build:
 build_script:
   - go version
   - go env
-  - rice embed-go -i ./cmd
   - ps: go build -ldflags '-linkmode external -extldflags "-static"'
 
 test_script:
