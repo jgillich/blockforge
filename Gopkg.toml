@@ -48,10 +48,6 @@
   name = "github.com/shibukawa/configdir"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/AllenDang/w32"
-
-[[constraint]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
 
