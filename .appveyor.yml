@@ -9,7 +9,7 @@ install:
   - ps: |
       git submodule update --init --recursive
       $env:Path = "$env:GOPATH\bin;C:\msys64\usr\bin;" + $env:Path
-      $env:CGO_CFLAGS = "-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib"
+      $env:CGO_CFLAGS = "-w -I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib"
       bash -l -c "pacman -S --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make" 2>&1 | %{ "$_" }
       go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
       dep ensure -vendor-only
