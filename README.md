@@ -25,7 +25,7 @@ cmake --build hash/build
 go get -u github.com/golang/dep/cmd/dep
 go get -u github.com/GeertJohan/go.rice/rice
 dep ensure -vendor-only
-rice embed-go -i ./cmd
+go generate
 go build
 ```
 
@@ -50,6 +50,6 @@ cmake --build hash/build
 go get -u github.com/golang/dep/cmd/dep
 go get -u github.com/GeertJohan/go.rice/rice
 dep ensure -vendor-only
-rice embed-go -i ./cmd
+go generate
 go build
 ```
