@@ -12,8 +12,8 @@ func TestCryptonote(t *testing.T) {
 
 	worker := NewCryptonight(Config{
 		Stratum: stratumClient,
-		CPUSet: []CPUConfig{
-			CPUConfig{Threads: 1},
+		Processors: []ProcessorConfig{
+			ProcessorConfig{Threads: 1},
 		},
 	}, false)
 
@@ -37,8 +37,8 @@ func TestCryptonoteLite(t *testing.T) {
 
 	worker := NewCryptonight(Config{
 		Stratum: stratumClient,
-		CPUSet: []CPUConfig{
-			CPUConfig{Threads: 1},
+		Processors: []ProcessorConfig{
+			ProcessorConfig{Threads: 1},
 		},
 	}, true)
 
