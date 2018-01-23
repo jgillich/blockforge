@@ -3,14 +3,24 @@ title: "Announcing CoinStack, a modern multi miner"
 date: 2018-01-21
 ---
 
-Most mining software fits in one of two categories:
+Let's face it, the current state of software for cryptocurrency mining is less than ideal.
+There are easy to use miners that support a wide range of coins but are closed source
+and often accused of fraudulent behaviour. Then there are open source miners that tend to
+perform much better, but are difficult to use and often only support a single algorithm or hardware
+type.
 
-* Easy to use and closed source
-* Open source and complicated
+CoinStack is an attempt to create a miner that ticks all the boxes:
 
-We're here to bridge the two. CoinStack is a modern miner featuring
-automatic hardware detection, support for many different
-coins and a optional graphical user interface. Oh, and it's open source!
+* Easy to use
+* Multiple algorithms
+* CPU and GPU mining
+* Open source
+
+Our inital plan was to integrate existing open source miners, but for technical reasons we
+had to
+
+CoinStack is a modern miner featuring automatic hardware detection, support for many different
+coins and a optional graphical user interface. And it is of course open source!
 
 Our original plan was to provide a simpler interface
 around existing open source miners, but for various

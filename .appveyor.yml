@@ -16,7 +16,7 @@ install:
   - curl http://www.open-mpi.de/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.9.zip -o c:\hwloc.zip
   - 7z x c:\hwloc.zip -oc:\hwloc
   - ps: Copy-Item -Force -Recurse c:\hwloc\hwloc-win64-build-1.11.9\* c:\msys64\mingw64
-  - curl https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/files/1406216/lightOCLSDK.zip -o c:\ocl.zip
+  - curl -L https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/files/1406216/lightOCLSDK.zip -o c:\ocl.zip
   - 7z x c:\ocl.zip -oc:\ocl
   - ps: Copy-Item -Force -Recurse c:\ocl\lib\x86_64\* c:\msys64\mingw64\lib
   - set PATH=C:\go\bin;%GOPATH%\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0

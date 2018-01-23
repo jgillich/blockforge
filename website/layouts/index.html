@@ -16,13 +16,47 @@
 
 <section class="hero is-primary">
   <div class="hero-body">
-    <div class="container is-size-1 has-text-centered">
-      <h2 class="title is-h2">Supported Coins</h2>
-      <i class="cc XMR" title="Monero"></i>
-      <i class="cc AEON" title="Aeon"></i>
+    <div class="containerhas-text-centered">
+      <div class="columns">
+        <div class="column has-text-centered">
+          <h2 class="title is-h2">Multiple Coins</h2>
+          <span class="is-size-2">
+            <i class="cc XMR" title="Monero"></i>
+            <i class="cc AEON" title="Aeon"></i>
+          </span>
+        </div>
+
+        <div class="column has-text-centered">
+            <h2 class="title is-h2">Multiple Coins</h2>
+            <span class="is-size-2">
+              <i class="cc XMR" title="Monero"></i>
+              <i class="cc AEON" title="Aeon"></i>
+            </span>
+          </div>
+
+        <div class="column has-text-centered">
+          <h2 class="title is-h2">Open source</h2>
+          <span class="is-size-2">
+              <a href="#"><i class="fa fa-github" title="View code on GitHub"></i></a>
+            </span>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-size-1 has-text-centered">
+      <h2 class="title is-h2">Download Alpha</h2>
+      <a href="#" class="button is-primary">Linux</a>
+      <a href="#" class="button is-primary">Windows</a>
+    </div>
+  </div>
+</section>
+
+
 
 {{ $paginator := .Paginate (where .Data.Pages "Type" "in" "blog") }}
 
