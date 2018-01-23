@@ -8,8 +8,8 @@ environment:
 install:
   - ps: |
       git submodule update --init --recursive
-      set PATH=%GOPATH%\bin;C:\msys64\usr\bin;%PATH%
-      set CGO_CFLAGS=-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib
+      $env:Path += "$env:GOPATH\bin;C:\msys64\usr\bin"
+      $env:CGO_CFLAGS = "-I c:\msys64\mingw64\include -L c:\msys64\mingw64\lib"
       bash -l -c "pacman -S --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make"
       go get -u github.com/golang/dep/cmd/dep
       go get -u github.com/GeertJohan/go.rice/rice
@@ -20,7 +20,7 @@ install:
       curl -L https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/files/1406216/lightOCLSDK.zip -o c:\ocl.zip
       7z x c:\ocl.zip -oc:\ocl
       Copy-Item -Force -Recurse c:\ocl\lib\x86_64\* c:\msys64\mingw64\lib
-      set PATH=C:\go\bin;%GOPATH%\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0
+      $env:Path = "C:\go\bin;$env:GOPATH\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0"
 
 before_build:
   - ps: |
