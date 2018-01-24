@@ -69,15 +69,13 @@
             <nav class="level" style="flex: 1">
               <div class="level-item has-text-centered">
                 <div>
-                <!--
-                  <p class="heading">Threads</p>
+                  <p class="heading">Intensity</p>
                   <p class="title">
-                    <select class="select" data-index={i} onchange={updateThreads}>
-                      <option each={i in threadNums[processor.index]} value={i} selected={threads == i}>{i}</option>
+                    <select class="select" data-index={i} onchange={updateIntensity}>
+                      <option value="1">1</option>
                     </select>
                   </p>
                 </div>
-                -->
               </div>
               <div class="level-item has-text-centered">
                 <div>
@@ -143,12 +141,20 @@
       opts.miner.trigger('update')
     }
 
+    updateIntensity(e) {
+
+    }
+
     toggleEnable(e) {
       var id = e.srcElement.id
 
       if (id.includes("pswitch")) {
         var pid = parseInt(id.replace("pswitch", ""), 10)
         opts.miner.config.processors[pid].enable = !opts.miner.config.processors[pid].enable
+        opts.miner.trigger('update')
+      } else if (id.includes("clswitch")) {
+        var clid = parseInt(id.replace("clswitch", ""), 10)
+        opts.miner.config.opencl[clid].enable = !opts.miner.config.opencl[clid].enable
         opts.miner.trigger('update')
       }
 

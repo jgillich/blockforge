@@ -44,7 +44,7 @@ func New(config Config) (*Miner, error) {
 			var processor *processor.Processor
 			for _, p := range processors {
 				if p.Index == conf.Index {
-					processor = &p
+					processor = p
 					break
 				}
 			}
@@ -71,7 +71,7 @@ func New(config Config) (*Miner, error) {
 				if p.Index == conf.Platform {
 					for _, d := range p.Devices {
 						if d.Index == conf.Index {
-							device = &d
+							device = d
 							break
 						}
 					}

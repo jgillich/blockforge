@@ -14,8 +14,8 @@ type Device struct {
 	Version  string `json:"version"`
 }
 
-func GetDevices(platform *Platform) ([]Device, error) {
-	devices := []Device{}
+func GetDevices(platform *Platform) ([]*Device, error) {
+	devices := []*Device{}
 
 	clDevices, err := platform.ptr.GetDevices(cl.DeviceTypeGPU)
 	if err != nil {
@@ -36,8 +36,12 @@ func GetDevices(platform *Platform) ([]Device, error) {
 			log.Debugw("skipping unavailable opencl device", "device", d.Name())
 			continue
 		}
-		devices = append(devices, device)
+		devices = append(devices, &device)
 	}
 
 	return devices, nil
+}
+
+func (d *Device) CL() *cl.Device {
+	return d.ptr
 }

@@ -7,15 +7,15 @@ import (
 
 type Platform struct {
 	ptr     *cl.Platform
-	Index   int      `json:"index"`
-	Name    string   `json:"name"`
-	Version string   `json:"version"`
-	Vendor  string   `json:"vendor"`
-	Devices []Device `json:"devices"`
+	Index   int       `json:"index"`
+	Name    string    `json:"name"`
+	Version string    `json:"version"`
+	Vendor  string    `json:"vendor"`
+	Devices []*Device `json:"devices"`
 }
 
-func GetPlatforms() ([]Platform, error) {
-	platforms := []Platform{}
+func GetPlatforms() ([]*Platform, error) {
+	platforms := []*Platform{}
 
 	clPlatforms, err := cl.GetPlatforms()
 	if err != nil {
@@ -38,8 +38,12 @@ func GetPlatforms() ([]Platform, error) {
 			continue
 		}
 
-		platforms = append(platforms, platform)
+		platforms = append(platforms, &platform)
 	}
 
 	return platforms, nil
+}
+
+func (p *Platform) CL() *cl.Platform {
+	return p.ptr
 }

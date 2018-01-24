@@ -6,7 +6,10 @@ import (
 	"math"
 	"time"
 
+	"github.com/jgillich/go-opencl/cl"
+
 	"gitlab.com/jgillich/autominer/hash"
+	"gitlab.com/jgillich/autominer/hash/opencl"
 	"gitlab.com/jgillich/autominer/log"
 
 	"gitlab.com/jgillich/autominer/stratum"
@@ -32,16 +35,42 @@ func init() {
 }
 
 type cryptonight struct {
-	config   Config
-	stratum  stratum.Client
-	light    bool
-	cpuStats map[int]map[int]float32
+	clhash     *opencl.Cryptonight
+	cpuThreads int
+	config     Config
+	stratum    stratum.Client
+	light      bool
+	cpuStats   map[int]map[int]float32
 }
 
 func NewCryptonight(config Config, light bool) Worker {
+
+	var clhash *opencl.Cryptonight
+	if len(config.CLDevices) > 0 {
+		clDevices := []*cl.Device{}
+		for _, conf := range config.CLDevices {
+			clDevices = append(clDevices, conf.Device.CL())
+		}
+
+		var err error
+		clhash, err = opencl.NewCryptonight(clDevices)
+		if err != nil {
+			// TODO
+			log.Fatal(err)
+		}
+	}
+
+	cpuThreads := 0
+	if len(config.Processors) > 0 {
+
+		for _, cpu := range config.Processors {
+			cpuThreads += cpu.Threads
+		}
+	}
+
 	return &cryptonight{
+		clhash:   clhash,
 		stratum:  config.Stratum,
-		config:   config,
 		light:    light,
 		cpuStats: map[int]map[int]float32{},
 	}
@@ -60,17 +89,7 @@ func (w *cryptonight) Work() error {
 			return nil
 		}
 
-		numThreads := 0
-
-		for _, cpu := range w.config.Processors {
-			numThreads += cpu.Threads
-		}
-
-		if numThreads == 0 {
-			return fmt.Errorf("no threads configured")
-		}
-
-		nounceStepping := uint32(math.MaxUint32 / numThreads)
+		nounceStepping := uint32(math.MaxUint32 / w.cpuThreads)
 		nonce := uint32(0)
 
 		for _, conf := range w.config.Processors {
@@ -156,7 +175,7 @@ func (w *cryptonight) Stats() Stats {
 func (w *cryptonight) Capabilities() Capabilities {
 	return Capabilities{
 		CPU:    true,
-		OpenCL: false,
+		OpenCL: true,
 		CUDA:   false,
 	}
 }

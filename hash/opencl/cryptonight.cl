@@ -73,15 +73,15 @@ inline int amd_bfe(const uint src0, const uint offset, const uint width)
 #endif
 
 //#include "opencl/wolf-aes.cl"
-XMRSTAK_INCLUDE_WOLF_AES
+{{ .MustString "wolf-aes.cl" }}
 //#include "opencl/wolf-skein.cl"
-XMRSTAK_INCLUDE_WOLF_SKEIN
+{{ .MustString "wolf-skein.cl" }}
 //#include "opencl/jh.cl"
-XMRSTAK_INCLUDE_JH
+{{ .MustString "jh.cl" }}
 //#include "opencl/blake256.cl"
-XMRSTAK_INCLUDE_BLAKE256
+{{ .MustString "blake256.cl" }}
 //#include "opencl/groestl256.cl"
-XMRSTAK_INCLUDE_GROESTL256
+{{ .MustString "groestl256.cl" }}
 
 static const __constant ulong keccakf_rndc[24] =
 {

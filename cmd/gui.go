@@ -106,7 +106,7 @@ type GuiBackend struct {
 	webview    webview.WebView
 	miner      *miner.Miner
 	Config     miner.Config                   `json:"config"`
-	Processors []processor.Processor          `json:"processors"`
+	Processors []*processor.Processor         `json:"processors"`
 	Coins      map[string]worker.Capabilities `json:"coins"`
 }
 

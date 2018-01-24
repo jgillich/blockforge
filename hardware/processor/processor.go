@@ -11,8 +11,8 @@ type Processor struct {
 	VirtualCores  int `json:"virtual_cores"`
 }
 
-func GetProcessors() ([]Processor, error) {
-	processors := []Processor{}
+func GetProcessors() ([]*Processor, error) {
+	processors := []*Processor{}
 
 	h, err := hwloc.NewTopology(hwloc.TopologyFlagThisSystem)
 	if err != nil {
@@ -29,7 +29,7 @@ func GetProcessors() ([]Processor, error) {
 			VirtualCores:  h.GetNbobjsInsideCPUSetByType(cpuObj.CPUSet(), hwloc.ObjectTypePU),
 		}
 
-		processors = append(processors, processor)
+		processors = append(processors, &processor)
 	}
 
 	return processors, nil
