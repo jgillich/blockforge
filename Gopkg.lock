@@ -32,7 +32,7 @@
   branch = "master"
   name = "github.com/jgillich/go-opencl"
   packages = ["cl"]
-  revision = "dd62c48972170d14fa963e3e3dc8fa031bf9bceb"
+  revision = "35fc16069bbe40be495f73e9ac8bdd4666934f38"
 
 [[projects]]
   branch = "master"
@@ -50,7 +50,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "0c34d16c3123764e413b9ed982ada58b1c3d53ea"
+  revision = "f91529fc609202eededff4de2dc0ba2f662240a3"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -68,7 +68,7 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "a00f78470369f751da377e41cf22b757eb4e63ff"
+  revision = "1b314e88b5d8b1cee2e8803d3b7de931c0cb8717"
 
 [[projects]]
   name = "go.uber.org/atomic"

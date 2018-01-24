@@ -69,10 +69,11 @@ func NewCryptonight(config Config, light bool) Worker {
 	}
 
 	return &cryptonight{
-		clhash:   clhash,
-		stratum:  config.Stratum,
-		light:    light,
-		cpuStats: map[int]map[int]float32{},
+		cpuThreads: cpuThreads,
+		clhash:     clhash,
+		stratum:    config.Stratum,
+		light:      light,
+		cpuStats:   map[int]map[int]float32{},
 	}
 }
 

@@ -3,7 +3,7 @@ package opencl
 import (
 	"bytes"
 	"fmt"
-	"html/template"
+	"text/template"
 
 	"github.com/jgillich/go-opencl/cl"
 
@@ -65,6 +65,7 @@ func NewCryptonight(devices []*cl.Device) (*Cryptonight, error) {
 
 	for _, device := range devices {
 		gpuCtx := CryptonightGpuContext{}
+
 		gpuCtx.queue, err = ctx.CreateCommandQueue(device, 0)
 		if err != nil {
 			return nil, err
@@ -125,7 +126,6 @@ func NewCryptonight(devices []*cl.Device) (*Cryptonight, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		gpuCtx.kernels = []*cl.Kernel{}
 
 		for _, name := range []string{"cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein"} {
