@@ -5,8 +5,7 @@ import (
 	"gitlab.com/jgillich/autominer/cmd"
 )
 
-//go:generate rice embed-go -i ./cmd
-//go:generate rice embed-go -i ./hash/opencl
+//go:generate rice embed-go -i ./cmd -i ./worker
 
 func main() {
 	cobra.MousetrapHelpText = ""
