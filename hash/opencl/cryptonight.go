@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"text/template"
+	"unsafe"
 
 	"github.com/jgillich/go-opencl/cl"
 
@@ -38,6 +39,7 @@ type Cryptonight struct {
 }
 
 type CryptonightGpuContext struct {
+	threads       int
 	queue         *cl.CommandQueue
 	inputBuf      *cl.MemObject
 	scratchpadBuf *cl.MemObject
@@ -64,7 +66,9 @@ func NewCryptonight(devices []*cl.Device) (*Cryptonight, error) {
 	}
 
 	for _, device := range devices {
-		gpuCtx := CryptonightGpuContext{}
+		gpuCtx := CryptonightGpuContext{
+			threads: intensity,
+		}
 
 		gpuCtx.queue, err = ctx.CreateCommandQueue(device, 0)
 		if err != nil {
@@ -141,4 +145,134 @@ func NewCryptonight(devices []*cl.Device) (*Cryptonight, error) {
 	}
 
 	return &cryptonight, nil
+}
+
+func (ctx *CryptonightGpuContext) SetJob(input []byte, target uint) error {
+
+	_, err := ctx.queue.EnqueueWriteBuffer(ctx.inputBuf, true, 0, 88, unsafe.Pointer(&input[0]), nil)
+	if err != nil {
+		return err
+	}
+
+	// kernel cn0
+
+	err = ctx.kernels[0].SetArgBuffer(0, ctx.inputBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[0].SetArgBuffer(1, ctx.scratchpadBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[0].SetArgBuffer(2, ctx.hashStateBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[0].SetArg(3, &ctx.threads)
+	if err != nil {
+		return err
+	}
+
+	// kernel cn1
+
+	err = ctx.kernels[1].SetArgBuffer(0, ctx.scratchpadBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[1].SetArgBuffer(1, ctx.hashStateBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[1].SetArg(2, &ctx.threads)
+	if err != nil {
+		return err
+	}
+
+	// kernel cn2
+
+	err = ctx.kernels[2].SetArgBuffer(0, ctx.scratchpadBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[2].SetArgBuffer(1, ctx.hashStateBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[2].SetArgBuffer(2, ctx.blakeBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[2].SetArgBuffer(3, ctx.groestlBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[2].SetArgBuffer(4, ctx.jhBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[2].SetArgBuffer(5, ctx.skeinBuf)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.kernels[2].SetArg(6, &ctx.threads)
+	if err != nil {
+		return err
+	}
+
+	for i := 3; i < 7; i++ {
+		err = ctx.kernels[i].SetArgBuffer(0, ctx.hashStateBuf)
+		if err != nil {
+			return err
+		}
+
+		switch i {
+		case 3:
+			err = ctx.kernels[i].SetArgBuffer(1, ctx.blakeBuf)
+			if err != nil {
+				return err
+			}
+		case 4:
+			err = ctx.kernels[i].SetArgBuffer(1, ctx.groestlBuf)
+			if err != nil {
+				return err
+			}
+		case 5:
+			err = ctx.kernels[i].SetArgBuffer(1, ctx.jhBuf)
+			if err != nil {
+				return err
+			}
+		case 6:
+			err = ctx.kernels[i].SetArgBuffer(1, ctx.skeinBuf)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = ctx.kernels[i].SetArgBuffer(2, ctx.outputBuf)
+		if err != nil {
+			return err
+		}
+
+		err = ctx.kernels[i].SetArg(3, &target)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ctx *CryptonightGpuContext) RunJob() {
+
 }

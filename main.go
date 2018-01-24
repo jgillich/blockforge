@@ -6,6 +6,7 @@ import (
 )
 
 //go:generate rice embed-go -i ./cmd
+//go:generate rice embed-go -i ./hash/opencl
 
 func main() {
 	cobra.MousetrapHelpText = ""

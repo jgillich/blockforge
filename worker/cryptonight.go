@@ -37,14 +37,13 @@ func init() {
 type cryptonight struct {
 	clhash     *opencl.Cryptonight
 	cpuThreads int
-	config     Config
+	processors []ProcessorConfig
 	stratum    stratum.Client
 	light      bool
 	cpuStats   map[int]map[int]float32
 }
 
 func NewCryptonight(config Config, light bool) Worker {
-
 	var clhash *opencl.Cryptonight
 	if len(config.CLDevices) > 0 {
 		clDevices := []*cl.Device{}
@@ -71,6 +70,7 @@ func NewCryptonight(config Config, light bool) Worker {
 	return &cryptonight{
 		cpuThreads: cpuThreads,
 		clhash:     clhash,
+		processors: config.Processors,
 		stratum:    config.Stratum,
 		light:      light,
 		cpuStats:   map[int]map[int]float32{},
@@ -93,7 +93,7 @@ func (w *cryptonight) Work() error {
 		nounceStepping := uint32(math.MaxUint32 / w.cpuThreads)
 		nonce := uint32(0)
 
-		for _, conf := range w.config.Processors {
+		for _, conf := range w.processors {
 			w.cpuStats[conf.Processor.Index] = map[int]float32{}
 			for i := 0; i < conf.Threads; i++ {
 				log.Debugf("starting thread for job '%v'", job.JobId)
