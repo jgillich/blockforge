@@ -9,11 +9,18 @@ import (
 	"github.com/jgillich/go-opencl/cl"
 
 	"gitlab.com/jgillich/autominer/hash"
-	"gitlab.com/jgillich/autominer/hash/opencl"
 	"gitlab.com/jgillich/autominer/log"
 
 	"gitlab.com/jgillich/autominer/stratum"
 )
+
+var CryptonightMemory = 2097152
+var CryptonightMask = 0x1FFFF0
+var CryptonightIter = 0x80000
+
+var CryptonightLiteMemory = 1048576
+var CryptonightLiteMask = 0xFFFF0
+var CryptonightLiteIter = 0x40000
 
 // NonceIndex is the starting location of nonce in blob
 var NonceIndex = 78
@@ -35,7 +42,7 @@ func init() {
 }
 
 type cryptonight struct {
-	clhash     *opencl.Cryptonight
+	clworker   *CryptonightCLWorker
 	cpuThreads int
 	processors []ProcessorConfig
 	stratum    stratum.Client
@@ -44,7 +51,7 @@ type cryptonight struct {
 }
 
 func NewCryptonight(config Config, light bool) Worker {
-	var clhash *opencl.Cryptonight
+	var clworker *CryptonightCLWorker
 	if len(config.CLDevices) > 0 {
 		clDevices := []*cl.Device{}
 		for _, conf := range config.CLDevices {
@@ -52,7 +59,7 @@ func NewCryptonight(config Config, light bool) Worker {
 		}
 
 		var err error
-		clhash, err = opencl.NewCryptonight(clDevices)
+		clworker, err = NewCryptonightCLWorker(clDevices)
 		if err != nil {
 			// TODO
 			log.Fatal(err)
@@ -69,7 +76,7 @@ func NewCryptonight(config Config, light bool) Worker {
 
 	return &cryptonight{
 		cpuThreads: cpuThreads,
-		clhash:     clhash,
+		clworker:   clworker,
 		processors: config.Processors,
 		stratum:    config.Stratum,
 		light:      light,
