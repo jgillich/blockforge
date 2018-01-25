@@ -54,3 +54,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/jgillich/go-opencl"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"
