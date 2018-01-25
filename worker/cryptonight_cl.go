@@ -29,9 +29,9 @@ func init() {
 }
 
 type CryptonightCLWorker struct {
-	intensity     int
+	Intensity     int
+	Nonce         int
 	worksize      int
-	nonce         int
 	queue         *cl.CommandQueue
 	inputBuf      *cl.MemObject
 	scratchpadBuf *cl.MemObject
@@ -44,7 +44,9 @@ type CryptonightCLWorker struct {
 	kernels       []*cl.Kernel
 }
 
-func NewCryptonightCLWorker(device *cl.Device, light bool) (*CryptonightCLWorker, error) {
+func NewCryptonightCLWorker(config CLDeviceConfig, light bool) (*CryptonightCLWorker, error) {
+	device := config.Device.CL()
+
 	ctx, err := cl.CreateContext([]*cl.Device{device})
 	if err != nil {
 		return nil, err
@@ -64,26 +66,9 @@ func NewCryptonightCLWorker(device *cl.Device, light bool) (*CryptonightCLWorker
 		mask = CryptonightMask
 	}
 
-	hashMemSize := CryptonightMemory
-	computeUnits := device.MaxComputeUnits()
-
-	// 224byte extra memory is used per thread for meta data
-	maxIntensity := int(device.GlobalMemSize())/hashMemSize + 224
-
-	// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
-	intensity := (maxIntensity / (8 * computeUnits)) * computeUnits * 8
-
-	// leave some free memory
-	intensity--
-
-	// TODO figure out the best maximum
-	if intensity > 1000 {
-		intensity = 1000
-	}
-
 	w := CryptonightCLWorker{
-		intensity: int(intensity),
-		nonce:     0,
+		Intensity: config.Intensity,
+		Nonce:     0,
 		worksize:  device.MaxWorkGroupSize() / 8,
 	}
 
@@ -101,37 +86,37 @@ func NewCryptonightCLWorker(device *cl.Device, light bool) (*CryptonightCLWorker
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.scratchpadBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, CryptonightMemory*intensity)
+	w.scratchpadBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, CryptonightMemory*w.Intensity)
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.hashStateBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 200*intensity)
+	w.hashStateBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 200*w.Intensity)
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.blakeBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(intensity+2))
+	w.blakeBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(w.Intensity+2))
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.blakeBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(intensity+2))
+	w.blakeBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(w.Intensity+2))
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.groestlBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(intensity+2))
+	w.groestlBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(w.Intensity+2))
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.jhBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(intensity+2))
+	w.jhBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(w.Intensity+2))
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.skeinBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(intensity+2))
+	w.skeinBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, 4*(w.Intensity+2))
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
@@ -170,7 +155,7 @@ func (w *CryptonightCLWorker) SetJob(input []byte, target uint64) error {
 	// input[input_len] = 0x01;
 	// memset(input + input_len + 1, 0, 88 - input_len - 1);
 
-	uintensity := uint64(w.intensity)
+	uintensity := uint64(w.Intensity)
 
 	if _, err := w.queue.EnqueueWriteBuffer(w.inputBuf, true, 0, 88, unsafe.Pointer(&input[0]), nil); err != nil {
 		return errors.WithStack(err)
@@ -277,7 +262,7 @@ func (w *CryptonightCLWorker) SetJob(input []byte, target uint64) error {
 func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 
 	// round up to next multiple of worksize
-	threads := ((w.intensity + w.worksize - 1) / w.worksize) * w.worksize
+	threads := ((w.Intensity + w.worksize - 1) / w.worksize) * w.worksize
 
 	if threads%w.worksize != 0 {
 		return nil, errors.New("threads is no multiple of workSize")
@@ -293,19 +278,19 @@ func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 	// zero branch buffer counters
 	{
 
-		if _, err := w.queue.EnqueueWriteBuffer(w.blakeBuf, false, 4*w.intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
+		if _, err := w.queue.EnqueueWriteBuffer(w.blakeBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		if _, err := w.queue.EnqueueWriteBuffer(w.groestlBuf, false, 4*w.intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
+		if _, err := w.queue.EnqueueWriteBuffer(w.groestlBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		if _, err := w.queue.EnqueueWriteBuffer(w.jhBuf, false, 4*w.intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
+		if _, err := w.queue.EnqueueWriteBuffer(w.jhBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		if _, err := w.queue.EnqueueWriteBuffer(w.skeinBuf, false, 4*w.intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
+		if _, err := w.queue.EnqueueWriteBuffer(w.skeinBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&zero), nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
@@ -318,7 +303,7 @@ func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	globalWorkOffset := []int{w.nonce, 1}
+	globalWorkOffset := []int{w.Nonce, 1}
 	globalWorkSize := []int{threads, 8}
 	localWorkSize := []int{w.worksize, 8}
 
@@ -326,7 +311,7 @@ func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[1], []int{w.nonce}, []int{threads}, []int{w.worksize}, nil); err != nil {
+	if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[1], []int{w.Nonce}, []int{threads}, []int{w.worksize}, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -334,19 +319,19 @@ func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	if _, err := w.queue.EnqueueReadBuffer(w.blakeBuf, false, 4*w.intensity, 4, unsafe.Pointer(&branchNonces[0]), nil); err != nil {
+	if _, err := w.queue.EnqueueReadBuffer(w.blakeBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&branchNonces[0]), nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if _, err := w.queue.EnqueueReadBuffer(w.groestlBuf, false, 4*w.intensity, 4, unsafe.Pointer(&branchNonces[1]), nil); err != nil {
+	if _, err := w.queue.EnqueueReadBuffer(w.groestlBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&branchNonces[1]), nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if _, err := w.queue.EnqueueReadBuffer(w.jhBuf, false, 4*w.intensity, 4, unsafe.Pointer(&branchNonces[2]), nil); err != nil {
+	if _, err := w.queue.EnqueueReadBuffer(w.jhBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&branchNonces[2]), nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	if _, err := w.queue.EnqueueReadBuffer(w.skeinBuf, false, 4*w.intensity, 4, unsafe.Pointer(&branchNonces[3]), nil); err != nil {
+	if _, err := w.queue.EnqueueReadBuffer(w.skeinBuf, false, 4*w.Intensity, 4, unsafe.Pointer(&branchNonces[3]), nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -373,13 +358,13 @@ func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 			return nil, errors.New("branchNonce is no multiple of workSize")
 		}
 
-		if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[i], []int{w.nonce}, []int{int(branchNonces[ni])}, []int{w.worksize}, nil); err != nil {
+		if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[i], []int{w.Nonce}, []int{int(branchNonces[ni])}, []int{w.worksize}, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 
 	}
 
-	output := make([]byte, 4)
+	output := make([]byte, 4*0x100)
 	if _, err := w.queue.EnqueueReadBuffer(w.outputBuf, true, 0, 4*0x100, unsafe.Pointer(&output[0]), nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -388,7 +373,7 @@ func (w *CryptonightCLWorker) RunJob() ([]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	w.nonce += w.intensity
+	w.Nonce += w.Intensity
 
 	return output, nil
 }

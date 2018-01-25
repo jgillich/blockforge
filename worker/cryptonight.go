@@ -6,8 +6,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/jgillich/go-opencl/cl"
-
 	"gitlab.com/jgillich/autominer/hash"
 	"gitlab.com/jgillich/autominer/log"
 
@@ -42,7 +40,7 @@ func init() {
 }
 
 type cryptonight struct {
-	clworker   *CryptonightCLWorker
+	clWorkers  []*CryptonightCLWorker
 	cpuThreads int
 	processors []ProcessorConfig
 	stratum    stratum.Client
@@ -51,18 +49,15 @@ type cryptonight struct {
 }
 
 func NewCryptonight(config Config, light bool) Worker {
-	var clworker *CryptonightCLWorker
+	clWorkers := make([]*CryptonightCLWorker, len(config.CLDevices))
 	if len(config.CLDevices) > 0 {
-		clDevices := []*cl.Device{}
-		for _, conf := range config.CLDevices {
-			clDevices = append(clDevices, conf.Device.CL())
-		}
-
-		var err error
-		clworker, err = NewCryptonightCLWorker(clDevices)
-		if err != nil {
-			// TODO
-			log.Fatal(err)
+		for i, device := range config.CLDevices {
+			worker, err := NewCryptonightCLWorker(device, light)
+			if err != nil {
+				// TODO
+				log.Fatal(err)
+			}
+			clWorkers[i] = worker
 		}
 	}
 
@@ -76,7 +71,7 @@ func NewCryptonight(config Config, light bool) Worker {
 
 	return &cryptonight{
 		cpuThreads: cpuThreads,
-		clworker:   clworker,
+		clWorkers:  clWorkers,
 		processors: config.Processors,
 		stratum:    config.Stratum,
 		light:      light,
@@ -97,6 +92,12 @@ func (w *cryptonight) Work() error {
 			return nil
 		}
 
+		target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
+
+		if len(w.clWorkers) > 0 {
+			w.gpuThread(w.clWorkers[0], job, target)
+		}
+
 		nounceStepping := uint32(math.MaxUint32 / w.cpuThreads)
 		nonce := uint32(0)
 
@@ -105,7 +106,7 @@ func (w *cryptonight) Work() error {
 			for i := 0; i < conf.Threads; i++ {
 				log.Debugf("starting thread for job '%v'", job.JobId)
 				log.Debugf("nonce start '%v' end '%v'", nonce, nonce+nounceStepping)
-				go w.cpuThread(conf.Processor.Index, i, job, nonce, nonce+nounceStepping, closer)
+				go w.cpuThread(conf.Processor.Index, i, job, nonce, nonce+nounceStepping, target, closer)
 				nonce += nounceStepping
 			}
 		}
@@ -113,8 +114,61 @@ func (w *cryptonight) Work() error {
 	}
 }
 
-func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceStart uint32, nonceEnd uint32, closer chan int) {
-	target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
+func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target uint64) {
+	hashes := 0
+
+	input, err := hex.DecodeString(job.Blob)
+	if err != nil {
+		log.Errorf("malformed blob: '%v'", job.Blob)
+		return
+	}
+
+	cl.SetJob(input, target)
+
+	for {
+		results, err := cl.RunJob()
+		if err != nil {
+			log.Errorw("cl error", "error", err)
+			return
+		}
+
+		for i := byte(0); i < results[0xFF]; i++ {
+			panic("???")
+			/*
+				uint8_t	bWorkBlob[112];
+				uint8_t	bResult[32];
+
+				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
+				memset(bResult, 0, sizeof(job_result::bResult));
+
+				*(uint32_t*)(bWorkBlob + 39) = results[i];
+
+				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
+				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
+					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
+				else
+					executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));*/
+		}
+
+		continue
+
+		val := hexUint64LE([]byte(hex.EncodeToString(results)[48:]))
+
+		if val < target {
+			share := stratum.Share{
+				MinerId: job.MinerId,
+				JobId:   job.JobId,
+				Result:  fmt.Sprintf("%x", results),
+				Nonce:   fmtNonce(uint32(cl.Nonce)),
+			}
+
+			go w.stratum.SubmitShare(&share)
+		}
+		hashes += cl.Intensity
+	}
+}
+
+func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceStart uint32, nonceEnd uint32, target uint64, closer chan int) {
 	hashes := float32(0)
 	startTime := time.Now()
 

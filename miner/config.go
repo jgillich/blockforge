@@ -6,6 +6,7 @@ import (
 	"gitlab.com/jgillich/autominer/hardware/opencl"
 	"gitlab.com/jgillich/autominer/hardware/processor"
 	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/jgillich/autominer/worker"
 )
 
 type Config struct {
@@ -77,13 +78,31 @@ func GenerateConfig() (*Config, error) {
 
 	for _, platform := range clPlatforms {
 		for _, device := range platform.Devices {
+
+			hashMemSize := worker.CryptonightMemory
+			computeUnits := device.CL().MaxComputeUnits()
+
+			// 224byte extra memory is used per thread for meta data
+			maxIntensity := int(device.CL().GlobalMemSize())/hashMemSize + 224
+
+			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
+			intensity := (maxIntensity / (8 * computeUnits)) * computeUnits * 8
+
+			// leave some free memory
+			intensity--
+
+			// TODO figure out the best maximum
+			if intensity > 1000 {
+				intensity = 1000
+			}
+
 			config.OpenCL = append(config.OpenCL, OpenCLDevice{
 				Enable:    strings.Contains(device.Platform.Name, "Advanced Micro Devices"),
 				Coin:      "XMR",
 				Index:     device.Index,
 				Platform:  platform.Index,
 				Name:      device.Name,
-				Intensity: 1,
+				Intensity: intensity,
 			})
 		}
 	}
