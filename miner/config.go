@@ -9,12 +9,14 @@ import (
 	"gitlab.com/blockforge/blockforge/worker"
 )
 
+var currentConfigVersion = 1
+
 type Config struct {
-	Version    int             `yaml:"version" json:"version"`
-	Donate     int             `yaml:"donate" json:"donate"`
-	Coins      map[string]Coin `yaml:"coins" json:"coins"`
-	Processors []Processor     `yaml:"processors" json:"processors"`
-	OpenCL     []OpenCLDevice  `yaml:"opencl" json:"opencl"`
+	Version       int             `yaml:"version" json:"version"`
+	Donate        int             `yaml:"donate" json:"donate"`
+	Coins         map[string]Coin `yaml:"coins" json:"coins"`
+	Processors    []Processor     `yaml:"processors" json:"processors"`
+	OpenCLDevices []OpenCLDevice  `yaml:"opencl_devices" json:"opencl_devices"`
 }
 
 type Coin struct {
@@ -41,7 +43,7 @@ type OpenCLDevice struct {
 func GenerateConfig() (*Config, error) {
 
 	config := Config{
-		Version: 1,
+		Version: currentConfigVersion,
 		Donate:  5,
 		Coins: map[string]Coin{
 			"XMR": Coin{
@@ -52,8 +54,8 @@ func GenerateConfig() (*Config, error) {
 				},
 			},
 		},
-		Processors: []Processor{},
-		OpenCL:     []OpenCLDevice{},
+		Processors:    []Processor{},
+		OpenCLDevices: []OpenCLDevice{},
 	}
 
 	processors, err := processor.GetProcessors()
@@ -96,7 +98,7 @@ func GenerateConfig() (*Config, error) {
 				intensity = 1000
 			}
 
-			config.OpenCL = append(config.OpenCL, OpenCLDevice{
+			config.OpenCLDevices = append(config.OpenCLDevices, OpenCLDevice{
 				Enable:    strings.Contains(device.Platform.Name, "Advanced Micro Devices"),
 				Coin:      "XMR",
 				Index:     device.Index,

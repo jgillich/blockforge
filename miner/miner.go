@@ -61,7 +61,7 @@ func New(config Config) (*Miner, error) {
 		}
 
 		var clConf []worker.CLDeviceConfig
-		for _, conf := range config.OpenCL {
+		for _, conf := range config.OpenCLDevices {
 			if !conf.Enable || conf.Coin != name {
 				continue
 			}
