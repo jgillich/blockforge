@@ -133,8 +133,9 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 			return
 		}
 
+		panic("???")
+
 		for i := byte(0); i < results[0xFF]; i++ {
-			panic("???")
 			/*
 				uint8_t	bWorkBlob[112];
 				uint8_t	bResult[32];
@@ -150,8 +151,6 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 				else
 					executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));*/
 		}
-
-		continue
 
 		val := hexUint64LE([]byte(hex.EncodeToString(results)[48:]))
 

@@ -131,7 +131,7 @@ func NewCryptonightCLWorker(config CLDeviceConfig, light bool) (*CryptonightCLWo
 		return nil, errors.Wrap(err, "creating program failed")
 	}
 
-	options := fmt.Sprintf("-DITERATIONS=%v -DMASK=%v -DWORKSIZE=%v -DSTRIDED_INDEX=%v", iterations, mask, w.worksize, 0)
+	options := fmt.Sprintf("-DITERATIONS=%v -DMASK=%v -DWORKSIZE=%v -DSTRIDED_INDEX=%v", iterations, mask, w.worksize, 1)
 	if err := program.BuildProgram([]*cl.Device{device}, options); err != nil {
 		return nil, errors.Wrap(err, "building program failed")
 	}
