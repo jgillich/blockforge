@@ -24,12 +24,12 @@ var cmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.Initialize(debug)
 	},
-	Use:   "blockforge",
-	Short: "BlockForge is a miner for cryptocurrencies",
+	Version: "0.0.1",
+	Use:     "blockforge",
 	Long: strings.TrimSpace(`
-BlockForge is a next generation miner for many cryptocurrencies
-that features automatic hardware detection and a optional
-graphical user interface.`),
+BlockForge is a next generation miner for cryptocurrencies.
+Easy to use, multi algo and open source.
+		`),
 	Run: func(cmd *cobra.Command, args []string) {
 		if mousetrap.StartedByExplorer() {
 			guiCmd.Run(cmd, args)

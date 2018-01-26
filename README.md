@@ -4,16 +4,14 @@
 [![pipeline status](https://gitlab.com/blockforge/blockforge/badges/master/pipeline.svg)](https://gitlab.com/blockforge/blockforge/commits/master)
 [![Build status](https://ci.appveyor.com/api/projects/status/6bl4w08cpa6163kx?svg=true)](https://ci.appveyor.com/project/JakobGillich/blockforge)
 
-BlockForge is a easy to use miner for crypto currencies. It features automatic hardware detection,
-support for many different algorithms and a optional graphical user interface.
+ BlockForge is a next generation miner for cryptocurrencies.
+ Easy to use, multi algo and open source.
 
 Current state: Under development.
 
 ## Usage
 
-Run `blockforge --help` to display usage. For command line usage, you first want to run `blockforge miner --init`
-to generate the configuration file, and then use `blockforge miner` afterwards to start mining. To
-launch the GUI, run `blockforge gui`.
+Run `blockforge --help` to display usage.
 
 ## Building
 
