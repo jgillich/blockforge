@@ -1,5 +1,10 @@
 # BlockForge
 
+
+[![GoDoc](https://godoc.org/gitlab.com/blockforge/blockforge?status.svg)](https://godoc.org/gitlab.com/blockforge/blockforge)
+[![pipeline status](https://gitlab.com/blockforge/blockforge/badges/master/pipeline.svg)](https://gitlab.com/blockforge/blockforge/commits/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/6bl4w08cpa6163kx?svg=true)](https://ci.appveyor.com/project/JakobGillich/blockforge)
+
 BlockForge is a easy to use miner for crypto currencies. It features automatic hardware detection,
 support for many different algorithms and a optional graphical user interface.
 
