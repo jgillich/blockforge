@@ -7,7 +7,7 @@ import (
 	"net"
 	"strings"
 
-	"gitlab.com/jgillich/autominer/log"
+	"gitlab.com/blockforge/blockforge/log"
 )
 
 var clients = map[Protocol]clientFactory{}
@@ -29,7 +29,7 @@ type Client interface {
 	SubmitShare(*Share)
 }
 
-var agent = "coinstack/1.0.0"
+var agent = "blockforge/1.0.0"
 
 type Message struct {
 	Id      int         `json:"id,omitempty"`

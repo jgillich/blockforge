@@ -3,7 +3,7 @@ package worker
 import (
 	"testing"
 
-	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/blockforge/blockforge/stratum"
 )
 
 func TestCryptonote(t *testing.T) {

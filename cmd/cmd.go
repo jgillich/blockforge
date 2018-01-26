@@ -11,8 +11,8 @@ import (
 	"github.com/inconshreveable/mousetrap"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/cobra"
-	"gitlab.com/jgillich/autominer/log"
-	"gitlab.com/jgillich/autominer/miner"
+	"gitlab.com/blockforge/blockforge/log"
+	"gitlab.com/blockforge/blockforge/miner"
 )
 
 var (
@@ -24,10 +24,10 @@ var cmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.Initialize(debug)
 	},
-	Use:   "coinstack",
-	Short: "CoinStack is a miner for cryptocurrencies",
+	Use:   "blockforge",
+	Short: "BlockForge is a miner for cryptocurrencies",
 	Long: strings.TrimSpace(`
-CoinStack is a next generation miner for many cryptocurrencies
+BlockForge is a next generation miner for many cryptocurrencies
 that features automatic hardware detection and a optional
 graphical user interface.`),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -40,7 +40,7 @@ graphical user interface.`),
 }
 
 func init() {
-	configDirs := configdir.New("", "coinstack")
+	configDirs := configdir.New("", "blockforge")
 	defaultPath := path.Join(configDirs.QueryFolders(configdir.Global)[0].Path, "config.yml")
 
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logging")

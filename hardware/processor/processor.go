@@ -1,6 +1,6 @@
 package processor
 
-import "gitlab.com/jgillich/autominer/pkg/hwloc"
+import "gitlab.com/blockforge/blockforge/pkg/hwloc"
 
 type Processor struct {
 	Index int    `json:"index"`

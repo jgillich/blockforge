@@ -3,7 +3,7 @@ image: centos:7
 variables:
   GIT_SUBMODULE_STRATEGY: normal
   GOPATH: /go
-  REPO_NAME: gitlab.com/jgillich/autominer
+  REPO_NAME: gitlab.com/blockforge/blockforge
 
 before_script:
   - yum install -y @development go hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
@@ -45,7 +45,7 @@ compile:
   stage: build
   script:
     - rice embed-go -i ./command
-    - go build -o $CI_PROJECT_DIR/autominer
+    - go build -o $CI_PROJECT_DIR/blockforge
   artifacts:
     paths:
-      - autominer
+      - blockforge

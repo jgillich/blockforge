@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"gitlab.com/jgillich/autominer/hardware/processor"
+	"gitlab.com/blockforge/blockforge/hardware/processor"
 
-	"gitlab.com/jgillich/autominer/worker"
+	"gitlab.com/blockforge/blockforge/worker"
 
 	"gopkg.in/yaml.v2"
 
@@ -18,8 +18,8 @@ import (
 	"github.com/inconshreveable/mousetrap"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
-	"gitlab.com/jgillich/autominer/log"
-	"gitlab.com/jgillich/autominer/miner"
+	"gitlab.com/blockforge/blockforge/log"
+	"gitlab.com/blockforge/blockforge/miner"
 )
 
 func init() {
@@ -76,7 +76,7 @@ var guiCmd = &cobra.Command{
 
 		view := webview.New(webview.Settings{
 			URL:       "http://" + listener.Addr().String(),
-			Title:     "CoinStack",
+			Title:     "BlockForge",
 			Width:     1024,
 			Height:    768,
 			Resizable: true,

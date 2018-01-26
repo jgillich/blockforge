@@ -14,9 +14,9 @@ import (
 
 	"github.com/xlab/closer"
 
-	"gitlab.com/jgillich/autominer/log"
-	"gitlab.com/jgillich/autominer/miner"
-	"gitlab.com/jgillich/autominer/worker"
+	"gitlab.com/blockforge/blockforge/log"
+	"gitlab.com/blockforge/blockforge/miner"
+	"gitlab.com/blockforge/blockforge/worker"
 )
 
 var initArg bool

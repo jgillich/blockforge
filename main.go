@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/jgillich/autominer/cmd"
+	"gitlab.com/blockforge/blockforge/cmd"
 )
 
 //go:generate rice embed-go -i ./cmd -i ./worker

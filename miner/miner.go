@@ -3,13 +3,13 @@ package miner
 import (
 	"fmt"
 
-	"gitlab.com/jgillich/autominer/hardware/opencl"
-	"gitlab.com/jgillich/autominer/hardware/processor"
-	"gitlab.com/jgillich/autominer/log"
+	"gitlab.com/blockforge/blockforge/hardware/opencl"
+	"gitlab.com/blockforge/blockforge/hardware/processor"
+	"gitlab.com/blockforge/blockforge/log"
 
-	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/blockforge/blockforge/stratum"
 
-	"gitlab.com/jgillich/autominer/worker"
+	"gitlab.com/blockforge/blockforge/worker"
 )
 
 type Miner struct {

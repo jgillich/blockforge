@@ -1,5 +1,5 @@
 ---
-title: "Announcing CoinStack, a modern multi miner"
+title: "Announcing BlockForge, a modern multi miner"
 date: 2018-01-21
 ---
 
@@ -9,7 +9,7 @@ and often accused of fraudulent behaviour. Then there are open source miners tha
 perform much better, but are difficult to use and often only support a single algorithm or hardware
 type.
 
-CoinStack is an attempt to create a miner that ticks all the boxes:
+BlockForge is an attempt to create a miner that ticks all the boxes:
 
 * Easy to use
 * Multiple algorithms
@@ -19,7 +19,7 @@ CoinStack is an attempt to create a miner that ticks all the boxes:
 Our inital plan was to integrate existing open source miners, but for technical reasons we
 had to
 
-CoinStack is a modern miner featuring automatic hardware detection, support for many different
+BlockForge is a modern miner featuring automatic hardware detection, support for many different
 coins and a optional graphical user interface. And it is of course open source!
 
 Our original plan was to provide a simpler interface
@@ -32,12 +32,12 @@ Cryptonight coins including Monero, Aeon, Electroneum and more,
 mining on the CPU only. OpenCL and CUDA support are at the top of our
 priority list and will hopefully be ready with the next release.
 
-Speaking of release, you can try the first alpha version of CoinStack right now.
+Speaking of release, you can try the first alpha version of BlockForge right now.
 
 <a href="#" class="button is-primary">Download for Linux</a>
 <a href="#" class="button is-primary">Download for Windows</a>
 
-After downloading CoinStack, you'll first want to run `coinstack miner --init` to generate
+After downloading BlockForge, you'll first want to run `blockforge miner --init` to generate
 the configuration file. This will scan your hardware and generate a default configuration file
 that looks like this:
 
@@ -63,24 +63,24 @@ not yet implemented, but you can simply remove it if you don't want to donate in
 After modifying the configuration to fit your needs, start the miner:
 
 ```
-$ coinstack miner
+$ blockforge miner
 19:55:03	info	miner started
 19:56:03	info	CPU 0: 75.32 H/s
 ```
 
 As you can see, the miner will automatically report your hashrate every minute.
 
-But this is not all. CoinStack also includes a simple graphical user interface. On Windows, simply
-double click the exe to launch it, on Linux you'll need to run `coinstack gui`. Note that this
+But this is not all. BlockForge also includes a simple graphical user interface. On Windows, simply
+double click the exe to launch it, on Linux you'll need to run `blockforge gui`. Note that this
 requires webkit2gtk to be installed. Here's how it looks:
 
 
 ![](/images/2018/coinstack.png)
 
-In case you're experiencing any issues, run CoinStack with the `--debug` flag and create
+In case you're experiencing any issues, run BlockForge with the `--debug` flag and create
 an issue [on our GitHub page](#) with the output.
 
-We have big plans for CoinStack, but to make it happen, we need your help in any of the following
+We have big plans for BlockForge, but to make it happen, we need your help in any of the following
 areas:
 
 * **Programming**: Most of our code is written in Go, the crypto is implemented in C and the graphical

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/blockforge/blockforge/stratum"
 )
 
 type StratumTestClient struct {

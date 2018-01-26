@@ -3,7 +3,7 @@ image: fedora:latest
 variables:
   GIT_SUBMODULE_STRATEGY: normal
   GOPATH: /go
-  REPO_NAME: gitlab.com/jgillich/autominer
+  REPO_NAME: gitlab.com/blockforge/blockforge
 
 before_script:
   - dnf install -y @development-tools go hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
@@ -45,7 +45,7 @@ compile:
   script:
     - go get -u github.com/GeertJohan/go.rice/rice
     - go generate
-    - go build -o $CI_PROJECT_DIR/autominer
+    - go build -o $CI_PROJECT_DIR/blockforge
   artifacts:
     paths:
-      - autominer
+      - blockforge

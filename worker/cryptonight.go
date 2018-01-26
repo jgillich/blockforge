@@ -4,12 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"runtime"
 	"time"
 
-	"gitlab.com/jgillich/autominer/hash"
-	"gitlab.com/jgillich/autominer/log"
+	"gitlab.com/blockforge/blockforge/hash"
+	"gitlab.com/blockforge/blockforge/log"
 
-	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/blockforge/blockforge/stratum"
 )
 
 var CryptonightMemory = 2097152
@@ -169,6 +170,9 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 }
 
 func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceStart uint32, nonceEnd uint32, target uint64, closer chan int) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	hashes := float32(0)
 	startTime := time.Now()
 

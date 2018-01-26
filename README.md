@@ -1,14 +1,15 @@
+# BlockForge
 
-coin is a easy to use miner for crypto currencies. It features automatic hardware detection,
+BlockForge is a easy to use miner for crypto currencies. It features automatic hardware detection,
 support for many different algorithms and a optional graphical user interface.
 
 Current state: Under development.
 
 ## Usage
 
-Run `coin --help` to display usage. For command line usage, you first want to run `coin miner -init`
-to generate the configuration file, and then use `coin miner` afterwards to start mining. To
-launch the GUI, run `coin gui`.
+Run `blockforge --help` to display usage. For command line usage, you first want to run `blockforge miner -init`
+to generate the configuration file, and then use `blockforge miner` afterwards to start mining. To
+launch the GUI, run `blockforge gui`.
 
 ## Building
 
@@ -22,8 +23,7 @@ To build, run:
 ```
 cmake -G -Hhash -Bhash/build
 cmake --build hash/build
-go get -u github.com/golang/dep/cmd/dep
-go get -u github.com/GeertJohan/go.rice/rice
+go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
 dep ensure -vendor-only
 go generate
 go build
@@ -47,8 +47,7 @@ To build, run:
 ```
 cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hhash -Bhash/build
 cmake --build hash/build
-go get -u github.com/golang/dep/cmd/dep
-go get -u github.com/GeertJohan/go.rice/rice
+go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
 dep ensure -vendor-only
 go generate
 go build

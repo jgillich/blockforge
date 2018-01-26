@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"gitlab.com/jgillich/autominer/hardware/opencl"
-	"gitlab.com/jgillich/autominer/hardware/processor"
+	"gitlab.com/blockforge/blockforge/hardware/opencl"
+	"gitlab.com/blockforge/blockforge/hardware/processor"
 
-	"gitlab.com/jgillich/autominer/stratum"
+	"gitlab.com/blockforge/blockforge/stratum"
 )
 
 var workers = map[string]workerFactory{}

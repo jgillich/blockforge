@@ -1,6 +1,6 @@
 version: "{build}"
 
-clone_folder: c:\gopath\src\gitlab.com\jgillich\autominer
+clone_folder: c:\gopath\src\gitlab.com\blockforge\blockforge
 
 environment:
   GOPATH: c:\gopath
@@ -41,5 +41,5 @@ build_script:
 #      go test -race $(go list ./... | sls -NotMatch '/vendor/')
 
 artifacts:
-  - path: autominer.exe
-    name: autominer
+  - path: blockforge.exe
+    name: blockforge

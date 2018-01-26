@@ -2,7 +2,7 @@ package opencl
 
 import (
 	"github.com/jgillich/go-opencl/cl"
-	"gitlab.com/jgillich/autominer/log"
+	"gitlab.com/blockforge/blockforge/log"
 )
 
 type Platform struct {

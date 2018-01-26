@@ -7,7 +7,7 @@ import (
 
 	"github.com/Jeffail/gabs"
 
-	"gitlab.com/jgillich/autominer/log"
+	"gitlab.com/blockforge/blockforge/log"
 )
 
 func init() {

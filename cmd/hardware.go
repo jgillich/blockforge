@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 
-	"gitlab.com/jgillich/autominer/hardware/opencl"
-	"gitlab.com/jgillich/autominer/hardware/processor"
+	"gitlab.com/blockforge/blockforge/hardware/opencl"
+	"gitlab.com/blockforge/blockforge/hardware/processor"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/jgillich/autominer/log"
+	"gitlab.com/blockforge/blockforge/log"
 )
 
 func init() {
