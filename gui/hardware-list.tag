@@ -47,7 +47,7 @@
       </div>
     </div>
 
-    <div class="column is-4" each={ cl, i in miner.config.opencl }>
+    <div class="column is-4" each={ cl, i in miner.config.opencl_devices }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
@@ -154,7 +154,7 @@
         opts.miner.trigger('update')
       } else if (id.includes("clswitch")) {
         var clid = parseInt(id.replace("clswitch", ""), 10)
-        opts.miner.config.opencl[clid].enable = !opts.miner.config.opencl[clid].enable
+        opts.miner.config.opencl_devices[clid].enable = !opts.miner.config.opencl_devices[clid].enable
         opts.miner.trigger('update')
       }
 
