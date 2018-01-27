@@ -23,7 +23,7 @@ Install the following dependencies: GCC, cmake, Go, hwloc, webkit2gtk, ocl-icd
 To build, run:
 
 ```
-cmake -G -Hhash -Bhash/build
+cmake -Hhash -Bhash/build
 cmake --build hash/build
 go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
 dep ensure -vendor-only
@@ -33,7 +33,7 @@ go build
 
 ### Windows
 
-Install the following dependencies: MSYS2, Go
+Install the following dependencies: MSYS2, Go, Git
 
 Use the MSYS2 shell to install the rest of the dependencies:
 
@@ -42,6 +42,7 @@ pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-he
 ```
 
 Download [hwloc](https://www.open-mpi.org/software/hwloc/v1.11/) and extract it to `C:\msys64\mingw64`.
+Extract the x64 `OpenCL.lib` from [OCL-SDK](https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/releases) to `C:\msys64\mingw64\lib`.
 Make sure `C:\msys64\mingw64\bin` is in your PATH.
 
 To build, run:
@@ -52,5 +53,5 @@ cmake --build hash/build
 go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
 dep ensure -vendor-only
 go generate
-go build
+go build -ldflags '-linkmode external -extldflags "-static"'
 ```

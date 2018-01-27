@@ -1,4 +1,5 @@
 vendor
 blockforge
+blockforge.exe
 hash/build
 rice-box.go
