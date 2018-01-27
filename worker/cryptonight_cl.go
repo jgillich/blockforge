@@ -44,7 +44,7 @@ type CryptonightCLWorker struct {
 	kernels       []*cl.Kernel
 }
 
-func NewCryptonightCLWorker(config CLDeviceConfig, light bool) (*CryptonightCLWorker, error) {
+func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWorker, error) {
 	device := config.Device.CL()
 
 	ctx, err := cl.CreateContext([]*cl.Device{device})
@@ -52,15 +52,22 @@ func NewCryptonightCLWorker(config CLDeviceConfig, light bool) (*CryptonightCLWo
 		return nil, err
 	}
 
+	var memory int
+	if lite {
+		memory = CryptonightLiteMemory
+	} else {
+		memory = CryptonightMemory
+	}
+
 	var iterations int
-	if light {
+	if lite {
 		iterations = CryptonightLiteIter
 	} else {
 		iterations = CryptonightIter
 	}
 
 	var mask int
-	if light {
+	if lite {
 		mask = CryptonightLiteMask
 	} else {
 		mask = CryptonightMask
@@ -86,7 +93,7 @@ func NewCryptonightCLWorker(config CLDeviceConfig, light bool) (*CryptonightCLWo
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.scratchpadBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, CryptonightMemory*w.Intensity)
+	w.scratchpadBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, memory*w.Intensity)
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}

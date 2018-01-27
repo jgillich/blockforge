@@ -45,15 +45,15 @@ type cryptonight struct {
 	cpuThreads int
 	processors []ProcessorConfig
 	stratum    stratum.Client
-	light      bool
+	lite       bool
 	cpuStats   map[int]map[int]float32
 }
 
-func NewCryptonight(config Config, light bool) Worker {
+func NewCryptonight(config Config, lite bool) Worker {
 	clWorkers := make([]*CryptonightCLWorker, len(config.CLDevices))
 	if len(config.CLDevices) > 0 {
 		for i, device := range config.CLDevices {
-			worker, err := NewCryptonightCLWorker(device, light)
+			worker, err := NewCryptonightCLWorker(device, lite)
 			if err != nil {
 				// TODO
 				log.Fatal(err)
@@ -75,7 +75,7 @@ func NewCryptonight(config Config, light bool) Worker {
 		clWorkers:  clWorkers,
 		processors: config.Processors,
 		stratum:    config.Stratum,
-		light:      light,
+		lite:       lite,
 		cpuStats:   map[int]map[int]float32{},
 	}
 }
@@ -191,7 +191,7 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 			}
 
 			var result []byte
-			if w.light {
+			if w.lite {
 				result = hash.CryptonightLite(input)
 			} else {
 				result = hash.Cryptonight(input)
