@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -13,19 +14,19 @@ import (
 	"gitlab.com/blockforge/blockforge/stratum"
 )
 
-var CryptonightMemory = 2097152
-var CryptonightMask = 0x1FFFF0
-var CryptonightIter = 0x80000
+var CryptonightMemory uint32 = 2097152
+var CryptonightMask uint32 = 0x1FFFF0
+var CryptonightIter uint32 = 0x80000
 
-var CryptonightLiteMemory = 1048576
-var CryptonightLiteMask = 0xFFFF0
-var CryptonightLiteIter = 0x40000
+var CryptonightLiteMemory uint32 = 1048576
+var CryptonightLiteMask uint32 = 0xFFFF0
+var CryptonightLiteIter uint32 = 0x40000
 
-// NonceIndex is the starting location of nonce in blob
-var NonceIndex = 78
+// NonceIndex is the starting location of nonce in binary blob
+var NonceIndex = 39
 
-// NonceWidth is the char width of nonce in blob
-var NonceWidth = 8
+// NonceWidth is the char width of nonce in binary blob
+var NonceWidth = 4
 
 func init() {
 	for _, c := range []string{"XMR", "ETN", "ITNS", "SUMO"} {
@@ -42,7 +43,6 @@ func init() {
 
 type cryptonight struct {
 	clWorkers  []*CryptonightCLWorker
-	cpuThreads int
 	processors []ProcessorConfig
 	stratum    stratum.Client
 	lite       bool
@@ -62,16 +62,7 @@ func NewCryptonight(config Config, lite bool) Worker {
 		}
 	}
 
-	cpuThreads := 0
-	if len(config.Processors) > 0 {
-
-		for _, cpu := range config.Processors {
-			cpuThreads += cpu.Threads
-		}
-	}
-
 	return &cryptonight{
-		cpuThreads: cpuThreads,
 		clWorkers:  clWorkers,
 		processors: config.Processors,
 		stratum:    config.Stratum,
@@ -93,30 +84,59 @@ func (w *cryptonight) Work() error {
 			return nil
 		}
 
-		target := math.MaxUint64 / uint64(math.MaxUint32/hexUint64LE([]byte(job.Target)))
-
-		if len(w.clWorkers) > 0 {
-			w.gpuThread(w.clWorkers[0], job, target)
+		t, err := hex.DecodeString(job.Target)
+		if err != nil {
+			return err
 		}
 
-		nounceStepping := uint32(math.MaxUint32 / w.cpuThreads)
-		nonce := uint32(0)
+		var target uint64
+		switch len(job.Target) {
+		case 8:
+			t32 := uint64(binary.LittleEndian.Uint32(t))
+			target = math.MaxUint64 / (math.MaxUint32 / t32)
+		case 16:
+			target = binary.LittleEndian.Uint64(t)
+		default:
+			return fmt.Errorf("unsupported target length '%v'", len(job.Target))
+		}
 
-		for _, conf := range w.processors {
-			w.cpuStats[conf.Processor.Index] = map[int]float32{}
-			for i := 0; i < conf.Threads; i++ {
-				log.Debugf("starting thread for job '%v'", job.JobId)
-				log.Debugf("nonce start '%v' end '%v'", nonce, nonce+nounceStepping)
-				go w.cpuThread(conf.Processor.Index, i, job, nonce, nonce+nounceStepping, target, closer)
-				nonce += nounceStepping
+		log.Infof("job difficulty %v", math.MaxUint64/target)
+
+		if len(w.clWorkers) > 0 {
+			go w.gpuThread(w.clWorkers[0], job, target, closer)
+		}
+
+		if len(w.processors) > 0 {
+			cpuThreads := 0
+
+			for _, cpu := range w.processors {
+				cpuThreads += cpu.Threads
+			}
+
+			nounceStepping := uint32(math.MaxUint32 / cpuThreads)
+			nonce := uint32(0)
+
+			for _, conf := range w.processors {
+				w.cpuStats[conf.Processor.Index] = map[int]float32{}
+				for i := 0; i < conf.Threads; i++ {
+					log.Debugf("starting thread for job '%v'", job.JobId)
+					log.Debugf("nonce start '%v' end '%v'", nonce, nonce+nounceStepping)
+					go w.cpuThread(conf.Processor.Index, i, job, nonce, nonce+nounceStepping, target, closer)
+					nonce += nounceStepping
+				}
 			}
 		}
 
 	}
 }
 
-func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target uint64) {
-	hashes := 0
+func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target uint64, closer chan int) {
+	hashes := uint32(0)
+	startTime := time.Now()
+
+	defer func() {
+		log.Infof("gpu hashes %v H/s", float64(hashes)/time.Since(startTime).Seconds())
+	}()
 
 	input, err := hex.DecodeString(job.Blob)
 	if err != nil {
@@ -124,47 +144,56 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 		return
 	}
 
+	nonce := make([]byte, 4)
+
 	cl.SetJob(input, target)
 
 	for {
-		results, err := cl.RunJob()
-		if err != nil {
-			log.Errorw("cl error", "error", err)
-			return
-		}
+		select {
+		default:
+			results := make([]uint32, 0x100)
 
-		panic("???")
-
-		for i := byte(0); i < results[0xFF]; i++ {
-			/*
-				uint8_t	bWorkBlob[112];
-				uint8_t	bResult[32];
-
-				memcpy(bWorkBlob, oWork.bWorkBlob, oWork.iWorkSize);
-				memset(bResult, 0, sizeof(job_result::bResult));
-
-				*(uint32_t*)(bWorkBlob + 39) = results[i];
-
-				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
-				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
-				else
-					executor::inst()->push_event(ex_event("AMD Invalid Result", pGpuCtx->deviceIdx, oWork.iPoolId));*/
-		}
-
-		val := hexUint64LE([]byte(hex.EncodeToString(results)[48:]))
-
-		if val < target {
-			share := stratum.Share{
-				MinerId: job.MinerId,
-				JobId:   job.JobId,
-				Result:  fmt.Sprintf("%x", results),
-				Nonce:   fmtNonce(uint32(cl.Nonce)),
+			err := cl.RunJob(results)
+			if err != nil {
+				log.Errorw("cl error", "error", err)
+				return
 			}
 
-			go w.stratum.SubmitShare(&share)
+			for i := uint32(0); i < results[0xFF]; i++ {
+				binary.LittleEndian.PutUint32(nonce, i)
+				for i := 0; i < len(nonce); i++ {
+					input[NonceIndex+i] = nonce[i]
+				}
+
+				var result []byte
+				if w.lite {
+					result = hash.CryptonightLite(input)
+				} else {
+					result = hash.Cryptonight(input)
+				}
+
+				if binary.LittleEndian.Uint64(result[24:]) < target {
+					share := stratum.Share{
+						MinerId: job.MinerId,
+						JobId:   job.JobId,
+						Result:  fmt.Sprintf("%x", result),
+						Nonce:   fmt.Sprintf("%x", nonce),
+					}
+
+					go w.stratum.SubmitShare(&share)
+				} else {
+					log.Errorw("invalid result from CL worker",
+						"input", fmt.Sprintf("%x", input),
+						"target", target,
+						"nonce", fmt.Sprintf("%x", nonce))
+				}
+			}
+
+			hashes += cl.Intensity
+		case <-closer:
+			log.Debugf("stopping gpu for job '%v'", job.JobId)
+			return
 		}
-		hashes += cl.Intensity
 	}
 }
 
@@ -174,20 +203,24 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 
 	hashes := float32(0)
 	startTime := time.Now()
+	nonce := make([]byte, NonceWidth)
+
+	input, err := hex.DecodeString(job.Blob)
+	if err != nil {
+		log.Errorf("malformed blob: '%v'", job.Blob)
+		return
+	}
 
 	defer func() {
 		w.cpuStats[cpu][threadNum] = hashes / float32(time.Since(startTime).Seconds())
 	}()
 
-	for nonce := nonceStart; nonce < nonceEnd; nonce++ {
+	for i := nonceStart; i < nonceEnd; i++ {
 		select {
 		default:
-			blob := fmt.Sprintf("%v%v%v", job.Blob[:NonceIndex], fmtNonce(nonce), job.Blob[NonceIndex+NonceWidth:])
-
-			input, err := hex.DecodeString(blob)
-			if err != nil {
-				log.Errorf("malformed blob: '%v'", blob)
-				return
+			binary.LittleEndian.PutUint32(nonce, i)
+			for i := 0; i < len(nonce); i++ {
+				input[NonceIndex+i] = nonce[i]
 			}
 
 			var result []byte
@@ -197,14 +230,12 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 				result = hash.Cryptonight(input)
 			}
 
-			val := hexUint64LE([]byte(hex.EncodeToString(result)[48:]))
-
-			if val < target {
+			if binary.LittleEndian.Uint64(result[24:]) < target {
 				share := stratum.Share{
 					MinerId: job.MinerId,
 					JobId:   job.JobId,
 					Result:  fmt.Sprintf("%x", result),
-					Nonce:   fmtNonce(nonce),
+					Nonce:   fmt.Sprintf("%x", nonce),
 				}
 
 				go w.stratum.SubmitShare(&share)

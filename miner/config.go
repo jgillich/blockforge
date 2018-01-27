@@ -82,10 +82,10 @@ func GenerateConfig() (*Config, error) {
 		for _, device := range platform.Devices {
 
 			hashMemSize := worker.CryptonightMemory
-			computeUnits := device.CL().MaxComputeUnits()
+			computeUnits := int64(device.CL().MaxComputeUnits())
 
 			// 224byte extra memory is used per thread for meta data
-			maxIntensity := int(device.CL().GlobalMemSize())/hashMemSize + 224
+			maxIntensity := device.CL().GlobalMemSize()/int64(hashMemSize) + 224
 
 			// map intensity to a multiple of the compute unit count, 8 is the number of threads per work group
 			intensity := (maxIntensity / (8 * computeUnits)) * computeUnits * 8
@@ -104,7 +104,7 @@ func GenerateConfig() (*Config, error) {
 				Index:     device.Index,
 				Platform:  platform.Index,
 				Name:      device.Name,
-				Intensity: intensity,
+				Intensity: int(intensity),
 			})
 		}
 	}
