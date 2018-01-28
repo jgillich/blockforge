@@ -8,6 +8,7 @@ environment:
 install:
   - ps: |
       git submodule update --init --recursive
+      echo $env:Path
       $env:Path = "$env:GOPATH\bin;C:\msys64\usr\bin;" + $env:Path
       bash -l -c "pacman -S --needed --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make" 2>&1 | %{ "$_" }
       $env:Path = ($path.Split(';') | Where-Object { $_ -ne 'C:\msys64\usr\bin' }) -join ';'
