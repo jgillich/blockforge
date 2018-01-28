@@ -5,7 +5,7 @@ import (
 	"gitlab.com/blockforge/blockforge/cmd"
 )
 
-//go:generate rice embed-go -v -i ./cmd -i ./worker
+//go:generate packr
 
 func main() {
 	cobra.MousetrapHelpText = ""

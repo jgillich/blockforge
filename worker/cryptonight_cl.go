@@ -9,18 +9,21 @@ import (
 
 	"github.com/jgillich/go-opencl/cl"
 	"github.com/pkg/errors"
-
-	"github.com/GeertJohan/go.rice"
+	"gitlab.com/blockforge/blockforge/opencl"
 )
 
 var cryptonightKernel string
 
 func init() {
-	box := rice.MustFindBox("../opencl")
+	box := opencl.Box
+
 	var out bytes.Buffer
 	var re = regexp.MustCompile(`(#include "(.*\.cl)")`)
-	cl := box.MustString("cryptonight.cl")
-	cl = re.ReplaceAllString(cl, `{{ .MustString "$2" }}`)
+	cl, err := box.MustString("cryptonight.cl")
+	if err != nil {
+		panic(err)
+	}
+	cl = re.ReplaceAllString(cl, `{{ .String "$2" }}`)
 
 	if err := template.Must(template.New("cryptonight").Parse(cl)).Execute(&out, box); err != nil {
 		panic(err)

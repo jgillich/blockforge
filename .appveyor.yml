@@ -10,14 +10,14 @@ install:
       git submodule update --init --recursive
       $env:Path = "$env:GOPATH\bin;C:\msys64\usr\bin;" + $env:Path
       bash -l -c "pacman -S --needed --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make" 2>&1 | %{ "$_" }
-      go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
+      $env:Path = ($path.Split(';') | Where-Object { $_ -ne 'C:\msys64\usr\bin' }) -join ';'
+      go get -u github.com/golang/dep/cmd/dep github.com/gobuffalo/packr/...
       Invoke-WebRequest -Uri http://www.open-mpi.de/software/hwloc/v1.11/downloads/hwloc-win64-build-1.11.9.zip -OutFile c:\hwloc.zip
       7z x c:\hwloc.zip -oc:\hwloc
       Copy-Item -Force -Recurse c:\hwloc\hwloc-win64-build-1.11.9\* c:\msys64\mingw64
       Invoke-WebRequest -Uri https://github.com/GPUOpen-LibrariesAndSDKs/OCL-SDK/files/1406216/lightOCLSDK.zip -OutFile c:\ocl.zip
       7z x c:\ocl.zip -oc:\ocl
       Copy-Item -Force -Recurse c:\ocl\lib\x86_64\* c:\msys64\mingw64\lib
-      $env:Path = "C:\go\bin;$env:GOPATH\bin;C:\msys64\mingw64\bin;c:/Windows/system32;C:/Windows/System32/WindowsPowerShell/v1.0"
 
 before_build:
   - ps: |
@@ -30,7 +30,7 @@ build_script:
   - ps: |
       go version
       go env
-      go generate 2>&1 | %{ "$_" }
+      go generate
       go build -ldflags '-s -w -linkmode external -extldflags "-static"' 2>&1 | %{ "$_" }
 
 

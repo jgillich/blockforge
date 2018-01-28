@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"os"
 
+	"gitlab.com/blockforge/blockforge/gui"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 
 	"gitlab.com/blockforge/blockforge/worker"
 
 	"gopkg.in/yaml.v2"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/inconshreveable/mousetrap"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
@@ -57,7 +57,7 @@ var guiCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		http.Handle("/", http.FileServer(rice.MustFindBox("../gui").HTTPBox()))
+		http.Handle("/", http.FileServer(gui.Box))
 
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {

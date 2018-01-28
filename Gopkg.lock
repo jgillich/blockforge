@@ -2,25 +2,22 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/GeertJohan/go.rice"
-  packages = [
-    ".",
-    "embedded"
-  ]
-  revision = "c02ca9a983da5807ddf7d796784928f5be4afd09"
-
-[[projects]]
   name = "github.com/Jeffail/gabs"
   packages = ["."]
   revision = "2a3aa15961d5fee6047b8151b67ac2f08ba2c48c"
   version = "1.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/daaku/go.zipexe"
+  name = "github.com/gobuffalo/envy"
   packages = ["."]
-  revision = "a5fe2436ffcb3236e175e5149162b41cd28bd27d"
+  revision = "e613c80275b86293880eddeb27417c9a7c670ff3"
+  version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  revision = "b3669dfbd647a0beb9854464c825f7838aba1866"
+  version = "v1.11.0"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -35,10 +32,16 @@
   revision = "db9961dcc93ff747f6695ae3d18664d0a93c42c6"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/kardianos/osext"
+  name = "github.com/joho/godotenv"
   packages = ["."]
-  revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
+  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
+  version = "v1.2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -74,7 +77,7 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "d59529f042b4ec7b439beee5004dddd1e2040d2f"
+  revision = "af1a71c17d39021724884660b359ab0d6b916216"
 
 [[projects]]
   name = "go.uber.org/atomic"
@@ -110,6 +113,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c64f04f53b411da5e8788ad48d93031ca825b7a016201bbd2a5577e3fa23816e"
+  inputs-digest = "f961bdf909d0f13d98921178f0a4799a70dbf1779015ff3b7b22f2c3890394fb"
   solver-name = "gps-cdcl"
   solver-version = 1
