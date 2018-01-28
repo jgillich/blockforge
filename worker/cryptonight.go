@@ -144,8 +144,6 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 		return
 	}
 
-	nonce := make([]byte, 4)
-
 	cl.SetJob(input, target)
 
 	for {
@@ -160,7 +158,8 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 			}
 
 			for i := uint32(0); i < results[0xFF]; i++ {
-				binary.LittleEndian.PutUint32(nonce, i)
+				nonce := make([]byte, NonceWidth)
+				binary.LittleEndian.PutUint32(nonce, results[i])
 				for i := 0; i < len(nonce); i++ {
 					input[NonceIndex+i] = nonce[i]
 				}
@@ -177,14 +176,14 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 						MinerId: job.MinerId,
 						JobId:   job.JobId,
 						Result:  fmt.Sprintf("%x", result),
-						Nonce:   fmt.Sprintf("%x", nonce),
+						Nonce:   fmt.Sprintf("%08x", binary.BigEndian.Uint32(nonce)),
 					}
 
 					go w.stratum.SubmitShare(&share)
 				} else {
 					log.Errorw("invalid result from CL worker",
-						"input", fmt.Sprintf("%x", input),
-						"target", target,
+						"blob", job.Blob,
+						"target", job.Target,
 						"nonce", fmt.Sprintf("%x", nonce))
 				}
 			}
@@ -203,7 +202,6 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 
 	hashes := float32(0)
 	startTime := time.Now()
-	nonce := make([]byte, NonceWidth)
 
 	input, err := hex.DecodeString(job.Blob)
 	if err != nil {
@@ -218,7 +216,8 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 	for i := nonceStart; i < nonceEnd; i++ {
 		select {
 		default:
-			binary.LittleEndian.PutUint32(nonce, i)
+			nonce := make([]byte, NonceWidth)
+			binary.BigEndian.PutUint32(nonce, i)
 			for i := 0; i < len(nonce); i++ {
 				input[NonceIndex+i] = nonce[i]
 			}
@@ -235,7 +234,7 @@ func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceSt
 					MinerId: job.MinerId,
 					JobId:   job.JobId,
 					Result:  fmt.Sprintf("%x", result),
-					Nonce:   fmt.Sprintf("%x", nonce),
+					Nonce:   fmt.Sprintf("%08x", nonce),
 				}
 
 				go w.stratum.SubmitShare(&share)

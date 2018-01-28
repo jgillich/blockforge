@@ -108,11 +108,6 @@ func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWor
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	w.blakeBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, int(4*(w.Intensity+2)))
-	if err != nil {
-		return nil, errors.Wrap(err, "intializing buffer failed")
-	}
-
 	w.groestlBuf, err = ctx.CreateEmptyBuffer(cl.MemReadWrite, int(4*(w.Intensity+2)))
 	if err != nil {
 		return nil, errors.Wrap(err, "intializing buffer failed")
@@ -139,7 +134,6 @@ func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWor
 	}
 
 	options := fmt.Sprintf("-DITERATIONS=%v -DMASK=%v -DWORKSIZE=%v -DSTRIDED_INDEX=%v", iterations, mask, w.worksize, 0)
-	fmt.Printf("options %v\n", options)
 	if err := program.BuildProgram([]*cl.Device{device}, options); err != nil {
 		return nil, errors.Wrap(err, "building program failed")
 	}
@@ -165,6 +159,7 @@ func (w *CryptonightCLWorker) SetJob(input []byte, target uint64) error {
 	for i := 0; i < len(input); i++ {
 		in[i] = input[i]
 	}
+	in[len(input)] = 0x01
 
 	if _, err := w.queue.EnqueueWriteBuffer(w.inputBuf, true, 0, 88, unsafe.Pointer(&in[0]), nil); err != nil {
 		return errors.WithStack(err)
@@ -277,10 +272,7 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 		return errors.New("threads is no multiple of workSize")
 	}
 
-	// TODO ???
-	// size_t BranchNonces[4];
-	// memset(BranchNonces,0,sizeof(size_t)*4);
-	branchNonces := [4]uint32{0, 0, 0, 0}
+	branchNonces := make([]uint32, 4)
 
 	zero := uint32(0)
 
@@ -380,6 +372,7 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 		return errors.WithStack(err)
 	}
 
+	// TODO ???
 	w.Nonce += threads //w.Intensity
 
 	return nil
