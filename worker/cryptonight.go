@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -213,9 +212,6 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 }
 
 func (w *cryptonight) cpuThread(job stratum.Job, target uint64, closer chan int) float32 {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	hashes := float32(0)
 	startTime := time.Now()
 

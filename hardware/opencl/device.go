@@ -7,11 +7,11 @@ import (
 
 type Device struct {
 	ptr      *cl.Device
-	Platform *Platform
-	Index    int    `json:"index"`
-	Name     string `json:"name"`
-	Vendor   string `json:"vendor"`
-	Version  string `json:"version"`
+	Platform *Platform `json:"platform"`
+	Index    int       `json:"index"`
+	Name     string    `json:"name"`
+	Vendor   string    `json:"vendor"`
+	Version  string    `json:"version"`
 }
 
 func GetDevices(platform *Platform) ([]*Device, error) {

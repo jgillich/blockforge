@@ -31,7 +31,7 @@ var guiCmd = &cobra.Command{
 	Short: "Launch the graphical user interface",
 	Long:  `Launch the graphical user interface.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if mousetrap.StartedByExplorer() {
+		if mousetrap.StartedByExplorer() && !debug {
 			hideConsoleWindow()
 		}
 
@@ -91,6 +91,10 @@ var guiCmd = &cobra.Command{
 						Processors: processors,
 						Coins:      worker.List(),
 					})
+
+					if debug {
+						view.Eval(`document.write('<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js#startOpened=true"></script>')`)
+					}
 
 					view.Eval("init()")
 				}

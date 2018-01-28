@@ -61,7 +61,7 @@
           </div>
         </div>
         <div class="card-content has-text-centered">
-          <h3 class="title is-3">0.00</h3>
+          <h3 class="title is-3">{ clHashrate(i).toFixed(2) }</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
         <div class="card-footer">
@@ -73,6 +73,15 @@
                   <p class="title">
                     <select class="select" data-index={i} onchange={updateIntensity}>
                       <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
                     </select>
                   </p>
                 </div>
@@ -107,25 +116,43 @@
       this.threadNums[cpu.index] = threads
     }.bind(this))
 
-
-    this.stats = []
     this.miner.on('stats', function(stats) {
       this.stats = stats
       this.update()
     }.bind(this))
 
-    cpuHashrate(index) {
-      if (this.stats.length == 0) {
+    cpuHashrate(i) {
+      if (!this.stats || !this.stats.cpu_stats.length) {
         return 0
       }
 
-      var cpuStat = this.stats.cpu_stats.find(function (s) { return s.index == index })
+      var cpu = opts.miner.config.processors[i]
 
-      if(!cpuStat) {
+      var stat = this.stats.cpu_stats.find(function (s) { return s.index == cpu.index })
+
+      if(!stat) {
         return 0
       }
 
-      return cpuStat.hashrate
+      return stat.hashrate
+    }
+
+    clHashrate(i) {
+      if (!this.stats || !this.stats.gpu_stats.length) {
+        return 0
+      }
+
+      var cl = opts.miner.config.opencl_devices[i]
+
+      var stat = this.stats.gpu_stats.find(function (s) {
+        return s.index == cl.index && s.platform == cl.platform
+      })
+
+      if(!stat) {
+        return 0
+      }
+
+      return stat.hashrate
     }
 
     updateThreads(e) {
@@ -142,7 +169,7 @@
     }
 
     updateIntensity(e) {
-
+      alert("Sorry, this is not implemented yet")
     }
 
     toggleEnable(e) {
