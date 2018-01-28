@@ -1,21 +1,21 @@
 <hardware-list>
   <div class="columns is-centered">
 
-    <div class="column is-4" each={ processor, i in miner.config.processors }>
+    <div class="column is-4" each={ miner.config.processors }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
-            { processor.name }
+            { name }
           </p>
           <div class="card-header-icon">
             <div class="field">
-              <input id={ "pswitch" + i} type="checkbox" class="switch is-rounded" checked={ processor.enable } onclick={ toggleEnable }>
-              <label for={ "pswitch" + i}></label>
+              <input id={ "enable" + index} type="checkbox" class="switch is-rounded" data-index={index} checked={ enable } onclick={ toggleEnable }>
+              <label for={ "enable" + index}></label>
             </div>
           </div>
         </div>
         <div class="card-content has-text-centered">
-          <h3 class="title is-3">{ cpuHashrate(i).toFixed(2) }</h3>
+          <h3 class="title is-3">{ hashrate(index).toFixed(2) }</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
         <div class="card-footer">
@@ -25,8 +25,8 @@
                 <div>
                   <p class="heading">Threads</p>
                   <p class="title">
-                    <select class="select" data-index={i} onchange={updateThreads}>
-                      <option each={i in threadNums[processor.index]} value={i} selected={threads == i}>{i}</option>
+                    <select class="select" data-index={index} onchange={updateThreads}>
+                      <option each={i in threadNums[index]} value={i} selected={threads == i}>{i}</option>
                     </select>
                   </p>
                 </div>
@@ -36,7 +36,7 @@
                   <p class="heading">Coin</p>
                   <p class="title">
                     <select class="select" data-index={index} onchange={updateCoin}>
-                      <option each={ c, name in miner.config.coins } value={name} selected={processor.coin == name}>{ name }</option>
+                      <option each={ c, name in miner.config.coins } value={name} selected={coin == name}>{ name }</option>
                     </select>
                   </p>
                 </div>
@@ -47,21 +47,22 @@
       </div>
     </div>
 
-    <div class="column is-4" each={ cl, i in miner.config.opencl_devices }>
+    <div class="column is-4" each={ miner.config.opencl_devices }>
       <div class="card">
         <div class="card-header">
           <p class="card-header-title">
-            { cl.name }
+            { name }
           </p>
           <div class="card-header-icon">
             <div class="field">
-              <input id={ "clswitch" + i} type="checkbox" class="switch is-rounded" checked={ cl.enable } onclick={ toggleEnable }>
-              <label for={ "clswitch" + i}></label>
+              <input id={ "enable" + platform + index } type="checkbox" class="switch is-rounded"
+                data-index={ index } data-platform={ platform } checked={ enable } onclick={ toggleEnable }>
+              <label for={ "enable" + platform + index }></label>
             </div>
           </div>
         </div>
         <div class="card-content has-text-centered">
-          <h3 class="title is-3">{ clHashrate(i).toFixed(2) }</h3>
+          <h3 class="title is-3">{ hashrate(index, platform).toFixed(2) }</h3>
           <h3 class="subtitle">H/s</h3>
         </div>
         <div class="card-footer">
@@ -71,7 +72,7 @@
                 <div>
                   <p class="heading">Intensity</p>
                   <p class="title">
-                    <select class="select" data-index={i} onchange={updateIntensity}>
+                    <select class="select" data-index={index} data-platform={ platform } onchange={updateIntensity}>
                       <option value="1">1</option>
                       <option value="2">2</option>
                       <option value="3">3</option>
@@ -90,8 +91,8 @@
                 <div>
                   <p class="heading">Coin</p>
                   <p class="title">
-                    <select class="select" data-index={index} onchange={updateCoin}>
-                      <option each={ c, name in miner.config.coins } value={name} selected={cl.coin == name}>{ name }</option>
+                    <select class="select" data-index={index} data-platform={platform} onchange={updateCoin}>
+                      <option each={ c, name in miner.config.coins } value={name} selected={coin == name}>{ name }</option>
                     </select>
                   </p>
                 </div>
@@ -121,50 +122,53 @@
       this.update()
     }.bind(this))
 
-    cpuHashrate(i) {
-      if (!this.stats || !this.stats.cpu_stats.length) {
-        return 0
-      }
-
-      var cpu = opts.miner.config.processors[i]
-
-      var stat = this.stats.cpu_stats.find(function (s) { return s.index == cpu.index })
-
-      if(!stat) {
-        return 0
-      }
-
-      return stat.hashrate
+    processor(i) {
+      return opts.miner.config.processors.find(function(p) {
+        return p.index == i
+      })
     }
 
-    clHashrate(i) {
-      if (!this.stats || !this.stats.gpu_stats.length) {
-        return 0
-      }
-
-      var cl = opts.miner.config.opencl_devices[i]
-
-      var stat = this.stats.gpu_stats.find(function (s) {
-        return s.index == cl.index && s.platform == cl.platform
+    cl(i, p) {
+      return opts.miner.config.opencl_devices.find(function(d) {
+        return d.index == i && d.platform == p
       })
+    }
 
-      if(!stat) {
+    hashrate(i, p) {
+      if (!this.stats) {
         return 0
       }
 
-      return stat.hashrate
+      if (p == undefined) {
+        var stat = this.stats.cpu_stats.find(function (s) { return s.index == i })
+        return stat ? stat.hashrate : 0
+      } else {
+        var stat = this.stats.gpu_stats.find(function (s) { return s.index == i && s.platform == p })
+        return stat ? stat.hashrate : 0
+      }
     }
 
     updateThreads(e) {
       var index = parseInt(e.srcElement.dataset.index)
       var threads = parseInt(e.srcElement.value)
-      opts.miner.config.processors[index].threads = threads
+      var processor = this.processor(index)
+
+      processor.threads = threads
       opts.miner.trigger('update')
     }
 
     updateCoin(e) {
       var index = parseInt(e.srcElement.dataset.index)
-      opts.miner.config.processors[index].coin = e.srcElement.value
+      var platform = parseInt(e.srcElement.dataset.platform)
+
+      if (isNaN(platform)) {
+        var processor = this.processor(index)
+        processor.coin = e.srcElement.value
+      } else {
+        var cl = this.cl(index, platform)
+        cl.coin = e.srcElement.value
+      }
+
       opts.miner.trigger('update')
     }
 
@@ -173,19 +177,18 @@
     }
 
     toggleEnable(e) {
-      var id = e.srcElement.id
+      var index = parseInt(e.srcElement.dataset.index)
+      var platform = parseInt(e.srcElement.dataset.platform)
 
-      if (id.includes("pswitch")) {
-        var pid = parseInt(id.replace("pswitch", ""), 10)
-        opts.miner.config.processors[pid].enable = !opts.miner.config.processors[pid].enable
-        opts.miner.trigger('update')
-      } else if (id.includes("clswitch")) {
-        var clid = parseInt(id.replace("clswitch", ""), 10)
-        opts.miner.config.opencl_devices[clid].enable = !opts.miner.config.opencl_devices[clid].enable
-        opts.miner.trigger('update')
+      if (isNaN(platform)) {
+        var processor = this.processor(index)
+        processor.enable = !processor.enable
+      } else {
+        var cl = this.cl(index, platform)
+        cl.enable = !cl.enable
       }
 
-      this.update()
+      opts.miner.trigger('update')
     }
 
   </script>
