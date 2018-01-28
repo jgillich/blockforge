@@ -372,8 +372,7 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 		return errors.WithStack(err)
 	}
 
-	// TODO ???
-	w.Nonce += threads //w.Intensity
+	w.Nonce += w.Intensity
 
 	return nil
 }

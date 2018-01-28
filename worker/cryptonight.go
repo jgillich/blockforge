@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"sync/atomic"
 	"time"
 
 	"gitlab.com/blockforge/blockforge/hash"
@@ -42,37 +43,39 @@ func init() {
 }
 
 type cryptonight struct {
-	clWorkers  []*CryptonightCLWorker
+	clDevices  []CLDeviceConfig
 	processors []ProcessorConfig
 	stratum    stratum.Client
 	lite       bool
+	nonce      uint32
 	cpuStats   map[int]map[int]float32
+	gpuStats   map[int]map[int]float32
 }
 
 func NewCryptonight(config Config, lite bool) Worker {
-	clWorkers := make([]*CryptonightCLWorker, len(config.CLDevices))
-	if len(config.CLDevices) > 0 {
-		for i, device := range config.CLDevices {
-			worker, err := NewCryptonightCLWorker(device, lite)
-			if err != nil {
-				// TODO
-				log.Fatal(err)
-			}
-			clWorkers[i] = worker
-		}
-	}
-
 	return &cryptonight{
-		clWorkers:  clWorkers,
+		clDevices:  config.CLDevices,
 		processors: config.Processors,
 		stratum:    config.Stratum,
 		lite:       lite,
 		cpuStats:   map[int]map[int]float32{},
+		gpuStats:   map[int]map[int]float32{},
 	}
 }
 
 func (w *cryptonight) Work() error {
 	closer := make(chan int, 0)
+
+	clWorkers := make([]*CryptonightCLWorker, len(w.clDevices))
+	if len(w.clDevices) > 0 {
+		for i, device := range w.clDevices {
+			worker, err := NewCryptonightCLWorker(device, w.lite)
+			if err != nil {
+				return err
+			}
+			clWorkers[i] = worker
+		}
+	}
 
 	for {
 		job, ok := <-w.stratum.Jobs()
@@ -102,27 +105,37 @@ func (w *cryptonight) Work() error {
 
 		log.Infof("job difficulty %v", math.MaxUint64/target)
 
-		if len(w.clWorkers) > 0 {
-			go w.gpuThread(w.clWorkers[0], job, target, closer)
-		}
+		atomic.StoreUint32(&w.nonce, 0)
 
-		if len(w.processors) > 0 {
-			cpuThreads := 0
-
-			for _, cpu := range w.processors {
-				cpuThreads += cpu.Threads
+		for i, cl := range clWorkers {
+			platformIndex := w.clDevices[i].Device.Platform.Index
+			deviceIndex := w.clDevices[i].Device.Index
+			if w.gpuStats[platformIndex] == nil {
+				w.gpuStats[deviceIndex] = map[int]float32{
+					deviceIndex: 0,
+				}
+			} else {
+				w.gpuStats[platformIndex][deviceIndex] = 0
 			}
 
-			nounceStepping := uint32(math.MaxUint32 / cpuThreads)
-			nonce := uint32(0)
+			go func(cl *CryptonightCLWorker) {
+				log.Debugf("started cl thread %v/%v", platformIndex, deviceIndex)
+				w.gpuStats[platformIndex][deviceIndex] = w.gpuThread(cl, job, target, closer)
+				log.Debugf("stopped cl thread %v/%v", platformIndex, deviceIndex)
+			}(cl)
+		}
 
+		if w.processors != nil {
 			for _, conf := range w.processors {
 				w.cpuStats[conf.Processor.Index] = map[int]float32{}
 				for i := 0; i < conf.Threads; i++ {
-					log.Debugf("starting thread for job '%v'", job.JobId)
-					log.Debugf("nonce start '%v' end '%v'", nonce, nonce+nounceStepping)
-					go w.cpuThread(conf.Processor.Index, i, job, nonce, nonce+nounceStepping, target, closer)
-					nonce += nounceStepping
+					cpuIndex := conf.Processor.Index
+					threadIndex := i
+					go func() {
+						log.Debugf("started cpu thread %v/%v", cpuIndex, threadIndex)
+						w.cpuStats[cpuIndex][threadIndex] = w.cpuThread(job, target, closer)
+						log.Debugf("stopped cpu thread %v/%v", cpuIndex, threadIndex)
+					}()
 				}
 			}
 		}
@@ -130,18 +143,14 @@ func (w *cryptonight) Work() error {
 	}
 }
 
-func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target uint64, closer chan int) {
+func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target uint64, closer chan int) float32 {
 	hashes := uint32(0)
 	startTime := time.Now()
-
-	defer func() {
-		log.Infof("gpu hashes %v H/s", float64(hashes)/time.Since(startTime).Seconds())
-	}()
 
 	input, err := hex.DecodeString(job.Blob)
 	if err != nil {
 		log.Errorf("malformed blob: '%v'", job.Blob)
-		return
+		return 0
 	}
 
 	cl.SetJob(input, target)
@@ -149,17 +158,81 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 	for {
 		select {
 		default:
-			results := make([]uint32, 0x100)
+			cl.Nonce = w.nextNonce(cl.Intensity * 16)
+		case <-closer:
+			return float32(hashes) / float32(time.Since(startTime).Seconds())
+		}
+		for i := 0; i < 16; i++ {
+			select {
+			default:
+				results := make([]uint32, 0x100)
 
-			err := cl.RunJob(results)
-			if err != nil {
-				log.Errorw("cl error", "error", err)
-				return
+				err := cl.RunJob(results)
+				if err != nil {
+					log.Errorw("cl error", "error", err)
+					return 0
+				}
+
+				for i := uint32(0); i < results[0xFF]; i++ {
+					nonce := make([]byte, NonceWidth)
+					binary.LittleEndian.PutUint32(nonce, results[i])
+					for i := 0; i < len(nonce); i++ {
+						input[NonceIndex+i] = nonce[i]
+					}
+
+					var result []byte
+					if w.lite {
+						result = hash.CryptonightLite(input)
+					} else {
+						result = hash.Cryptonight(input)
+					}
+
+					if binary.LittleEndian.Uint64(result[24:]) < target {
+						share := stratum.Share{
+							MinerId: job.MinerId,
+							JobId:   job.JobId,
+							Result:  fmt.Sprintf("%x", result),
+							Nonce:   fmt.Sprintf("%08x", binary.BigEndian.Uint32(nonce)),
+						}
+
+						go w.stratum.SubmitShare(&share)
+					} else {
+						log.Errorw("invalid result from CL worker",
+							"blob", job.Blob,
+							"target", job.Target,
+							"nonce", fmt.Sprintf("%x", nonce))
+					}
+				}
+
+				hashes += cl.Intensity
+			case <-closer:
+				return float32(hashes) / float32(time.Since(startTime).Seconds())
 			}
+		}
+	}
+}
 
-			for i := uint32(0); i < results[0xFF]; i++ {
+func (w *cryptonight) cpuThread(job stratum.Job, target uint64, closer chan int) float32 {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	hashes := float32(0)
+	startTime := time.Now()
+
+	input, err := hex.DecodeString(job.Blob)
+	if err != nil {
+		log.Errorf("malformed blob: '%v'", job.Blob)
+		return 0
+	}
+
+	for {
+		select {
+		default:
+			n := w.nextNonce(16)
+
+			for i := n; i < n+16; i++ {
 				nonce := make([]byte, NonceWidth)
-				binary.LittleEndian.PutUint32(nonce, results[i])
+				binary.BigEndian.PutUint32(nonce, i)
 				for i := 0; i < len(nonce); i++ {
 					input[NonceIndex+i] = nonce[i]
 				}
@@ -176,73 +249,16 @@ func (w *cryptonight) gpuThread(cl *CryptonightCLWorker, job stratum.Job, target
 						MinerId: job.MinerId,
 						JobId:   job.JobId,
 						Result:  fmt.Sprintf("%x", result),
-						Nonce:   fmt.Sprintf("%08x", binary.BigEndian.Uint32(nonce)),
+						Nonce:   fmt.Sprintf("%08x", nonce),
 					}
 
 					go w.stratum.SubmitShare(&share)
-				} else {
-					log.Errorw("invalid result from CL worker",
-						"blob", job.Blob,
-						"target", job.Target,
-						"nonce", fmt.Sprintf("%x", nonce))
 				}
 			}
 
-			hashes += cl.Intensity
+			hashes += 16
 		case <-closer:
-			log.Debugf("stopping gpu for job '%v'", job.JobId)
-			return
-		}
-	}
-}
-
-func (w *cryptonight) cpuThread(cpu int, threadNum int, job stratum.Job, nonceStart uint32, nonceEnd uint32, target uint64, closer chan int) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
-	hashes := float32(0)
-	startTime := time.Now()
-
-	input, err := hex.DecodeString(job.Blob)
-	if err != nil {
-		log.Errorf("malformed blob: '%v'", job.Blob)
-		return
-	}
-
-	defer func() {
-		w.cpuStats[cpu][threadNum] = hashes / float32(time.Since(startTime).Seconds())
-	}()
-
-	for i := nonceStart; i < nonceEnd; i++ {
-		select {
-		default:
-			nonce := make([]byte, NonceWidth)
-			binary.BigEndian.PutUint32(nonce, i)
-			for i := 0; i < len(nonce); i++ {
-				input[NonceIndex+i] = nonce[i]
-			}
-
-			var result []byte
-			if w.lite {
-				result = hash.CryptonightLite(input)
-			} else {
-				result = hash.Cryptonight(input)
-			}
-
-			if binary.LittleEndian.Uint64(result[24:]) < target {
-				share := stratum.Share{
-					MinerId: job.MinerId,
-					JobId:   job.JobId,
-					Result:  fmt.Sprintf("%x", result),
-					Nonce:   fmt.Sprintf("%08x", nonce),
-				}
-
-				go w.stratum.SubmitShare(&share)
-			}
-			hashes++
-		case <-closer:
-			log.Debugf("stopping thread for job '%v'", job.JobId)
-			return
+			return hashes / float32(time.Since(startTime).Seconds())
 		}
 	}
 }
@@ -251,6 +267,16 @@ func (w *cryptonight) Stats() Stats {
 	stats := Stats{
 		CPUStats: []CPUStats{},
 		GPUStats: []GPUStats{},
+	}
+
+	for platform, indexes := range w.gpuStats {
+		for index, stat := range indexes {
+			stats.GPUStats = append(stats.GPUStats, GPUStats{
+				Platform: platform,
+				Hashrate: stat,
+				Index:    index,
+			})
+		}
 	}
 
 	for cpu, stat := range w.cpuStats {
@@ -265,6 +291,15 @@ func (w *cryptonight) Stats() Stats {
 	}
 
 	return stats
+}
+
+func (w *cryptonight) nextNonce(size uint32) uint32 {
+	for {
+		val := atomic.LoadUint32(&w.nonce)
+		if atomic.CompareAndSwapUint32(&w.nonce, val, val+size) {
+			return val
+		}
+	}
 }
 
 func (w *cryptonight) Capabilities() Capabilities {

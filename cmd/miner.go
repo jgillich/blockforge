@@ -87,7 +87,7 @@ Supported coins: ` + coinList()),
 				}
 
 				for _, stat := range stats.GPUStats {
-					log.Infof("GPU %v: %.2f H/s", stat.Index, stat.Hashrate)
+					log.Infof("GPU %v/%v: %.2f H/s", stat.Platform, stat.Index, stat.Hashrate)
 				}
 
 			}

@@ -72,6 +72,7 @@ type CPUStats struct {
 }
 
 type GPUStats struct {
+	Platform int     `json:"index"`
 	Index    int     `json:"index"`
 	Hashrate float32 `json:"hashrate"`
 }
