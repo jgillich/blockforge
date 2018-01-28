@@ -47,7 +47,7 @@ Supported coins: ` + coinList()),
 		if initArg {
 			err := initConfig()
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("unexpected error: %+v", err)
 			}
 			fmt.Printf("Wrote config file to '%v'\n", configPath)
 			return
@@ -58,21 +58,26 @@ Supported coins: ` + coinList()),
 			if os.IsNotExist(err) {
 				log.Fatal("Config file not found. Set '--config' argument or run 'coin miner --init' to generate.")
 			}
-			log.Fatal(err)
+			log.Fatalf("unexpected error: %+v", err)
 		}
 
 		var config miner.Config
 		err = yaml.Unmarshal(buf, &config)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("unexpected error: %+v", err)
 		}
-
-		log.Debugf("%+v", config)
 
 		miner, err := miner.New(config)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("unexpected error: %+v", err)
 		}
+
+		go func() {
+			err := miner.Start()
+			if err != nil {
+				log.Fatalf("unexpected error: %+v", err)
+			}
+		}()
 
 		log.Info("miner started")
 

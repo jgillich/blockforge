@@ -15,12 +15,14 @@ import (
 type Miner struct {
 	stratums map[string]stratum.Client
 	workers  map[string]worker.Worker
+	err      chan error
 }
 
 func New(config Config) (*Miner, error) {
 	miner := Miner{
 		stratums: map[string]stratum.Client{},
 		workers:  map[string]worker.Worker{},
+		err:      make(chan error),
 	}
 
 	processors, err := processor.GetProcessors()
@@ -118,13 +120,6 @@ func New(config Config) (*Miner, error) {
 			return nil, fmt.Errorf("coin '%v' does not support opencl devices", name)
 		}
 
-		go func() {
-			err := worker.Work()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}()
-
 		miner.stratums[name] = stratum
 		miner.workers[name] = worker
 	}
@@ -133,10 +128,24 @@ func New(config Config) (*Miner, error) {
 	return &miner, nil
 }
 
+func (m *Miner) Start() error {
+	for _, worker := range m.workers {
+		go func() {
+			err := worker.Work()
+			if err != nil {
+				m.err <- err
+			}
+		}()
+	}
+
+	return <-m.err
+}
+
 func (m *Miner) Stop() {
 	for _, stratum := range m.stratums {
 		stratum.Close()
 	}
+	close(m.err)
 	log.Debug("miner stopped")
 }
 

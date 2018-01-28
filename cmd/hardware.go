@@ -5,9 +5,9 @@ import (
 
 	"gitlab.com/blockforge/blockforge/hardware/opencl"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
+	"gitlab.com/blockforge/blockforge/log"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/blockforge/blockforge/log"
 )
 
 func init() {
@@ -21,7 +21,7 @@ var hardwareCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		processors, err := processor.GetProcessors()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("unexpected error: %+v", err)
 		}
 
 		for _, p := range processors {
@@ -30,7 +30,7 @@ var hardwareCmd = &cobra.Command{
 
 		platforms, err := opencl.GetPlatforms()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("unexpected error: %+v", err)
 		}
 
 		for _, p := range platforms {
