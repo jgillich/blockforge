@@ -54,4 +54,4 @@ compile:
     - sha256sum blockforge-$GOHOSTOS-GOARCH.tar.bz2
   artifacts:
     paths:
-      - blockforge-$GOHOSTOS-GOARCH.tar.bz2
+      - blockforge-$GOHOSTOS-$GOARCH.tar.bz2
