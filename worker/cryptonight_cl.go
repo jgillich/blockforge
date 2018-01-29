@@ -18,12 +18,15 @@ func init() {
 	box := opencl.Box
 
 	var out bytes.Buffer
-	var re = regexp.MustCompile(`(#include "(.*\.cl)")`)
 	cl, err := box.MustString("cryptonight.cl")
 	if err != nil {
+		fmt.Print("this binary is incomplete - did you run go generate?\nfile list: ")
+		for _, f := range box.List() {
+			fmt.Print(f)
+		}
 		panic(err)
 	}
-	cl = re.ReplaceAllString(cl, `{{ .String "$2" }}`)
+	cl = regexp.MustCompile(`(#include "(.*\.cl)")`).ReplaceAllString(cl, `{{ .String "$2" }}`)
 
 	if err := template.Must(template.New("cryptonight").Parse(cl)).Execute(&out, box); err != nil {
 		panic(err)
