@@ -9,7 +9,7 @@ variables:
   GOHOSTOS: linux
 
 before_script:
-  - dnf install -y @development-tools go hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
+  - dnf install -y @development-tools go hwloc-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
