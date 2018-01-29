@@ -39,7 +39,7 @@ build_script:
 
 after_build:
   - ps: |
-      7z a blockforge-$GOHOSTOS-GOARCH.zip blockforge.exe
+      7z a blockforge-$env:GOHOSTOS-$env:GOARCH.zip blockforge.exe
 
 # FIXME tests require opencl dll
 #test_script:
@@ -49,5 +49,5 @@ after_build:
 #      go test -race $(go list ./... | sls -NotMatch '/vendor/')
 
 artifacts:
-  - path: blockforge-$GOHOSTOS-GOARCH.zip
+  - path: blockforge-%GOHOSTOS%-%GOARCH%.zip
     name: blockforge
