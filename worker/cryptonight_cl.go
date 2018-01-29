@@ -21,6 +21,9 @@ func init() {
 	cl, err := box.MustString("cryptonight.cl")
 	if err != nil {
 		fmt.Println("this binary is incomplete - did you run go generate?")
+		for _, f := range box.List() {
+			fmt.Println(f)
+		}
 		panic(err)
 	}
 	cl = regexp.MustCompile(`(#include "(.*\.cl)")`).ReplaceAllString(cl, `{{ .String "$2" }}`)

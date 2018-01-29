@@ -48,8 +48,11 @@ compile:
     - go generate
     - pwd
     - ls -la opencl
-    - cat opencl/opencl-packr.go
+    - go run main.go --help
     - go build -ldflags '-s -w'
+    - ./blockforge --help
+    - rm -rf opencl
+    - ./blockforge --help
     - tar cjf blockforge-$GOHOSTOS-$GOARCH.tar.bz2 blockforge
     - sha256sum blockforge-$GOHOSTOS-$GOARCH.tar.bz2
   artifacts:
