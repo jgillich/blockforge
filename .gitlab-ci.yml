@@ -49,7 +49,7 @@ compile:
     - pwd
     - ls -la opencl
     - go run main.go --help
-    - go build -ldflags '-s -w'
+    - go build # -ldflags '-s -w'
     - ./blockforge --help
     - rm -rf opencl
     - ./blockforge --help
