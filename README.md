@@ -25,7 +25,7 @@ To build, run:
 ```
 cmake -Hhash -Bhash/build
 cmake --build hash/build
-go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
+go get -u github.com/golang/dep/cmd/dep github.com/gobuffalo/packr/...
 dep ensure -vendor-only
 go generate
 go build
@@ -50,7 +50,7 @@ To build, run:
 ```
 cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=c:\msys64\mingw64 -Hhash -Bhash/build
 cmake --build hash/build
-go get -u github.com/golang/dep/cmd/dep github.com/GeertJohan/go.rice/rice
+go get -u github.com/golang/dep/cmd/dep github.com/gobuffalo/packr/...
 dep ensure -vendor-only
 go generate
 go build -ldflags '-linkmode external -extldflags "-static"'
