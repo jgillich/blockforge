@@ -5,7 +5,8 @@ import (
 	"gitlab.com/blockforge/blockforge/cmd"
 )
 
-//go:generate packr
+//go:generate packr -i gui/
+//go:generate packr -i opencl/
 
 func main() {
 	cobra.MousetrapHelpText = ""
