@@ -47,8 +47,8 @@ compile:
     - go get -u github.com/gobuffalo/packr/...
     - go generate
     - pwd
-    - ls -la
     - ls -la opencl
+    - cat opencl/opencl-packr.go
     - go build -ldflags '-s -w'
     - tar cjf blockforge-$GOHOSTOS-$GOARCH.tar.bz2 blockforge
     - sha256sum blockforge-$GOHOSTOS-$GOARCH.tar.bz2
