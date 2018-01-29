@@ -13,7 +13,7 @@ before_script:
   #- mv $CI_PROJECT_DIR $GOPATH/src/$(dirname $REPO_NAME)
   #- ln -svf $GOPATH/src/$REPO_NAME $CI_PROJECT_DIR
   - ln -s /builds $GOPATH/src/gitlab.com
-  - cd $GOPATH/src/$CI_PROJECT_PATH
+  - cd $GOPATH/src/gitlab.com/$CI_PROJECT_PATH
 
 stages:
   - prepare
