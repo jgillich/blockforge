@@ -8,10 +8,6 @@ variables:
 
 before_script:
   - apt update && apt install -y libhwloc-dev libgl1-mesa-dev ocl-icd-opencl-dev libwebkit2gtk-4.0-dev cmake
-  #- mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
-  #- ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
-  #- mv $CI_PROJECT_DIR $GOPATH/src/$(dirname $REPO_NAME)
-  #- ln -svf $GOPATH/src/$REPO_NAME $CI_PROJECT_DIR
   - ln -s /builds $GOPATH/src/gitlab.com
   - cd $GOPATH/src/gitlab.com/$CI_PROJECT_PATH
 
@@ -49,16 +45,11 @@ compile:
   script:
     - go get -u github.com/gobuffalo/packr/...
     - go generate
-    - pwd
-    - ls -la opencl
-    - go run main.go --help
-    - packr build # -ldflags '-s -w'
-    - ./blockforge --help
-    - rm -rf opencl
-    - ./blockforge --help
+    - go build -ldflags '-s -w'
+    # verify packr embedding worked
+    - rm -rf opencl && ./blockforge --help
     - tar cjf blockforge-$GOHOSTOS-$GOARCH.tar.bz2 blockforge
     - sha256sum blockforge-$GOHOSTOS-$GOARCH.tar.bz2
-    - cp blockforge-$GOHOSTOS-$GOARCH.tar.bz2 $CI_PROJECT_DIR
   artifacts:
     paths:
       - blockforge-$GOHOSTOS-$GOARCH.tar.bz2
