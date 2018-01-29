@@ -1,19 +1,16 @@
-image: fedora:latest
+image: golang:stretch
 
 variables:
-  GIT_SUBMODULE_STRATEGY: normal
-  GOPATH: /go
   REPO_NAME: gitlab.com/blockforge/blockforge
   CGO_CFLAGS: -w -Ofast
   GOARCH: amd64
   GOHOSTOS: linux
 
 before_script:
-  - dnf install -y @development-tools bzip2 go hwloc-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
+  - apt update && apt install -y libhwloc-dev libgl1-mesa-dev ocl-icd-dev libwebkit2gtk-4.0-dev cmake
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
-  - export PATH="$GOPATH/bin:$PATH"
 
 stages:
   - prepare
