@@ -4,6 +4,9 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
   GOPATH: /go
   REPO_NAME: gitlab.com/blockforge/blockforge
+  CGO_CFLAGS: -w -Ofast
+  GOARCH: amd64
+  GOHOSTOS: linux
 
 before_script:
   - dnf install -y @development-tools go hwloc-devel openssl-devel mesa-libGL-devel ocl-icd-devel webkitgtk4-devel cmake
@@ -24,6 +27,7 @@ libhash:
     - cmake --build hash/build
   artifacts:
     untracked: true
+    expires_in: 10 min
 
 dep:
   stage: prepare
@@ -32,6 +36,7 @@ dep:
     - dep ensure -vendor-only
   artifacts:
     untracked: true
+    expires_in: 10 min
 
 format:
   stage: test
@@ -45,7 +50,9 @@ compile:
   script:
     - go get -u github.com/gobuffalo/packr/...
     - go generate
-    - go build -o $CI_PROJECT_DIR/blockforge
+    - go build -ldflags '-s -w'
+    - tar cjf blockforge-$GOHOSTOS-GOARCH.tar.bz2 blockforge
+    - sha256sum blockforge-$GOHOSTOS-GOARCH.tar.bz2
   artifacts:
     paths:
-      - blockforge
+      - blockforge-$GOHOSTOS-GOARCH.tar.bz2
