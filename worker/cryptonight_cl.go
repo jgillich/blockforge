@@ -32,7 +32,7 @@ func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWor
 
 	var cryptonightKernel string
 	{
-		box := packr.NewBox("opencl")
+		box := packr.NewBox("../opencl")
 
 		var out bytes.Buffer
 		cl, err := box.MustString("cryptonight.cl")
