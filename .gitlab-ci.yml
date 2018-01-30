@@ -8,9 +8,8 @@ variables:
 
 before_script:
   - apt update && apt install -y libhwloc-dev libgl1-mesa-dev ocl-icd-opencl-dev libwebkit2gtk-4.0-dev cmake
-  - ln -s /builds $GOPATH/src/gitlab.com
-  #- mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
-  #- ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/gitlab.com/$CI_PROJECT_PATH
 
 stages:
@@ -48,8 +47,6 @@ compile:
     - go get -u github.com/gobuffalo/packr/...
     - go generate
     - go build -ldflags '-s -w'
-    # verify packr embedding worked
-    - rm -rf opencl && ./blockforge --help
     - tar cjf blockforge-$GOHOSTOS-$GOARCH.tar.bz2 blockforge
     - sha256sum blockforge-$GOHOSTOS-$GOARCH.tar.bz2
   artifacts:
