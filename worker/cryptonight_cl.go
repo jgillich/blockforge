@@ -3,36 +3,14 @@ package worker
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"regexp"
-	"text/template"
 	"unsafe"
 
+	"github.com/gobuffalo/packr"
 	"github.com/jgillich/go-opencl/cl"
 	"github.com/pkg/errors"
-	"gitlab.com/blockforge/blockforge/opencl"
 )
-
-var cryptonightKernel string
-
-func init() {
-	box := opencl.Box
-
-	var out bytes.Buffer
-	cl, err := box.MustString("cryptonight.cl")
-	if err != nil {
-		fmt.Println("this binary is incomplete - did you run go generate?")
-		for _, f := range box.List() {
-			fmt.Println(f)
-		}
-		panic(err)
-	}
-	cl = regexp.MustCompile(`(#include "(.*\.cl)")`).ReplaceAllString(cl, `{{ .String "$2" }}`)
-
-	if err := template.Must(template.New("cryptonight").Parse(cl)).Execute(&out, box); err != nil {
-		panic(err)
-	}
-	cryptonightKernel = out.String()
-}
 
 type CryptonightCLWorker struct {
 	Intensity     uint32
@@ -51,6 +29,23 @@ type CryptonightCLWorker struct {
 }
 
 func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWorker, error) {
+
+	var cryptonightKernel string
+	{
+		box := packr.NewBox("opencl")
+
+		var out bytes.Buffer
+		cl, err := box.MustString("cryptonight.cl")
+		if err != nil {
+			return nil, errors.New("this binary is incomplete - did you run go generate?")
+		}
+		cl = regexp.MustCompile(`(#include "(.*\.cl)")`).ReplaceAllString(cl, `{{ .String "$2" }}`)
+		if err := template.Must(template.New("cryptonight").Parse(cl)).Execute(&out, box); err != nil {
+			panic(err)
+		}
+		cryptonightKernel = out.String()
+	}
+
 	device := config.Device.CL()
 
 	ctx, err := cl.CreateContext([]*cl.Device{device})

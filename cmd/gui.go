@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"os"
 
-	"gitlab.com/blockforge/blockforge/gui"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 
 	"gitlab.com/blockforge/blockforge/worker"
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/gobuffalo/packr"
 	"github.com/inconshreveable/mousetrap"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
@@ -59,7 +59,7 @@ var guiCmd = &cobra.Command{
 			}
 		}
 
-		http.Handle("/", http.FileServer(gui.Box))
+		http.Handle("/", http.FileServer(packr.NewBox("../gui")))
 
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
