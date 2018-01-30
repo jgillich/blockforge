@@ -19,7 +19,7 @@ func TestMiner(t *testing.T) {
 				Coin:    "XMR",
 				Enable:  true,
 				Index:   0,
-				Threads: 2,
+				Threads: 1,
 			},
 		},
 	}
