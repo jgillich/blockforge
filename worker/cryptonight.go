@@ -221,13 +221,14 @@ func (w *cryptonight) cpuThread(job stratum.Job, target uint64, closer chan int)
 		return 0
 	}
 
+	nonce := make([]byte, NonceWidth)
+
 	for {
 		select {
 		default:
 			n := w.nextNonce(16)
 
 			for i := n; i < n+16; i++ {
-				nonce := make([]byte, NonceWidth)
 				binary.BigEndian.PutUint32(nonce, i)
 				for i := 0; i < len(nonce); i++ {
 					input[NonceIndex+i] = nonce[i]
@@ -290,6 +291,7 @@ func (w *cryptonight) Stats() Stats {
 }
 
 func (w *cryptonight) nextNonce(size uint32) uint32 {
+	// TODO check for overflow
 	for {
 		val := atomic.LoadUint32(&w.nonce)
 		if atomic.CompareAndSwapUint32(&w.nonce, val, val+size) {

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -9,8 +10,15 @@ import (
 
 var logger *zap.SugaredLogger
 
+var panicOnError = false
+
 func init() {
 	logger = zap.NewNop().Sugar()
+}
+
+func InitializeTesting() {
+	Initialize(true)
+	panicOnError = true
 }
 
 func Initialize(debug bool) {
@@ -71,12 +79,21 @@ func Warnf(msg string, args ...interface{}) {
 }
 
 func Error(args ...interface{}) {
+	if panicOnError {
+		panic(fmt.Sprint(args...))
+	}
 	logger.Error(args...)
 }
 func Errorw(msg string, args ...interface{}) {
+	if panicOnError {
+		panic(fmt.Sprintf(msg, args...))
+	}
 	logger.Errorw(msg, args...)
 }
 func Errorf(msg string, args ...interface{}) {
+	if panicOnError {
+		panic(fmt.Sprintf(msg, args...))
+	}
 	logger.Errorf(msg, args...)
 }
 

@@ -114,6 +114,7 @@ func (c *JsonrpcClient) SubmitShare(share *Share) {
 		Method: "submit",
 		Params: share,
 	})
+	log.Info("share submitted")
 }
 
 func (c *JsonrpcClient) Close() error {

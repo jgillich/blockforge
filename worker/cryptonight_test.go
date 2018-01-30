@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	log.Initialize(true)
+	log.InitializeTesting()
 }
 
 func TestCryptonightCPU(t *testing.T) {

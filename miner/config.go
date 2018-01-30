@@ -40,20 +40,22 @@ type OpenCLDevice struct {
 	Coin      string `yaml:"coin" json:"coin"`
 }
 
+var DefaultCoinConfig = map[string]Coin{
+	"XMR": Coin{
+		Pool: stratum.Pool{
+			URL:  "stratum+tcp://xmr.coinfoundry.org:3032",
+			User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
+			Pass: "x",
+		},
+	},
+}
+
 func GenerateConfig() (*Config, error) {
 
 	config := Config{
-		Version: currentConfigVersion,
-		Donate:  5,
-		Coins: map[string]Coin{
-			"XMR": Coin{
-				Pool: stratum.Pool{
-					URL:  "stratum+tcp://xmr.coinfoundry.org:3032",
-					User: "46DTAEGoGgc575EK7rLmPZFgbXTXjNzqrT4fjtCxBFZSQr5ScJFHyEScZ8WaPCEsedEFFLma6tpLwdCuyqe6UYpzK1h3TBr",
-					Pass: "x",
-				},
-			},
-		},
+		Version:       currentConfigVersion,
+		Donate:        5,
+		Coins:         DefaultCoinConfig,
 		Processors:    []Processor{},
 		OpenCLDevices: []OpenCLDevice{},
 	}
