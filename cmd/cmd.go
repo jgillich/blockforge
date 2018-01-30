@@ -15,6 +15,12 @@ import (
 	"gitlab.com/blockforge/blockforge/miner"
 )
 
+var VERSION = "devel"
+
+func init() {
+	cmd.Version = VERSION
+}
+
 var (
 	debug      bool
 	configPath string
@@ -24,8 +30,7 @@ var cmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.Initialize(debug)
 	},
-	Version: "0.0.1",
-	Use:     "blockforge",
+	Use: "blockforge",
 	Long: strings.TrimSpace(`
 BlockForge is a next generation miner for cryptocurrencies.
 Easy to use, multi algo and open source.

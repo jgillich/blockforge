@@ -16,7 +16,7 @@ install:
       }
       else
       {
-          Update-AppveyorBuild -Version "dev-$($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))"
+          Update-AppveyorBuild -Version "devel-$($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))"
       }
       git submodule update --init --recursive
       $env:Path = "$env:GOPATH\bin;C:\msys64\usr\bin;C:\msys64\mingw64\bin;" + $env:Path
@@ -42,8 +42,7 @@ build_script:
       go version
       go env
       go generate
-      go build -ldflags '-s -w -linkmode external -extldflags "-static"' 2>&1 | %{ "$_" }
-
+      go build -ldflags '-s -w -X gitlab.com/blockforge/blockforge/cmd.VERSION=$env:APPVEYOR_BUILD_VERSION -linkmode external -extldflags "-static"' 2>&1 | %{ "$_" }
 
 after_build:
   - ps: |
