@@ -1,0 +1,29 @@
+name: blockforge
+version: '0.0.1'
+summary: BlockForge is a next generation miner for cryptocurrencies.
+description: |
+  BlockForge is a modern cryptocurrency miner featuring a easy to use
+  graphical interface, automatic hardware detection and support for many
+  coins.
+
+grade: devel
+confinement: devmode
+
+apps:
+  blockforge:
+    command: blockforge
+
+parts:
+  hash:
+    plugin: cmake
+    source: hash
+  blockforge:
+    plugin: go
+    source: .
+    go-importpath: gitlab.com/blockforge/blockforge
+    go-packages:
+      - gitlab.com/blockforge/blockforge
+      - github.com/gobuffalo/packr/
+      - go get -u github.com/golang/dep/cmd/dep
+    install: |
+      dep ensure -vendor-only
