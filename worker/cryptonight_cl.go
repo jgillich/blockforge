@@ -3,8 +3,8 @@ package worker
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"regexp"
+	"text/template"
 	"unsafe"
 
 	"github.com/gobuffalo/packr"

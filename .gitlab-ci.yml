@@ -48,6 +48,7 @@ compile:
   script:
     - go get -u github.com/gobuffalo/packr/...
     - go generate
+    - cat worker/worker-packr.go
     - TAG="devel-${CI_COMMIT_SHA:0:7}"
     - CI_COMMIT_TAG="${CI_COMMIT_TAG:-$TAG}"
     - go build -ldflags "-s -w -X gitlab.com/blockforge/blockforge/cmd.VERSION=$CI_COMMIT_TAG"
