@@ -10,6 +10,14 @@ environment:
 
 install:
   - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true")
+      {
+          Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_TAG_NAME.TrimStart("v"))"
+      }
+      else
+      {
+          Update-AppveyorBuild -Version "dev-$($env:APPVEYOR_REPO_COMMIT.Substring(0, 7))"
+      }
       git submodule update --init --recursive
       $env:Path = "$env:GOPATH\bin;C:\msys64\usr\bin;C:\msys64\mingw64\bin;" + $env:Path
       bash -l -c "pacman -S --needed --noconfirm mingw-w64-x86_64-pkg-config mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-opencl-headers mingw-w64-x86_64-headers-git mingw-w64-x86_64-make" 2>&1 | %{ "$_" }
@@ -51,3 +59,16 @@ after_build:
 artifacts:
   - path: blockforge-%GOHOSTOS%-%GOARCH%.zip
     name: blockforge
+
+deploy:
+- provider: BinTray
+  username: jgillich
+  subject: jgillich
+  api_key:
+    secure: f5rpBJFgosvnmjewQD251RhZiV3uPztv5xPok4VBRTiOfYLVGuAxL18iLdipvD9Z
+  repo: blockforge
+  package: blockforge
+  version: "{version}"
+  publish: true
+  on:
+    appveyor_repo_tag: true

@@ -15,6 +15,7 @@ before_script:
 stages:
   - prepare
   - build
+  - deploy
 
 libhash:
   stage: prepare
@@ -52,3 +53,10 @@ compile:
   artifacts:
     paths:
       - blockforge-$GOHOSTOS-$GOARCH.tar.bz2
+
+upload:
+  stage: deploy
+  script:
+    - curl -T blockforge-$GOHOSTOS-$GOARCH.tar.bz2 -ujgillich:$BINTRAY_APIKEY https://api.bintray.com/content/jgillich/blockforge/blockforge/${CI_COMMIT_TAG#v}/blockforge-$GOHOSTOS-$GOARCH.tar.bz2
+  only:
+    - tags
