@@ -30,9 +30,12 @@ func New(config Config) (*Miner, error) {
 		return nil, err
 	}
 
-	clPlatforms, err := opencl.GetPlatforms()
-	if err != nil {
-		return nil, err
+	var clPlatforms []*opencl.Platform
+	if len(config.OpenCLDevices) > 0 {
+		clPlatforms, err = opencl.GetPlatforms()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for name, coin := range config.Coins {
