@@ -1,9 +1,6 @@
 package miner
 
 import (
-	"bytes"
-	"io"
-	"os"
 	"testing"
 	"time"
 
@@ -15,29 +12,6 @@ func init() {
 }
 
 func TestMiner(t *testing.T) {
-
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	os.Stderr = w
-
-	go func() {
-		for {
-			var buf bytes.Buffer
-			written, err := io.Copy(&buf, r)
-
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if written > 0 {
-				t.Fail()
-			}
-		}
-
-	}()
-
 	config := Config{
 		Coins: DefaultCoinConfig,
 		Processors: []Processor{
