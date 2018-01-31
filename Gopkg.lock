@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/gobuffalo/packr"
   packages = ["."]
-  revision = "cd5d3b2451218b709c19f00a470005980a3a90df"
-  version = "v2.0.2"
+  revision = "6de5183d12ba3e77d5a9218120a2acf4214240dd"
+  version = "v1.10.2"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -36,12 +36,6 @@
   packages = ["."]
   revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
   version = "v1.2.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/markbates/inflect"
-  packages = ["."]
-  revision = "1290f21759a90e7c4bd277347c8631ed8d4b9ee0"
 
 [[projects]]
   branch = "master"
