@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 
@@ -103,7 +104,7 @@ var guiCmd = &cobra.Command{
 						return
 					}
 
-					if debug {
+					if debug && runtime.GOOS == "windows" {
 						view.Eval(`document.write('<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js#startOpened=true"></script>')`)
 					}
 
