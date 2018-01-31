@@ -151,8 +151,5 @@ func (c *JsonrpcClient) parseJob(data *gabs.Container) {
 
 	log.Debugf("got job '%+v'", jobId)
 
-	go func() {
-		c.jobs <- job
-	}()
-
+	c.jobs <- job
 }
