@@ -106,10 +106,8 @@
   </div>
 
   <script>
-    this.miner = opts.miner
-
     this.threadNums = []
-    this.miner.processors.forEach(function (cpu) {
+    opts.miner.processors.forEach(function (cpu) {
       var threads = []
       for(var thread = 0; thread < cpu.virtual_cores; thread++) {
         threads[thread] = thread+1
@@ -117,7 +115,7 @@
       this.threadNums[cpu.index] = threads
     }.bind(this))
 
-    this.miner.on('stats', function(stats) {
+    opts.miner.on('stats', function(stats) {
       this.stats = stats
       this.update()
     }.bind(this))

@@ -48,7 +48,7 @@
   </div>
 
   <script>
-    this.pool = opts.coin ? miner.config.coins[opts.coin].pool : {}
+    this.pool = opts.coin ? opts.miner.config.coins[opts.coin].pool : {}
 
     var configuredCoins = Object.keys(opts.miner.config.coins)
     this.coins = Object.keys(opts.miner.availableCoins).filter(function (available) {

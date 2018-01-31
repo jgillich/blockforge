@@ -8,7 +8,7 @@
     <div class="card-table">
       <table class="table is-fullwidth is-striped">
         <tbody>
-          <tr class="is-size-5" each={ coin, name in miner.config.coins }>
+          <tr class="is-size-5" each={ coin, name in opts.miner.config.coins }>
             <td>
               <i class={ "cc " + name}></i>
             </td>
@@ -31,11 +31,10 @@
   </div>
 
   <div if={ showEdit }>
-    <coin-edit close={ closeEdit } miner={miner} coin={editItem}></coin-edit>
+    <coin-edit close={ closeEdit } miner={opts.miner} coin={editItem}></coin-edit>
   </div>
 
   <script>
-    this.miner = opts.miner
     this.showEdit = false
     this.editItem = false
 

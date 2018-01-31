@@ -1,18 +1,31 @@
 <gui-main>
-  <section class="hero is-primary">
-    <div class="hero-body">
-      <div class="container has-text-centered">
-        <a class={"button is-large " + (miner.running ? "is-warning" : "is-success") } onclick={toggleRunning}>
-          <span class="icon">
-            <i class={"fa " +(miner.running ? "fa-pause" : "fa-play")}></i>
-          </span>
-         <span>
-            { miner.running ? "Stop mining" : "Start mining"}
-         </span>
-        </a>
+  <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+    <div class="container">
+      <div class="navbar-brand">
+        <div class="navbar-brand">
+          <a class="navbar-item has-text-weight-bold is-size-5">
+            BlockForge
+          </a>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class={"button is-large " + (miner.running ? "is-warning" : "is-success") } onclick={toggleRunning}>
+                <span class="icon">
+                  <i class={"fa " +(miner.running ? "fa-pause" : "fa-play")}></i>
+                </span>
+              <span>
+                  { miner.running ? "Stop mining" : "Start mining"}
+              </span>
+              </a>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
-  </section>
+  </nav>
 
   <div class="container">
     <section class="section">
