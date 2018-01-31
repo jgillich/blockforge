@@ -221,6 +221,7 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 		case newWork, ok := <-workChan:
 			w.statMu.Lock()
 			w.gpuStats[platform][index] = float32(hashes) / float32(time.Since(startTime).Seconds())
+			startTime = time.Now()
 			hashes = 0
 			w.statMu.Unlock()
 			if !ok {
@@ -264,6 +265,7 @@ func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, 
 		case newWork, ok := <-workChan:
 			w.statMu.Lock()
 			w.cpuStats[cpu][index] = float32(hashes) / float32(time.Since(startTime).Seconds())
+			startTime = time.Now()
 			hashes = 0
 			w.statMu.Unlock()
 			if !ok {
