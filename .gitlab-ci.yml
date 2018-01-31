@@ -25,7 +25,7 @@ libhash:
     - cmake --build hash/build
   artifacts:
     untracked: true
-    expire_in: 10 min
+    expire_in: 1 week
 
 dep:
   stage: prepare
@@ -34,7 +34,7 @@ dep:
     - dep ensure -vendor-only
   artifacts:
     untracked: true
-    expire_in: 10 min
+    expire_in: 1 week
 
 test:
   stage: build
