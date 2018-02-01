@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/url"
 
+	"go.uber.org/atomic"
+
 	"github.com/Jeffail/gabs"
 
 	"gitlab.com/blockforge/blockforge/log"
@@ -18,6 +20,7 @@ type JsonrpcClient struct {
 	conn    net.Conn
 	jobs    chan Job
 	minerId string
+	jobId   atomic.String
 	pool    Pool
 	closed  bool
 }
@@ -109,6 +112,11 @@ func (c *JsonrpcClient) Jobs() chan Job {
 }
 
 func (c *JsonrpcClient) SubmitShare(share *Share) {
+	if share.JobId != c.jobId.Load() {
+		log.Info("skipping share")
+		return
+	}
+
 	sendMessage(c.conn, &Message{
 		Id:     1,
 		Method: "submit",
@@ -151,5 +159,6 @@ func (c *JsonrpcClient) parseJob(data *gabs.Container) {
 
 	log.Debugf("got job '%+v'", jobId)
 
+	c.jobId.Store(jobId)
 	c.jobs <- job
 }
