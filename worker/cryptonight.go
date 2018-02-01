@@ -65,9 +65,13 @@ type cryptonightShare struct {
 }
 
 func (w *cryptonightWork) nextNonce(size uint32) uint32 {
-	// TODO check for overflow
 	for {
 		val := atomic.LoadUint32(&w.nonce)
+		if val > math.MaxUint32-size {
+			log.Error("nonce space exceeded")
+			time.Sleep(time.Second * 5)
+			return val
+		}
 		if atomic.CompareAndSwapUint32(&w.nonce, val, val+size) {
 			return val
 		}
@@ -189,11 +193,9 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 	for {
 		select {
 		default:
-			cl.Nonce = work.nextNonce(cl.Intensity * 16)
-
 			results := make([]uint32, 0x100)
 
-			err := cl.RunJob(results)
+			err := cl.RunJob(results, work.nextNonce(cl.Intensity))
 			if err != nil {
 				log.Errorw("cl error", "error", err)
 				return
@@ -201,7 +203,8 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 
 			go func(results []uint32) {
 				for i := uint32(0); i < results[0xFF]; i++ {
-					input := work.input
+					input := make([]byte, len(work.input))
+					copy(input, work.input)
 					binary.LittleEndian.PutUint32(input[NonceIndex:], results[i])
 
 					var result []byte
@@ -212,7 +215,7 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 					}
 
 					if binary.LittleEndian.Uint64(result[24:]) < work.target {
-						shareChan <- cryptonightShare{result, results[i]}
+						shareChan <- cryptonightShare{result, binary.BigEndian.Uint32(input[NonceIndex:])}
 					} else {
 						log.Errorw("invalid result from CL worker")
 					}
@@ -246,10 +249,11 @@ func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, 
 		select {
 		default:
 			n := work.nextNonce(64)
-			input := work.input
+			input := make([]byte, len(work.input))
+			copy(input, work.input)
 
 			for i := n; i < n+64; i++ {
-				binary.BigEndian.PutUint32(input[NonceIndex:], i)
+				binary.LittleEndian.PutUint32(input[NonceIndex:], i)
 
 				var result []byte
 				if w.lite {
@@ -259,7 +263,7 @@ func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, 
 				}
 
 				if binary.LittleEndian.Uint64(result[24:]) < work.target {
-					shareChan <- cryptonightShare{result, i}
+					shareChan <- cryptonightShare{result, binary.BigEndian.Uint32(input[NonceIndex:])}
 				}
 			}
 

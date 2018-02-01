@@ -39,7 +39,7 @@ func TestCryptonightCPU(t *testing.T) {
 
 	share := <-stratumClient.Shares
 
-	if share.Result != "03deef54ac208e5c4c41b608fa3c37436c5350858766d332fffbd8b06efc0700" || share.Nonce != "0000001b" {
+	if share.Result != "520dc6802cdc050d60a6edca53a3c530f9178da77af81cd64d073b9a38311100" || share.Nonce != "9b020000" {
 		t.Errorf("Invalid share result '%v' / nonce '%v'", share.Result, share.Nonce)
 	}
 }
@@ -112,7 +112,7 @@ func TestCryptonightLite(t *testing.T) {
 
 	share := <-stratumClient.Shares
 
-	if share.Result != "8ff9e89e9f5d6d52fc8fedc7e6e02b8c981cdae34ae4ed09df419c11f7fd0200" || share.Nonce != "0000044e" {
-		t.Errorf("Invalid share")
+	if share.Result != "cda095acfe6cbfbe33eb7a74af0bc52d59cc3e33a318bd584e667c735bb70400" || share.Nonce != "f6060000" {
+		t.Errorf("Invalid share result '%v' / nonce '%v'", share.Result, share.Nonce)
 	}
 }

@@ -14,7 +14,6 @@ import (
 
 type CryptonightCLWorker struct {
 	Intensity     uint32
-	Nonce         uint32
 	worksize      uint32
 	queue         *cl.CommandQueue
 	inputBuf      *cl.MemObject
@@ -76,7 +75,6 @@ func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWor
 
 	w := CryptonightCLWorker{
 		Intensity: uint32(config.Intensity),
-		Nonce:     0,
 		worksize:  uint32(device.MaxWorkGroupSize() / 8),
 	}
 
@@ -264,7 +262,7 @@ func (w *CryptonightCLWorker) SetJob(input []byte, target uint64) error {
 	return nil
 }
 
-func (w *CryptonightCLWorker) RunJob(results []uint32) error {
+func (w *CryptonightCLWorker) RunJob(results []uint32, nonce uint32) error {
 
 	// round up to next multiple of worksize
 	threads := ((w.Intensity + w.worksize - 1) / w.worksize) * w.worksize
@@ -305,7 +303,7 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 		return errors.WithStack(err)
 	}
 
-	globalWorkOffset := []int{int(w.Nonce), 1}
+	globalWorkOffset := []int{int(nonce), 1}
 	globalWorkSize := []int{int(threads), 8}
 	localWorkSize := []int{int(w.worksize), 8}
 
@@ -313,7 +311,7 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 		return errors.WithStack(err)
 	}
 
-	if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[1], []int{int(w.Nonce)}, []int{int(threads)}, []int{int(w.worksize)}, nil); err != nil {
+	if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[1], []int{int(nonce)}, []int{int(threads)}, []int{int(w.worksize)}, nil); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -359,7 +357,7 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 			return errors.New("branchNonce is no multiple of workSize")
 		}
 
-		if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[i], []int{int(w.Nonce)}, []int{int(branchNonces[ni])}, []int{int(w.worksize)}, nil); err != nil {
+		if _, err := w.queue.EnqueueNDRangeKernel(w.kernels[i], []int{int(nonce)}, []int{int(branchNonces[ni])}, []int{int(w.worksize)}, nil); err != nil {
 			return errors.WithStack(err)
 		}
 
@@ -372,8 +370,6 @@ func (w *CryptonightCLWorker) RunJob(results []uint32) error {
 	if err := w.queue.Finish(); err != nil {
 		return errors.WithStack(err)
 	}
-
-	w.Nonce += w.Intensity
 
 	return nil
 }
