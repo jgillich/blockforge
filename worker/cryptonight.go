@@ -199,23 +199,25 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 				return
 			}
 
-			for i := uint32(0); i < results[0xFF]; i++ {
-				input := work.input
-				binary.LittleEndian.PutUint32(input[NonceIndex:], results[i])
+			go func(results []uint32) {
+				for i := uint32(0); i < results[0xFF]; i++ {
+					input := work.input
+					binary.LittleEndian.PutUint32(input[NonceIndex:], results[i])
 
-				var result []byte
-				if w.lite {
-					result = hash.CryptonightLite(input)
-				} else {
-					result = hash.Cryptonight(input)
-				}
+					var result []byte
+					if w.lite {
+						result = hash.CryptonightLite(input)
+					} else {
+						result = hash.Cryptonight(input)
+					}
 
-				if binary.LittleEndian.Uint64(result[24:]) < work.target {
-					shareChan <- cryptonightShare{result, results[i]}
-				} else {
-					log.Errorw("invalid result from CL worker")
+					if binary.LittleEndian.Uint64(result[24:]) < work.target {
+						shareChan <- cryptonightShare{result, results[i]}
+					} else {
+						log.Errorw("invalid result from CL worker")
+					}
 				}
-			}
+			}(results)
 
 			hashes += cl.Intensity
 		case newWork, ok := <-workChan:
