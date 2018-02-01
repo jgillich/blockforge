@@ -72,18 +72,7 @@
                 <div>
                   <p class="heading">Intensity</p>
                   <p class="title">
-                    <select class="select" data-index={index} data-platform={ platform } onchange={updateIntensity}>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                      <option value="9">9</option>
-                      <option value="10">10</option>
-                    </select>
+                    <input class="input" style="width: 4em" type="number" max="2000"  value={ intensity } data-index={index} data-platform={ platform } onchange={updateIntensity}>
                   </p>
                 </div>
               </div>
@@ -171,7 +160,24 @@
     }
 
     updateIntensity(e) {
-      alert("Sorry, this is not implemented yet")
+      var index = parseInt(e.srcElement.dataset.index)
+      var platform = parseInt(e.srcElement.dataset.platform)
+
+      if (isNaN(e.srcElement.value)) {
+        alert("intensity must be a number")
+        return
+      }
+
+      var intensity = parseInt(e.srcElement.value, 10)
+
+      if (intensity > 2000) {
+        alert("intensity cannot be larger than 2000")
+        return
+      }
+
+      var cl = this.cl(index, platform)
+      cl.intensity = intensity
+      opts.miner.trigger('update')
     }
 
     toggleEnable(e) {
