@@ -42,7 +42,7 @@ build_script:
       go version
       go env
       go generate
-      go build -ldflags '-s -w -X gitlab.com/blockforge/blockforge/cmd.VERSION=$env:APPVEYOR_BUILD_VERSION -linkmode external -extldflags "-static"' 2>&1 | %{ "$_" }
+      go build -ldflags "-s -w -X gitlab.com/blockforge/blockforge/cmd.VERSION=$env:APPVEYOR_BUILD_VERSION -linkmode external -extldflags '-static'" 2>&1 | %{ "$_" }
 
 after_build:
   - ps: |
