@@ -90,6 +90,8 @@ func NewCryptonight(config Config, lite bool) Worker {
 }
 
 func (w *cryptonight) Work() error {
+	w.statMu.Lock()
+	defer w.statMu.Unlock()
 
 	totalThreads := len(w.clDevices)
 	for _, c := range w.processors {
