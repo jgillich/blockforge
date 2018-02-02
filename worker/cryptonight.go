@@ -54,12 +54,14 @@ type cryptonight struct {
 }
 
 type cryptonightWork struct {
+	jobId  string
 	input  []byte
 	target uint64
 	nonce  uint32
 }
 
 type cryptonightShare struct {
+	jobId  string
 	result []byte
 	nonce  uint32
 }
@@ -128,21 +130,31 @@ func (w *cryptonight) Work() error {
 	w.statMu.Unlock()
 
 	var job stratum.Job
+	var jobMu sync.RWMutex
 
 	go func() {
 		for share := range shareChan {
+			jobMu.RLock()
+			if share.jobId != job.JobId {
+				jobMu.RUnlock()
+				log.Info("skipping outdated share")
+				continue
+			}
+			jobMu.RUnlock()
+
 			w.stratum.SubmitShare(&stratum.Share{
-				MinerId: job.MinerId,
-				JobId:   job.JobId,
-				Result:  fmt.Sprintf("%x", share.result),
-				Nonce:   fmt.Sprintf("%08x", share.nonce),
+				JobId:  share.jobId,
+				Result: fmt.Sprintf("%x", share.result),
+				Nonce:  fmt.Sprintf("%08x", share.nonce),
 			})
 		}
 	}()
 
 	for j := range w.stratum.Jobs() {
+		jobMu.Lock()
 		job = j
 		work, err := w.getWork(job)
+		jobMu.Unlock()
 		if err != nil {
 			log.Errorw(err.Error(), "job", job)
 			continue
@@ -181,9 +193,9 @@ func (w *cryptonight) getWork(job stratum.Job) (*cryptonightWork, error) {
 	log.Infof("job difficulty %v", math.MaxUint64/target)
 
 	return &cryptonightWork{
+		jobId:  job.JobId,
 		input:  input,
 		target: target,
-		nonce:  0,
 	}, nil
 }
 
@@ -223,7 +235,7 @@ func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, wo
 					}
 
 					if binary.LittleEndian.Uint64(result[24:]) < work.target {
-						shareChan <- cryptonightShare{result, binary.BigEndian.Uint32(input[NonceIndex:])}
+						shareChan <- cryptonightShare{work.jobId, result, binary.BigEndian.Uint32(input[NonceIndex:])}
 					} else {
 						log.Errorw("invalid result from CL worker")
 					}
@@ -277,7 +289,7 @@ func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, 
 				}
 
 				if binary.LittleEndian.Uint64(result[24:]) < work.target {
-					shareChan <- cryptonightShare{result, binary.BigEndian.Uint32(input[NonceIndex:])}
+					shareChan <- cryptonightShare{work.jobId, result, binary.BigEndian.Uint32(input[NonceIndex:])}
 				}
 			}
 

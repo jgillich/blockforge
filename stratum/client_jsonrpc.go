@@ -20,7 +20,6 @@ type jsonrpcClient struct {
 	conn    net.Conn
 	jobs    chan Job
 	minerId string
-	jobId   atomic.String
 	pool    Pool
 	closed  atomic.Bool
 }
@@ -112,11 +111,7 @@ func (c *jsonrpcClient) Jobs() chan Job {
 }
 
 func (c *jsonrpcClient) SubmitShare(share *Share) {
-	if share.JobId != c.jobId.Load() {
-		log.Info("skipping share")
-		return
-	}
-
+	share.MinerId = c.minerId
 	sendMessage(c.conn, &Message{
 		Id:     1,
 		Method: "submit",
@@ -151,14 +146,12 @@ func (c *jsonrpcClient) parseJob(data *gabs.Container) {
 	}
 
 	job := Job{
-		MinerId: c.minerId,
-		JobId:   jobId,
-		Blob:    blob,
-		Target:  target,
+		JobId:  jobId,
+		Blob:   blob,
+		Target: target,
 	}
 
 	log.Debugf("got job '%+v'", jobId)
 
-	c.jobId.Store(jobId)
 	c.jobs <- job
 }

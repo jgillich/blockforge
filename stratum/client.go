@@ -46,10 +46,9 @@ type Error struct {
 }
 
 type Job struct {
-	MinerId string
-	JobId   string
-	Blob    string
-	Target  string
+	JobId  string
+	Blob   string
+	Target string
 }
 
 type Share struct {
