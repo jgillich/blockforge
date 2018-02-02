@@ -24,6 +24,7 @@ type cryptonightCLWorker struct {
 	jhBuf         *cl.MemObject
 	skeinBuf      *cl.MemObject
 	outputBuf     *cl.MemObject
+	program       *cl.Program
 	kernels       []*cl.Kernel
 }
 
@@ -127,19 +128,19 @@ func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWor
 		return nil, errors.Wrap(err, "intializing buffer failed")
 	}
 
-	program, err := ctx.CreateProgramWithSource([]string{cryptonightKernel})
+	w.program, err = ctx.CreateProgramWithSource([]string{cryptonightKernel})
 	if err != nil {
 		return nil, errors.Wrap(err, "creating program failed")
 	}
 
 	options := fmt.Sprintf("-DITERATIONS=%v -DMASK=%v -DWORKSIZE=%v -DSTRIDED_INDEX=%v", iterations, mask, w.worksize, 0)
-	if err := program.BuildProgram([]*cl.Device{device}, options); err != nil {
+	if err := w.program.BuildProgram([]*cl.Device{device}, options); err != nil {
 		return nil, errors.Wrap(err, "building program failed")
 	}
 
 	w.kernels = []*cl.Kernel{}
 	for _, name := range []string{"cn0", "cn1", "cn2", "Blake", "Groestl", "JH", "Skein"} {
-		kernel, err := program.CreateKernel(name)
+		kernel, err := w.program.CreateKernel(name)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating kernel failed")
 		}
@@ -372,4 +373,19 @@ func (w *cryptonightCLWorker) RunJob(results []uint32, nonce uint32) error {
 	}
 
 	return nil
+}
+
+func (w *cryptonightCLWorker) Release() {
+	w.queue.Release()
+	w.inputBuf.Release()
+	w.scratchpadBuf.Release()
+	w.hashStateBuf.Release()
+	w.blakeBuf.Release()
+	w.groestlBuf.Release()
+	w.jhBuf.Release()
+	w.outputBuf.Release()
+	for _, k := range w.kernels {
+		k.Release()
+	}
+	w.program.Release()
 }

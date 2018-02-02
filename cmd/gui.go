@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sync"
 
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 	"gitlab.com/blockforge/blockforge/log"
@@ -138,71 +139,91 @@ type guiBackend struct {
 	Config     miner.Config                   `json:"config"`
 	Processors []*processor.Processor         `json:"processors"`
 	Coins      map[string]worker.Capabilities `json:"coins"`
-}
-
-func (g *guiBackend) err(err error) {
-
+	mu         sync.Mutex
 }
 
 func (g *guiBackend) Start() {
-	miner, err := miner.New(g.Config)
-	if err != nil {
-		g.errors <- err
-		return
-	}
 	go func() {
-		err := miner.Start()
+		g.mu.Lock()
+		defer g.mu.Unlock()
+
+		miner, err := miner.New(g.Config)
 		if err != nil {
 			g.errors <- err
+			return
 		}
+		go func() {
+			err := miner.Start()
+			if err != nil {
+				g.errors <- err
+			}
+		}()
+		g.miner = miner
 	}()
-	g.miner = miner
 }
 
 func (g *guiBackend) Stop() {
-	if g.miner != nil {
-		g.miner.Stop()
-		g.miner = nil
-	}
+	go func() {
+		g.mu.Lock()
+		defer g.mu.Unlock()
+
+		if g.miner != nil {
+			g.miner.Stop()
+			g.miner = nil
+		}
+	}()
 }
 
 func (g *guiBackend) Stats() {
-	if g.miner != nil {
-		stats := g.miner.Stats()
-		buf, err := json.Marshal(stats)
-		if err != nil {
-			log.Debugf("%+v", stats)
-			g.errors <- errors.WithStack(err)
-			return
+	go func() {
+		g.mu.Lock()
+		defer g.mu.Unlock()
+
+		if g.miner != nil {
+			stats := g.miner.Stats()
+			buf, err := json.Marshal(stats)
+			if err != nil {
+				log.Debugf("%+v", stats)
+				g.errors <- errors.WithStack(err)
+				return
+			}
+			g.webview.Dispatch(func() {
+				g.webview.Eval(fmt.Sprintf("miner.trigger('stats', %v)", string(buf)))
+			})
 		}
-		g.webview.Eval(fmt.Sprintf("miner.trigger('stats', %v)", string(buf)))
-	}
+	}()
 }
 
 func (g *guiBackend) UpdateConfig(s string) {
-	var config miner.Config
-	err := json.Unmarshal([]byte(s), &config)
-	if err != nil {
-		g.errors <- err
-		return
-	}
+	go func() {
+		g.mu.Lock()
+		var config miner.Config
+		err := json.Unmarshal([]byte(s), &config)
+		if err != nil {
+			g.errors <- err
+			return
+		}
 
-	out, err := yaml.Marshal(&config)
-	if err != nil {
-		g.errors <- err
-		return
-	}
+		out, err := yaml.Marshal(&config)
+		if err != nil {
+			g.errors <- err
+			return
+		}
 
-	err = ioutil.WriteFile(configPath, []byte(out), os.ModePerm)
-	if err != nil {
-		g.errors <- err
-		return
-	}
+		err = ioutil.WriteFile(configPath, []byte(out), os.ModePerm)
+		if err != nil {
+			g.errors <- err
+			return
+		}
 
-	g.Config = config
+		g.Config = config
 
-	if g.miner != nil {
-		g.Stop()
-		g.Start()
-	}
+		if g.miner != nil {
+			g.mu.Unlock()
+			g.Stop()
+			g.Start()
+		} else {
+			g.mu.Unlock()
+		}
+	}()
 }

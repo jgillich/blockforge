@@ -126,8 +126,6 @@ func New(config Config) (*Miner, error) {
 		miner.stratums[name] = stratum
 		miner.workers[name] = worker
 	}
-
-	log.Debug("miner started")
 	return &miner, nil
 }
 
@@ -140,7 +138,8 @@ func (m *Miner) Start() error {
 			}
 		}()
 	}
-
+	log.Debug("miner started")
+	defer log.Debug("miner stopped")
 	return <-m.err
 }
 
@@ -148,8 +147,8 @@ func (m *Miner) Stop() {
 	for _, stratum := range m.stratums {
 		stratum.Close()
 	}
+	m.err <- nil
 	close(m.err)
-	log.Debug("miner stopped")
 }
 
 func (m *Miner) Stats() worker.Stats {

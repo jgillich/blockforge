@@ -98,7 +98,8 @@ func (w *cryptonight) Work() error {
 	workChannels := make([]chan *cryptonightWork, totalThreads)
 	for i := 0; i < totalThreads; i++ {
 		workChannels[i] = make(chan *cryptonightWork, 1)
-		defer close(workChannels[i])
+		index := i
+		defer close(workChannels[index])
 	}
 
 	shareChan := make(chan cryptonightShare, 10)
@@ -187,6 +188,10 @@ func (w *cryptonight) getWork(job stratum.Job) (*cryptonightWork, error) {
 }
 
 func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
+	log.Debugf("gpu thread %v/%v started", platform, index)
+	defer log.Debugf("gpu thread %v/%v stopped", platform, index)
+	defer cl.Release()
+
 	hashes := uint32(0)
 	start := time.Now()
 
@@ -246,6 +251,9 @@ func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, wo
 }
 
 func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
+	log.Debugf("cpu thread %v/%v started", cpu, index)
+	defer log.Debugf("cpu thread %v/%v stopped", cpu, index)
+
 	hashes := 0
 	start := time.Now()
 
