@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type CryptonightCLWorker struct {
+type cryptonightCLWorker struct {
 	Intensity     uint32
 	worksize      uint32
 	queue         *cl.CommandQueue
@@ -27,7 +27,7 @@ type CryptonightCLWorker struct {
 	kernels       []*cl.Kernel
 }
 
-func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWorker, error) {
+func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWorker, error) {
 
 	var cryptonightKernel string
 	{
@@ -73,7 +73,7 @@ func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWor
 		mask = CryptonightMask
 	}
 
-	w := CryptonightCLWorker{
+	w := cryptonightCLWorker{
 		Intensity: uint32(config.Intensity),
 		worksize:  uint32(device.MaxWorkGroupSize() / 8),
 	}
@@ -150,7 +150,7 @@ func NewCryptonightCLWorker(config CLDeviceConfig, lite bool) (*CryptonightCLWor
 	return &w, nil
 }
 
-func (w *CryptonightCLWorker) SetJob(input []byte, target uint64) error {
+func (w *cryptonightCLWorker) SetJob(input []byte, target uint64) error {
 
 	uintensity := uint64(w.Intensity)
 
@@ -262,7 +262,7 @@ func (w *CryptonightCLWorker) SetJob(input []byte, target uint64) error {
 	return nil
 }
 
-func (w *CryptonightCLWorker) RunJob(results []uint32, nonce uint32) error {
+func (w *cryptonightCLWorker) RunJob(results []uint32, nonce uint32) error {
 
 	// round up to next multiple of worksize
 	threads := ((w.Intensity + w.worksize - 1) / w.worksize) * w.worksize

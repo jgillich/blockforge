@@ -13,7 +13,7 @@ func init() {
 
 func TestMiner(t *testing.T) {
 	config := Config{
-		Coins: DefaultCoinConfig,
+		Coins: defaultCoinConfig,
 		Processors: []Processor{
 			Processor{
 				Coin:    "XMR",

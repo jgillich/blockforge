@@ -109,7 +109,7 @@ func (w *cryptonight) Work() error {
 		if len(w.clDevices) > 0 {
 			for i, device := range w.clDevices {
 				w.gpuStats[device.Device.Platform.Index] = map[int]float32{}
-				worker, err := NewCryptonightCLWorker(device, w.lite)
+				worker, err := newCryptonightCLWorker(device, w.lite)
 				if err != nil {
 					return err
 				}
@@ -186,9 +186,9 @@ func (w *cryptonight) getWork(job stratum.Job) (*cryptonightWork, error) {
 	}, nil
 }
 
-func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
+func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
 	hashes := uint32(0)
-	startTime := time.Now()
+	start := time.Now()
 
 	work := <-workChan
 	cl.SetJob(work.input, work.target)
@@ -227,11 +227,14 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 
 			hashes += cl.Intensity
 		case newWork, ok := <-workChan:
-			w.statMu.Lock()
-			w.gpuStats[platform][index] = float32(hashes) / float32(time.Since(startTime).Seconds())
-			startTime = time.Now()
-			hashes = 0
-			w.statMu.Unlock()
+			elapsed := time.Since(start).Seconds()
+			if elapsed > 0 {
+				w.statMu.Lock()
+				w.gpuStats[platform][index] = float32(hashes) / float32(elapsed)
+				w.statMu.Unlock()
+				start = time.Now()
+				hashes = 0
+			}
 			if !ok {
 				return
 			}
@@ -243,8 +246,8 @@ func (w *cryptonight) gpuThread(platform, index int, cl *CryptonightCLWorker, wo
 }
 
 func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
-	hashes := float32(0)
-	startTime := time.Now()
+	hashes := 0
+	start := time.Now()
 
 	work := <-workChan
 
@@ -272,11 +275,14 @@ func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, 
 
 			hashes += 64
 		case newWork, ok := <-workChan:
-			w.statMu.Lock()
-			w.cpuStats[cpu][index] = float32(hashes) / float32(time.Since(startTime).Seconds())
-			startTime = time.Now()
-			hashes = 0
-			w.statMu.Unlock()
+			elapsed := time.Since(start).Seconds()
+			if elapsed > 0 {
+				w.statMu.Lock()
+				w.cpuStats[cpu][index] = float32(hashes) / float32(elapsed)
+				w.statMu.Unlock()
+				start = time.Now()
+				hashes = 0
+			}
 			if !ok {
 				return
 			}

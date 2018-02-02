@@ -13,10 +13,10 @@ import (
 )
 
 func init() {
-	clients[ProtocolJsonrpc] = NewJsonrpcClient
+	clients[ProtocolJsonrpc] = newJsonrpcClient
 }
 
-type JsonrpcClient struct {
+type jsonrpcClient struct {
 	conn    net.Conn
 	jobs    chan Job
 	minerId string
@@ -25,7 +25,7 @@ type JsonrpcClient struct {
 	closed  bool
 }
 
-func NewJsonrpcClient(pool Pool) (Client, error) {
+func newJsonrpcClient(pool Pool) (Client, error) {
 	url, err := url.Parse(pool.URL)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func NewJsonrpcClient(pool Pool) (Client, error) {
 		return nil, err
 	}
 
-	c := JsonrpcClient{
+	c := jsonrpcClient{
 		jobs: make(chan Job, 10),
 		pool: pool,
 		conn: conn,
@@ -107,11 +107,11 @@ func NewJsonrpcClient(pool Pool) (Client, error) {
 	return &c, nil
 }
 
-func (c *JsonrpcClient) Jobs() chan Job {
+func (c *jsonrpcClient) Jobs() chan Job {
 	return c.jobs
 }
 
-func (c *JsonrpcClient) SubmitShare(share *Share) {
+func (c *jsonrpcClient) SubmitShare(share *Share) {
 	if share.JobId != c.jobId.Load() {
 		log.Info("skipping share")
 		return
@@ -125,13 +125,13 @@ func (c *JsonrpcClient) SubmitShare(share *Share) {
 	log.Info("share submitted")
 }
 
-func (c *JsonrpcClient) Close() error {
+func (c *jsonrpcClient) Close() error {
 	c.closed = true
 	close(c.jobs)
 	return c.conn.Close()
 }
 
-func (c *JsonrpcClient) parseJob(data *gabs.Container) {
+func (c *jsonrpcClient) parseJob(data *gabs.Container) {
 	jobId, ok := data.Path("job_id").Data().(string)
 	if !ok {
 		log.Error("job_id missing or malformed")

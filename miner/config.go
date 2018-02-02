@@ -40,7 +40,7 @@ type OpenCLDevice struct {
 	Coin      string `yaml:"coin" json:"coin"`
 }
 
-var DefaultCoinConfig = map[string]Coin{
+var defaultCoinConfig = map[string]Coin{
 	"XMR": Coin{
 		Pool: stratum.Pool{
 			URL:  "stratum+tcp://xmr.coinfoundry.org:3032",
@@ -55,7 +55,7 @@ func GenerateConfig() (*Config, error) {
 	config := Config{
 		Version:       currentConfigVersion,
 		Donate:        5,
-		Coins:         DefaultCoinConfig,
+		Coins:         defaultCoinConfig,
 		Processors:    []Processor{},
 		OpenCLDevices: []OpenCLDevice{},
 	}

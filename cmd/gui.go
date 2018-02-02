@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"gitlab.com/blockforge/blockforge/hardware/processor"
+	"gitlab.com/blockforge/blockforge/log"
 
 	"gitlab.com/blockforge/blockforge/worker"
 
@@ -17,6 +18,7 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/inconshreveable/mousetrap"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
 	"gitlab.com/blockforge/blockforge/miner"
@@ -35,7 +37,7 @@ var guiCmd = &cobra.Command{
 			hideConsoleWindow()
 		}
 
-		errors := make(chan error)
+		errors := make(chan error, 10)
 		var config miner.Config
 
 		buf, err := ioutil.ReadFile(configPath)
@@ -43,15 +45,15 @@ var guiCmd = &cobra.Command{
 			if os.IsNotExist(err) {
 				err := initConfig()
 				if err != nil {
-					go func(err error) { errors <- err }(err)
+					errors <- err
 				} else {
 					buf, err = ioutil.ReadFile(configPath)
 					if err != nil {
-						go func(err error) { errors <- err }(err)
+						errors <- err
 					}
 				}
 			} else {
-				go func(err error) { errors <- err }(err)
+				errors <- err
 			}
 		} else {
 			err = yaml.Unmarshal(buf, &config)
@@ -64,7 +66,7 @@ var guiCmd = &cobra.Command{
 
 		listener, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
-			go func(err error) { errors <- err }(err)
+			errors <- err
 		}
 		defer listener.Close()
 
@@ -77,7 +79,7 @@ var guiCmd = &cobra.Command{
 
 		processors, err := processor.GetProcessors()
 		if err != nil {
-			go func(err error) { errors <- err }(err)
+			errors <- err
 		}
 
 		view := webview.New(webview.Settings{
@@ -90,7 +92,7 @@ var guiCmd = &cobra.Command{
 			ExternalInvokeCallback: func(view webview.WebView, data string) {
 				if data == "__app_js_loaded__" {
 
-					_, err := view.Bind("backend", &GuiBackend{
+					_, err := view.Bind("backend", &guiBackend{
 						errors:     errors,
 						webview:    view,
 						miner:      nil,
@@ -105,7 +107,7 @@ var guiCmd = &cobra.Command{
 					}
 
 					if debug && runtime.GOOS == "windows" {
-						view.Eval(`document.write('<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js#startOpened=true"></script>')`)
+						view.Eval(`document.write('<script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script>')`)
 					}
 
 					err = view.Eval("init()")
@@ -121,7 +123,7 @@ var guiCmd = &cobra.Command{
 
 		go func() {
 			err := <-errors
-			view.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Unexpected Error", fmt.Sprintf("%v", err))
+			view.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Unexpected Error", fmt.Sprintf("%+v", err))
 			os.Exit(1)
 		}()
 
@@ -129,7 +131,7 @@ var guiCmd = &cobra.Command{
 	},
 }
 
-type GuiBackend struct {
+type guiBackend struct {
 	errors     chan error
 	webview    webview.WebView
 	miner      *miner.Miner
@@ -138,11 +140,11 @@ type GuiBackend struct {
 	Coins      map[string]worker.Capabilities `json:"coins"`
 }
 
-func (g *GuiBackend) err(err error) {
+func (g *guiBackend) err(err error) {
 
 }
 
-func (g *GuiBackend) Start() {
+func (g *guiBackend) Start() {
 	miner, err := miner.New(g.Config)
 	if err != nil {
 		g.errors <- err
@@ -157,25 +159,27 @@ func (g *GuiBackend) Start() {
 	g.miner = miner
 }
 
-func (g *GuiBackend) Stop() {
+func (g *guiBackend) Stop() {
 	if g.miner != nil {
 		g.miner.Stop()
 		g.miner = nil
 	}
 }
 
-func (g *GuiBackend) Stats() {
+func (g *guiBackend) Stats() {
 	if g.miner != nil {
-		buf, err := json.Marshal(g.miner.Stats())
+		stats := g.miner.Stats()
+		buf, err := json.Marshal(stats)
 		if err != nil {
-			g.errors <- err
+			log.Debugf("%+v", stats)
+			g.errors <- errors.WithStack(err)
 			return
 		}
 		g.webview.Eval(fmt.Sprintf("miner.trigger('stats', %v)", string(buf)))
 	}
 }
 
-func (g *GuiBackend) UpdateConfig(s string) {
+func (g *guiBackend) UpdateConfig(s string) {
 	var config miner.Config
 	err := json.Unmarshal([]byte(s), &config)
 	if err != nil {
