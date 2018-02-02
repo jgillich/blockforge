@@ -90,9 +90,6 @@ func NewCryptonight(config Config, lite bool) Worker {
 }
 
 func (w *cryptonight) Work() error {
-	w.statMu.Lock()
-	defer w.statMu.Unlock()
-
 	totalThreads := len(w.clDevices)
 	for _, c := range w.processors {
 		totalThreads += c.Threads
@@ -107,23 +104,27 @@ func (w *cryptonight) Work() error {
 	shareChan := make(chan cryptonightShare, 10)
 	defer close(shareChan)
 
-	if len(w.clDevices) > 0 {
-		for i, device := range w.clDevices {
-			w.gpuStats[device.Device.Platform.Index] = map[int]float32{}
-			worker, err := NewCryptonightCLWorker(device, w.lite)
-			if err != nil {
-				return err
+	w.statMu.Lock()
+	{
+		if len(w.clDevices) > 0 {
+			for i, device := range w.clDevices {
+				w.gpuStats[device.Device.Platform.Index] = map[int]float32{}
+				worker, err := NewCryptonightCLWorker(device, w.lite)
+				if err != nil {
+					return err
+				}
+				go w.gpuThread(device.Device.Platform.Index, i, worker, workChannels[i], shareChan)
 			}
-			go w.gpuThread(device.Device.Platform.Index, i, worker, workChannels[i], shareChan)
 		}
-	}
 
-	for cpuIndex, conf := range w.processors {
-		w.cpuStats[cpuIndex] = map[int]float32{}
-		for i := 0; i < conf.Threads; i++ {
-			go w.cpuThread(cpuIndex, i, workChannels[len(w.clDevices)+i], shareChan)
+		for cpuIndex, conf := range w.processors {
+			w.cpuStats[cpuIndex] = map[int]float32{}
+			for i := 0; i < conf.Threads; i++ {
+				go w.cpuThread(cpuIndex, i, workChannels[len(w.clDevices)+i], shareChan)
+			}
 		}
 	}
+	w.statMu.Unlock()
 
 	var job stratum.Job
 
