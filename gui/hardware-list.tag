@@ -79,7 +79,9 @@
                 <div>
                   <p class="heading">Intensity</p>
                   <p class="title">
-                    <input class="input" style="width: 4em" type="number" max="2000"  value={ intensity } data-index={index} data-platform={ platform } onchange={updateIntensity}>
+                    <select class="select" data-index={index} data-platform={platform} onchange={updateIntensity}>
+                      <option each={ i in this.intensities } value={i} selected={intensity == i}>{ i }</option>
+                    </select>
                   </p>
                 </div>
               </div>
@@ -102,6 +104,11 @@
   </div>
 
   <script>
+    this.intensities = []
+    for (i = 64; i < 1000; i += 64) {
+      this.intensities.push(i)
+    }
+
     this.threadNums = []
     opts.miner.processors.forEach(function (cpu) {
       var threads = []
@@ -158,6 +165,7 @@
       if (isNaN(platform)) {
         var processor = this.processor(index)
         processor.coin = e.srcElement.value
+        console.log(opts.miner.config)
       } else {
         var cl = this.cl(index, platform)
         cl.coin = e.srcElement.value
