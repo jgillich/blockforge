@@ -83,8 +83,8 @@ var guiCmd = &cobra.Command{
 		view := webview.New(webview.Settings{
 			URL:       "http://" + listener.Addr().String(),
 			Title:     fmt.Sprintf("BlockForge %v", VERSION),
-			Width:     1152,
-			Height:    648,
+			Width:     1232,
+			Height:    700,
 			Resizable: true,
 			Debug:     debug,
 			ExternalInvokeCallback: func(view webview.WebView, data string) {

@@ -4,15 +4,9 @@
     <div class="column is-4" each={ miner.config.processors }>
       <div class="card">
         <div class="card-header">
-          <p class="card-header-title">
+          <p class="card-header-title" style="white-space: nowrap; text-overflow: ellipsis; overflow: hidden">
             { name }
           </p>
-          <div class="card-header-icon">
-            <div class="field">
-              <input id={ "enable" + index} type="checkbox" class="switch is-rounded" data-index={index} checked={ enable } onclick={ toggleEnable }>
-              <label for={ "enable" + index}></label>
-            </div>
-          </div>
         </div>
         <div class="card-content has-text-centered">
           <h3 class="title is-3">{ hashrate(index).toFixed(2) }</h3>
@@ -21,6 +15,16 @@
         <div class="card-footer">
           <div class="card-footer-item">
             <nav class="level" style="flex: 1">
+              <div class="level-item has-text-centered">
+                <div>
+                  <p class="heading">Enabled</p>
+                  <p class="title">
+                    <input id={ "enable" + index} type="checkbox" class="switch is-rounded" data-index={index} checked={ enable } onclick={ toggleEnable }>
+                    <label for={ "enable" + index}></label>
+                  </p>
+                </div>
+              </div>
+
               <div class="level-item has-text-centered">
                 <div>
                   <p class="heading">Threads</p>
@@ -53,13 +57,6 @@
           <p class="card-header-title">
             { name }
           </p>
-          <div class="card-header-icon">
-            <div class="field">
-              <input id={ "enable" + platform + index } type="checkbox" class="switch is-rounded"
-                data-index={ index } data-platform={ platform } checked={ enable } onclick={ toggleEnable }>
-              <label for={ "enable" + platform + index }></label>
-            </div>
-          </div>
         </div>
         <div class="card-content has-text-centered">
           <h3 class="title is-3">{ hashrate(index, platform).toFixed(2) }</h3>
@@ -68,6 +65,16 @@
         <div class="card-footer">
           <div class="card-footer-item">
             <nav class="level" style="flex: 1">
+              <div class="level-item has-text-centered">
+                <div>
+                  <p class="heading">Enabled</p>
+                  <p class="title">
+                    <input id={ "enable" + platform + index } type="checkbox" class="switch is-rounded"
+                       data-index={ index } data-platform={ platform } checked={ enable } onclick={ toggleEnable }>
+                    <label for={ "enable" + platform + index }></label>
+                  </p>
+                </div>
+              </div>
               <div class="level-item has-text-centered">
                 <div>
                   <p class="heading">Intensity</p>
