@@ -67,7 +67,7 @@ deploy:
     secure: f5rpBJFgosvnmjewQD251RhZiV3uPztv5xPok4VBRTiOfYLVGuAxL18iLdipvD9Z
   repo: blockforge
   package: blockforge
-  version: "{version}"
+  version: $(appveyor_build_version)
   publish: true
   on:
     appveyor_repo_tag: true
