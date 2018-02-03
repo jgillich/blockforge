@@ -46,7 +46,7 @@ build_script:
 
 after_build:
   - ps: |
-      7z a blockforge-$env:GOHOSTOS-$env:GOARCH.zip blockforge.exe
+      7z a blockforge-$env:APPVEYOR_BUILD_VERSION-$env:GOHOSTOS-$env:GOARCH.zip blockforge.exe
 
 # FIXME tests require opencl dll
 #test_script:
