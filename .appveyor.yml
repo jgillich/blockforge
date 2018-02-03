@@ -56,7 +56,7 @@ after_build:
 #      go test -race $(go list ./... | sls -NotMatch '/vendor/')
 
 artifacts:
-  - path: blockforge-%GOHOSTOS%-%GOARCH%.zip
+  - path: blockforge-%APPVEYOR_BUILD_VERSION%-%GOHOSTOS%-%GOARCH%.zip
     name: blockforge
 
 deploy:

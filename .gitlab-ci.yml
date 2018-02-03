@@ -61,6 +61,6 @@ compile:
 upload:
   stage: deploy
   script:
-    - curl -T blockforge-$GOHOSTOS-$GOARCH.tar.bz2 -ujgillich:$BINTRAY_APIKEY https://api.bintray.com/content/jgillich/blockforge/blockforge/${CI_COMMIT_TAG#v}/blockforge-$GOHOSTOS-$GOARCH.tar.bz2?publish=1
+    - curl -T blockforge-$GOHOSTOS-$GOARCH.tar.bz2 -ujgillich:$BINTRAY_APIKEY https://api.bintray.com/content/jgillich/blockforge/blockforge/${CI_COMMIT_TAG#v}/blockforge-${CI_COMMIT_TAG#v}-$GOHOSTOS-$GOARCH.tar.bz2?publish=1
   only:
     - tags
