@@ -30,7 +30,7 @@ func TestMiner(t *testing.T) {
 	}
 
 	go func() {
-		time.Sleep(time.Minute)
+		time.Sleep(time.Minute * 2)
 
 		stats := miner.Stats()
 
