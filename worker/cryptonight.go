@@ -27,9 +27,6 @@ var CryptonightLiteIter uint32 = 0x40000
 // NonceIndex is the starting location of nonce in binary blob
 var NonceIndex = 39
 
-// NonceWidth is the char width of nonce in binary blob
-var NonceWidth = 4
-
 func init() {
 	for _, c := range []string{"XMR", "ETN", "ITNS", "SUMO", "BCN"} {
 		workers[c] = func(config Config) Worker {
@@ -105,7 +102,14 @@ func (w *cryptonight) Work() error {
 	}
 
 	shareChan := make(chan cryptonightShare, 10)
-	defer close(shareChan)
+	// TODO this is a bad workaround
+	// When stratum client closes the connection, the Work function returns and closes all channels.
+	// But some worker threads might not have gotten the news yet and might try to
+	// send on a closed channel, resulting in a data race. Not sure how to fix this properly.
+	defer func() {
+		time.Sleep(time.Second * 10)
+		close(shareChan)
+	}()
 
 	w.statMu.Lock()
 	{
