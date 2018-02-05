@@ -76,11 +76,12 @@ func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWor
 
 	w := cryptonightCLWorker{
 		Intensity: uint32(config.Intensity),
-		worksize:  uint32(device.MaxWorkGroupSize() / 8),
+		worksize:  uint32(config.Worksize),
 	}
 
+	// worksize 8 is a good default value for most cards
 	if w.worksize == 0 {
-		return nil, errors.New("workSize is 0")
+		w.worksize = 8
 	}
 
 	w.queue, err = ctx.CreateCommandQueue(device, 0)

@@ -58,6 +58,7 @@ type ProcessorConfig struct {
 
 type CLDeviceConfig struct {
 	Intensity int
+	Worksize  int
 	Device    *opencl.Device
 }
 

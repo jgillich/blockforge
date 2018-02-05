@@ -37,6 +37,7 @@ type OpenCLDevice struct {
 	Index     int    `yaml:"index" json:"index"`
 	Name      string `yaml:"name" json:"name"`
 	Intensity int    `yaml:"intensity" json:"intensity"`
+	Worksize  int    `yaml:"worksize,omitempty" json:"worksize,omitempty"`
 	Coin      string `yaml:"coin" json:"coin"`
 }
 

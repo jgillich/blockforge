@@ -88,7 +88,11 @@ func New(config Config) (*Miner, error) {
 				return nil, fmt.Errorf("opencl device platform '%v' index '%v' does not exist", conf.Platform, conf.Index)
 			}
 
-			clConf = append(clConf, worker.CLDeviceConfig{conf.Intensity, device})
+			clConf = append(clConf, worker.CLDeviceConfig{
+				Intensity: conf.Intensity,
+				Worksize:  conf.Worksize,
+				Device:    device,
+			})
 		}
 
 		// skip coins without workers
