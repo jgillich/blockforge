@@ -1,6 +1,8 @@
 package stratum
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/url"
@@ -30,9 +32,24 @@ func newJsonrpcClient(pool Pool) (Client, error) {
 		return nil, err
 	}
 
-	conn, err := net.Dial("tcp", url.Host)
-	if err != nil {
-		return nil, err
+	var conn net.Conn
+	switch url.Scheme {
+	case "stratum+tls":
+		certs, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+		conn, err = tls.Dial("tcp", url.Host, &tls.Config{RootCAs: certs})
+		if err != nil {
+			return nil, err
+		}
+	case "stratum+tcp":
+		conn, err = net.Dial("tcp", url.Host)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported stratum protocol '%v'", url.Scheme)
 	}
 
 	c := jsonrpcClient{
