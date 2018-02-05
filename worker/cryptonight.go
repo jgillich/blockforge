@@ -114,13 +114,13 @@ func (w *cryptonight) Work() error {
 	w.statMu.Lock()
 	{
 		if len(w.clDevices) > 0 {
-			for i, device := range w.clDevices {
-				w.gpuStats[device.Device.Platform.Index] = map[int]float32{}
-				worker, err := newCryptonightCLWorker(device, w.lite)
+			for i, d := range w.clDevices {
+				w.gpuStats[d.Device.Platform.Index] = map[int]float32{}
+				worker, err := newCryptonightCLWorker(d, w.lite)
 				if err != nil {
 					return err
 				}
-				go w.gpuThread(device.Device.Platform.Index, i, worker, workChannels[i], shareChan)
+				go w.gpuThread(d.Device.Platform.Index, d.Device.Index, worker, workChannels[i], shareChan)
 			}
 		}
 
