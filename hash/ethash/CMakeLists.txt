@@ -10,7 +10,7 @@ set(FILES
     sha3.c sha3.h
 )
 
-if (MSVC)
+if (WIN32)
     list(APPEND FILES util_win32.c io_win32.c mmap_win32.c)
 else()
     list(APPEND FILES io_posix.c)
