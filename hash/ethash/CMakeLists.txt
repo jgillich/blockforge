@@ -11,7 +11,7 @@ set(FILES
 )
 
 if (WIN32)
-    list(APPEND FILES util_win32.c io_win32.c mmap_win32.c)
+    list(APPEND FILES io_win32.c mmap_win32.c)
 else()
     list(APPEND FILES io_posix.c)
 endif()
