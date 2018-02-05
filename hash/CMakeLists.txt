@@ -5,7 +5,9 @@ project(hash C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mtune=generic -maes -msse2 -Ofast")
 
 add_subdirectory(cryptonight)
+add_subdirectory(ethash)
+
 
 FILE(GLOB SOURCES *.c)
 
-add_library(hash STATIC $<TARGET_OBJECTS:cryptonight> ${SOURCES})
+add_library(hash STATIC $<TARGET_OBJECTS:cryptonight> $<TARGET_OBJECTS:ethash> ${SOURCES})
