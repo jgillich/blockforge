@@ -6,6 +6,9 @@ description: |
   graphical interface, automatic hardware detection and support for many
   coins.
 
+architectures:
+  - amd64
+
 grade: devel
 confinement: strict
 
