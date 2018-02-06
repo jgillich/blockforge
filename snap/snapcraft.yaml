@@ -37,7 +37,7 @@ parts:
       - libwebkit2gtk-4.0-dev
     stage-packages:
       - libhwloc
-      - ocl-icd-opencl
+      - ocl-icd-libopencl1
       - libwebkit2gtk-4.0
     go-importpath: gitlab.com/blockforge/blockforge
     prepare: |
