@@ -3,3 +3,7 @@ blockforge
 blockforge.exe
 hash/build
 *-packr.go
+parts
+stage
+prime
+snap/.snapcraft

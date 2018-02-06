@@ -1,5 +1,5 @@
 name: blockforge
-version: '0.0.1'
+version: '0.0.4'
 summary: BlockForge is a next generation miner for cryptocurrencies.
 description: |
   BlockForge is a modern cryptocurrency miner featuring a easy to use
@@ -7,23 +7,39 @@ description: |
   coins.
 
 grade: devel
-confinement: devmode
+confinement: strict
 
 apps:
   blockforge:
-    command: blockforge
+    command: bin/blockforge
+    plugs: [home, opengl]
 
 parts:
   hash:
     plugin: cmake
     source: hash
+  go:
+    source-tag: go1.9.3
   blockforge:
+    after:
+      - hash
+      - go
     plugin: go
     source: .
+    build-packages:
+      - git
+      - cmake
+      - libhwloc-dev
+      - ocl-icd-opencl-dev
+      - libwebkit2gtk-4.0-dev
     go-importpath: gitlab.com/blockforge/blockforge
-    go-packages:
-      - gitlab.com/blockforge/blockforge
-      - github.com/gobuffalo/packr/
-      - go get -u github.com/golang/dep/cmd/dep
-    install: |
+    prepare: |
+      export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
+      export PATH=$GOPATH/bin:$PATH
+      cd $GOPATH/src/gitlab.com/blockforge/blockforge
+      go get github.com/golang/dep/cmd/dep github.com/gobuffalo/packr/packr
       dep ensure -vendor-only
+      go generate
+      rm -f $GOPATH/bin/dep
+      rm -f $GOPATH/bin/packr
+      echo "prepare done"
