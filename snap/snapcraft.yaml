@@ -35,6 +35,10 @@ parts:
       - libhwloc-dev
       - ocl-icd-opencl-dev
       - libwebkit2gtk-4.0-dev
+    stage-packages:
+      - libhwloc
+      - ocl-icd-opencl
+      - libwebkit2gtk-4.0
     go-importpath: gitlab.com/blockforge/blockforge
     prepare: |
       export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
