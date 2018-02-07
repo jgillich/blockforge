@@ -31,7 +31,6 @@ parts:
     source: .
     build-packages:
       - git
-      - cmake
       - libhwloc-dev
       - ocl-icd-opencl-dev
       - libwebkit2gtk-4.0-dev
