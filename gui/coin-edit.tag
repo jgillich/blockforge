@@ -7,12 +7,6 @@
         <button class="delete" aria-label="close" onclick={ close }></button>
       </header>
       <section class="modal-card-body">
-        
-        <article class="message is-danger" if={poolUrlError}>
-          <div class="message-body">
-          Pool URL is invalid.
-          </div>
-        </article>
 
         <div class="field" if={!opts.coin}>
             <label class="label">Coin</label>
@@ -44,6 +38,11 @@
           </div>
         </div>
 
+        <article class="message is-danger" if={ validationError }>
+          <div class="message-body">
+            { validationError }
+          </div>
+        </article>
 
       </section>
       <footer class="modal-card-foot">
@@ -55,18 +54,26 @@
 
   <script>
     this.pool = opts.coin ? opts.miner.config.coins[opts.coin].pool : {}
-    this.poolUrlError = false
 
     var configuredCoins = Object.keys(opts.miner.config.coins)
     this.coins = Object.keys(opts.miner.availableCoins).filter(function (available) {
       return !configuredCoins.find(function (configured) { return available == configured})
     })
 
-    var stratumUrlPattern = /^(stratum\+tcp?:\/\/|stratum\+tls?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?:[1-9][0-9]+$/
-
     save() {
-      this.poolUrlError = !stratumUrlPattern.test(this.refs.url.value)
-      if(this.poolUrlError) return
+      var a = document.createElement('a')
+      a.href = this.refs.url.value
+
+      if (a.protocol != "stratum+tcp:" && a.protocol != "stratum+tls:") {
+        this.validationError = "Pool URL must start with protocol (stratum+tcp:// or stratum+tls://)"
+        return
+      } else if (a.port == "") {
+        this.validationError = "Pool URL must include port"
+        return
+      } else if (this.refs.user.value == "") {
+        this.validationError = "Pool user must not be empty"
+        return
+      }
 
       opts.miner.config.coins[opts.coin || this.refs.coin.value] = {
         pool: {
