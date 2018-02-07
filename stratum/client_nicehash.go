@@ -1,15 +1,16 @@
 package stratum
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 
 	"go.uber.org/atomic"
 
-	"github.com/Jeffail/gabs"
-
 	"gitlab.com/blockforge/blockforge/log"
 )
+
+var NicehashProtocolError = fmt.Errorf("EthereumStratum protocol error")
 
 func init() {
 	clients[ProtocolNicehash] = newNicehashClient
@@ -38,8 +39,16 @@ type nicehashClient struct {
 	difficulty float64
 }
 
+type subscribeResult struct {
+}
+
 func newNicehashClient(pool Pool) (Client, error) {
 	conn, err := pool.dial()
+	if err != nil {
+		return nil, err
+	}
+
+	subscribeParams, err := json.Marshal([]string{agent, "EthereumStratum/1.0.0"})
 	if err != nil {
 		return nil, err
 	}
@@ -47,10 +56,7 @@ func newNicehashClient(pool Pool) (Client, error) {
 	if err := conn.putMessage(&message{
 		Id:     1,
 		Method: "mining.subscribe",
-		Params: []string{
-			agent,
-			"EthereumStratum/1.0.0",
-		},
+		Params: subscribeParams,
 	}); err != nil {
 		return nil, err
 	}
@@ -60,28 +66,34 @@ func newNicehashClient(pool Pool) (Client, error) {
 		return nil, err
 	}
 
-	result, err := gabs.Consume(msg.Result)
+	var result []json.RawMessage
+	err = json.Unmarshal(msg.Result, &result)
 	if err != nil {
 		return nil, err
 	}
 
-	results, err := result.Children()
+	if len(result) != 2 {
+		return nil, NicehashProtocolError
+	}
+
+	var first []string
+	err = json.Unmarshal(result[0], &first)
 	if err != nil {
 		return nil, err
 	}
 
-	inner, err := results[0].Children()
+	if len(first) != 3 {
+		return nil, NicehashProtocolError
+	}
+
+	if first[2] != "EthereumStratum/1.0.0" {
+		return nil, NicehashProtocolError
+	}
+
+	var extraNonce string
+	err = json.Unmarshal(result[1], &extraNonce)
 	if err != nil {
 		return nil, err
-	}
-
-	if inner[2].Data() != "EthereumStratum/1.0.0" {
-		return nil, fmt.Errorf("stratum server does not use protocol EthereumStratum/1.0.0")
-	}
-
-	extraNonce, ok := results[1].Data().(string)
-	if !ok || extraNonce == "" {
-		return nil, fmt.Errorf("missing or invalid etraNonce: '%v'", results[1].String())
 	}
 
 	/*
@@ -93,10 +105,15 @@ func newNicehashClient(pool Pool) (Client, error) {
 		}
 	*/
 
+	authorizeParams, err := json.Marshal([]string{pool.User, pool.Pass})
+	if err != nil {
+		return nil, err
+	}
+
 	if err := conn.putMessage(&message{
 		Id:     1,
 		Method: "mining.authorize",
-		Params: []string{pool.User, pool.Pass},
+		Params: authorizeParams,
 	}); err != nil {
 		return nil, err
 	}
@@ -106,13 +123,13 @@ func newNicehashClient(pool Pool) (Client, error) {
 		return nil, err
 	}
 
-	result, err = gabs.Consume(msg.Result)
+	var loginSuccess bool
+	err = json.Unmarshal(msg.Result, &loginSuccess)
 	if err != nil {
 		return nil, err
 	}
 
-	r, ok := result.Data().(bool)
-	if !r || !ok {
+	if !loginSuccess {
 		return nil, fmt.Errorf("login failed")
 	}
 
@@ -132,7 +149,7 @@ func newNicehashClient(pool Pool) (Client, error) {
 
 func (c *nicehashClient) loop() {
 	for {
-		message, err := c.conn.getMessage()
+		msg, err := c.conn.getMessage()
 		if err != nil {
 			if err == io.EOF {
 				if c.closed.Load() {
@@ -146,64 +163,55 @@ func (c *nicehashClient) loop() {
 			continue
 		}
 
-		params, err := gabs.Consume(message.Params)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-
-		switch message.Method {
+		switch msg.Method {
 		case "mining.notify":
-			children, err := params.Children()
+
+			var params []string
+			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Error(err)
+				log.Errorw(NicehashProtocolError.Error(), "err", err)
 				continue
 			}
-			seedHash, ok := children[0].Data().(string)
-			if !ok {
-				log.Error("received invalid seedHash")
-				continue
-			}
-			headerHash, ok := children[1].Data().(string)
-			if !ok {
-				log.Error("received invalid headerHash")
+
+			if len(params) != 3 {
+				log.Errorw("invalid job params length")
 				continue
 			}
 
 			c.jobs <- NicehashJob{
 				Difficulty: c.difficulty,
-				SeedHash:   seedHash,
-				HeaderHash: headerHash,
+				SeedHash:   params[0],
+				HeaderHash: params[1],
 			}
 
 		case "mining.set_difficulty":
-			children, err := params.Children()
+			var params []float64
+			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Error(err)
+				log.Errorw(NicehashProtocolError.Error(), "err", err)
 				continue
 			}
 
-			difficulty, ok := children[0].Data().(float64)
-			if !ok {
-				log.Error("received invalid difficulty")
+			if len(params) != 1 {
+				log.Errorw("invalid set_difficulty params length")
 				continue
 			}
 
-			c.difficulty = difficulty
+			c.difficulty = params[0]
 		case "mining.set_extranonce":
-			children, err := params.Children()
+			var params []string
+			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Error(err)
+				log.Errorw(NicehashProtocolError.Error(), "err", err)
 				continue
 			}
 
-			extraNonce, ok := children[0].Data().(string)
-			if !ok {
-				log.Error("received invalid extraNonce")
+			if len(params) != 1 {
+				log.Errorw("invalid set_extranonce params length")
 				continue
 			}
 
-			c.extraNonce = extraNonce
+			c.extraNonce = params[0]
 		case "client.get_version":
 		}
 	}

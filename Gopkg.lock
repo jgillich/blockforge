@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/Jeffail/gabs"
-  packages = ["."]
-  revision = "2a3aa15961d5fee6047b8151b67ac2f08ba2c48c"
-  version = "1.0"
-
-[[projects]]
   name = "github.com/gobuffalo/envy"
   packages = ["."]
   revision = "e613c80275b86293880eddeb27417c9a7c670ff3"
@@ -16,8 +10,8 @@
 [[projects]]
   name = "github.com/gobuffalo/packr"
   packages = ["."]
-  revision = "6de5183d12ba3e77d5a9218120a2acf4214240dd"
-  version = "v1.10.2"
+  revision = "64c3dd439b5efc5cd9fb69a8fb209a03cd7c5b86"
+  version = "v1.10.3"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -59,7 +53,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "f91529fc609202eededff4de2dc0ba2f662240a3"
+  revision = "93959269ad99e80983c9ba742a7e01203a4c0e4f"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -77,7 +71,7 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "af1a71c17d39021724884660b359ab0d6b916216"
+  revision = "dbddbff89c177b814be828fe9f3154dec1092ed6"
 
 [[projects]]
   name = "go.uber.org/atomic"
@@ -113,6 +107,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c4fb6434eff8f839e2a8b5fe4501428814af5e1f02bfb32b6a149a251220e355"
+  inputs-digest = "aad91386da73fddd6c68343db5cd2602f374c93b7931b4623db4fe2bfd3ab664"
   solver-name = "gps-cdcl"
   solver-version = 1

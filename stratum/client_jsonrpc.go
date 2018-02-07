@@ -1,12 +1,10 @@
 package stratum
 
 import (
-	"fmt"
+	"encoding/json"
 	"io"
 
 	"go.uber.org/atomic"
-
-	"github.com/Jeffail/gabs"
 
 	"gitlab.com/blockforge/blockforge/log"
 )
@@ -16,9 +14,9 @@ func init() {
 }
 
 type JsonrpcJob struct {
-	JobId  string
-	Blob   string
-	Target string
+	JobId  string `json:"job_id"`
+	Blob   string `json:"blob"`
+	Target string `json:"target"`
 }
 
 type JsonrpcShare struct {
@@ -36,8 +34,23 @@ type jsonrpcClient struct {
 	closed  atomic.Bool
 }
 
+type loginResult struct {
+	Job     JsonrpcJob `json:"job"`
+	Status  string     `json:"status"`
+	MinerId string     `json:"id"`
+}
+
 func newJsonrpcClient(pool Pool) (Client, error) {
 	conn, err := pool.dial()
+	if err != nil {
+		return nil, err
+	}
+
+	params, err := json.Marshal(map[string]string{
+		"login": pool.User,
+		"pass":  pool.Pass,
+		"agent": agent,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -45,11 +58,7 @@ func newJsonrpcClient(pool Pool) (Client, error) {
 	if err := conn.putMessage(&message{
 		Id:     1,
 		Method: "login",
-		Params: map[string]string{
-			"login": pool.User,
-			"pass":  pool.Pass,
-			"agent": agent,
-		},
+		Params: params,
 	}); err != nil {
 		return nil, err
 	}
@@ -59,26 +68,16 @@ func newJsonrpcClient(pool Pool) (Client, error) {
 		return nil, err
 	}
 
-	result, err := gabs.Consume(msg.Result)
-	if err != nil {
+	var result loginResult
+	if err := json.Unmarshal(msg.Result, &result); err != nil {
 		return nil, err
 	}
 
 	c := &jsonrpcClient{
-		jobs: make(chan JsonrpcJob, 10),
-		pool: pool,
-		conn: conn,
-	}
-
-	if result.Exists("job") {
-		container := result.Path("job")
-		minerId, ok := result.Path("id").Data().(string)
-		if !ok {
-			return nil, fmt.Errorf("server did not send miner id")
-		}
-		c.minerId = minerId
-
-		c.parseJob(container)
+		minerId: result.MinerId,
+		jobs:    make(chan JsonrpcJob, 10),
+		pool:    pool,
+		conn:    conn,
 	}
 
 	go c.loop()
@@ -104,12 +103,12 @@ func (c *jsonrpcClient) loop() {
 
 		switch msg.Method {
 		case "job":
-			params, err := gabs.Consume(msg.Params)
-			if err != nil {
-				log.Error(err)
+			var job JsonrpcJob
+			if err := json.Unmarshal(msg.Params, &job); err != nil {
+				log.Errorw("error parsing job", "err", err)
 				continue
 			}
-			c.parseJob(params)
+			c.jobs <- job
 		}
 
 	}
@@ -126,10 +125,17 @@ func (c *jsonrpcClient) GetJob() interface{} {
 func (c *jsonrpcClient) SubmitShare(in interface{}) {
 	share := in.(*JsonrpcShare)
 	share.MinerId = c.minerId
+
+	params, err := json.Marshal(share)
+	if err != nil {
+		log.Errorw("error while serializing share", "err", err)
+		return
+	}
+
 	c.conn.putMessage(&message{
 		Id:     1,
 		Method: "submit",
-		Params: share,
+		Params: params,
 	})
 	log.Info("share submitted")
 }
@@ -138,32 +144,4 @@ func (c *jsonrpcClient) Close() error {
 	c.closed.Store(true)
 	close(c.jobs)
 	return c.conn.close()
-}
-
-func (c *jsonrpcClient) parseJob(data *gabs.Container) {
-	jobId, ok := data.Path("job_id").Data().(string)
-	if !ok {
-		log.Error("job_id missing or malformed")
-		return
-	}
-
-	blob, ok := data.Path("blob").Data().(string)
-	if !ok {
-		log.Error("blob missing or malformed")
-		return
-	}
-
-	target, ok := data.Path("target").Data().(string)
-	if !ok {
-		log.Error("target missing or malformed")
-		return
-	}
-
-	job := JsonrpcJob{
-		JobId:  jobId,
-		Blob:   blob,
-		Target: target,
-	}
-
-	c.jobs <- job
 }

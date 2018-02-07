@@ -40,12 +40,12 @@ type Client interface {
 var agent = "blockforge/1.0.0"
 
 type message struct {
-	Id      int           `json:"id,omitempty"`
-	Method  string        `json:"method,omitempty"`
-	Params  interface{}   `json:"params,omitempty"`
-	Result  interface{}   `json:"result,omitempty"`
-	Error   *stratumError `json:"error,omitempty"`
-	Jsonrpc string        `json:"jsonrpc,omitempty"`
+	Id      int             `json:"id,omitempty"`
+	Method  string          `json:"method,omitempty"`
+	Params  json.RawMessage `json:"params,omitempty"`
+	Result  json.RawMessage `json:"result,omitempty"`
+	Error   *stratumError   `json:"error,omitempty"`
+	Jsonrpc string          `json:"jsonrpc,omitempty"`
 }
 
 type stratumError struct {
