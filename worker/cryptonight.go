@@ -16,13 +16,14 @@ import (
 	"gitlab.com/blockforge/blockforge/stratum"
 )
 
-var CryptonightMemory uint32 = 2097152
-var CryptonightMask uint32 = 0x1FFFF0
-var CryptonightIter uint32 = 0x80000
-
-var CryptonightLiteMemory uint32 = 1048576
-var CryptonightLiteMask uint32 = 0xFFFF0
-var CryptonightLiteIter uint32 = 0x40000
+var (
+	CryptonightMemory     uint32 = 2097152
+	CryptonightMask       uint32 = 0x1FFFF0
+	CryptonightIter       uint32 = 0x80000
+	CryptonightLiteMemory uint32 = 1048576
+	CryptonightLiteMask   uint32 = 0xFFFF0
+	CryptonightLiteIter   uint32 = 0x40000
+)
 
 // NonceIndex is the starting location of nonce in binary blob
 var NonceIndex = 39
@@ -133,7 +134,7 @@ func (w *cryptonight) Work() error {
 	}
 	w.statMu.Unlock()
 
-	var job stratum.Job
+	var job stratum.JsonrpcJob
 	var jobMu sync.RWMutex
 
 	go func() {
@@ -146,7 +147,7 @@ func (w *cryptonight) Work() error {
 			}
 			jobMu.RUnlock()
 
-			w.stratum.SubmitShare(&stratum.Share{
+			w.stratum.SubmitShare(&stratum.JsonrpcShare{
 				JobId:  share.jobId,
 				Result: fmt.Sprintf("%x", share.result),
 				Nonce:  fmt.Sprintf("%08x", share.nonce),
@@ -154,9 +155,13 @@ func (w *cryptonight) Work() error {
 		}
 	}()
 
-	for j := range w.stratum.Jobs() {
+	for {
+		j := w.stratum.GetJob()
+		if j == nil {
+			return nil
+		}
 		jobMu.Lock()
-		job = j
+		job = j.(stratum.JsonrpcJob)
 		work, err := w.getWork(job)
 		jobMu.Unlock()
 		if err != nil {
@@ -167,11 +172,9 @@ func (w *cryptonight) Work() error {
 			ch <- work
 		}
 	}
-
-	return nil
 }
 
-func (w *cryptonight) getWork(job stratum.Job) (*cryptonightWork, error) {
+func (w *cryptonight) getWork(job stratum.JsonrpcJob) (*cryptonightWork, error) {
 	input, err := hex.DecodeString(job.Blob)
 	if err != nil {
 		log.Errorw("malformed blob", "job", job)
@@ -225,26 +228,24 @@ func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, wo
 				return
 			}
 
-			go func(results []uint32) {
-				for i := uint32(0); i < results[0xFF]; i++ {
-					input := make([]byte, len(work.input))
-					copy(input, work.input)
-					binary.LittleEndian.PutUint32(input[NonceIndex:], results[i])
+			for i := uint32(0); i < results[0xFF]; i++ {
+				input := make([]byte, len(work.input))
+				copy(input, work.input)
+				binary.LittleEndian.PutUint32(input[NonceIndex:], results[i])
 
-					var result []byte
-					if w.lite {
-						result = hash.CryptonightLite(input)
-					} else {
-						result = hash.Cryptonight(input)
-					}
-
-					if binary.LittleEndian.Uint64(result[24:]) < work.target {
-						shareChan <- cryptonightShare{work.jobId, result, binary.BigEndian.Uint32(input[NonceIndex:])}
-					} else {
-						log.Errorw("invalid result from CL worker")
-					}
+				var result []byte
+				if w.lite {
+					result = hash.CryptonightLite(input)
+				} else {
+					result = hash.Cryptonight(input)
 				}
-			}(results)
+
+				if binary.LittleEndian.Uint64(result[24:]) < work.target {
+					shareChan <- cryptonightShare{work.jobId, result, binary.BigEndian.Uint32(input[NonceIndex:])}
+				} else {
+					log.Errorw("invalid result from CL worker")
+				}
+			}
 
 			hashes += cl.Intensity
 		case newWork, ok := <-workChan:

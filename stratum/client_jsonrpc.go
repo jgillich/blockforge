@@ -1,11 +1,8 @@
 package stratum
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"net"
-	"net/url"
+	"io"
 
 	"go.uber.org/atomic"
 
@@ -18,118 +15,118 @@ func init() {
 	clients[ProtocolJsonrpc] = newJsonrpcClient
 }
 
+type JsonrpcJob struct {
+	JobId  string
+	Blob   string
+	Target string
+}
+
+type JsonrpcShare struct {
+	MinerId string `json:"id"`
+	JobId   string `json:"job_id"`
+	Nonce   string `json:"nonce"`
+	Result  string `json:"result"`
+}
+
 type jsonrpcClient struct {
-	conn    net.Conn
-	jobs    chan Job
+	conn    *poolConn
+	jobs    chan JsonrpcJob
 	minerId string
 	pool    Pool
 	closed  atomic.Bool
 }
 
 func newJsonrpcClient(pool Pool) (Client, error) {
-	url, err := url.Parse(pool.URL)
+	conn, err := pool.dial()
 	if err != nil {
 		return nil, err
 	}
 
-	var conn net.Conn
-	switch url.Scheme {
-	case "stratum+tls":
-		certs, err := x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-		conn, err = tls.Dial("tcp", url.Host, &tls.Config{RootCAs: certs})
-		if err != nil {
-			return nil, err
-		}
-	case "stratum+tcp":
-		conn, err = net.Dial("tcp", url.Host)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unsupported stratum protocol '%v'", url.Scheme)
-	}
-
-	c := jsonrpcClient{
-		jobs: make(chan Job, 10),
-		pool: pool,
-		conn: conn,
-	}
-
-	login := &Message{
+	if err := conn.putMessage(&message{
 		Id:     1,
 		Method: "login",
 		Params: map[string]string{
-			"login": c.pool.User,
-			"pass":  c.pool.Pass,
+			"login": pool.User,
+			"pass":  pool.Pass,
 			"agent": agent,
 		},
-	}
-
-	if err := sendMessage(c.conn, login); err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	message, err := readMessage(c.conn)
+	msg, err := conn.getMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	if message.Id != login.Id {
-		return nil, fmt.Errorf("expected message id '%v' but got '%v'", login.Id, message.Id)
-	}
-
-	result, err := gabs.Consume(message.Result)
+	result, err := gabs.Consume(msg.Result)
 	if err != nil {
 		return nil, err
+	}
+
+	c := &jsonrpcClient{
+		jobs: make(chan JsonrpcJob, 10),
+		pool: pool,
+		conn: conn,
 	}
 
 	if result.Exists("job") {
 		container := result.Path("job")
 		minerId, ok := result.Path("id").Data().(string)
 		if !ok {
-			panic("missing id")
+			return nil, fmt.Errorf("server did not send miner id")
 		}
 		c.minerId = minerId
 
 		c.parseJob(container)
 	}
 
-	go func() {
-		for {
-			message, err := readMessage(c.conn)
-			if err != nil {
+	go c.loop()
+
+	return c, nil
+}
+
+func (c *jsonrpcClient) loop() {
+	for {
+		msg, err := c.conn.getMessage()
+		if err != nil {
+			if err == io.EOF {
 				if c.closed.Load() {
 					return
 				}
+				log.Error("stratum server closed the connection, aborting")
+				c.Close()
+				return
+			}
+			log.Error(err)
+			continue
+		}
+
+		switch msg.Method {
+		case "job":
+			params, err := gabs.Consume(msg.Params)
+			if err != nil {
 				log.Error(err)
 				continue
 			}
-
-			if message.Method == "job" {
-				params, err := gabs.Consume(message.Params)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				c.parseJob(params)
-			}
-
+			c.parseJob(params)
 		}
-	}()
 
-	return &c, nil
+	}
 }
 
-func (c *jsonrpcClient) Jobs() chan Job {
-	return c.jobs
+func (c *jsonrpcClient) GetJob() interface{} {
+	j, ok := <-c.jobs
+	if !ok {
+		return nil
+	}
+	return j
 }
 
-func (c *jsonrpcClient) SubmitShare(share *Share) {
+func (c *jsonrpcClient) SubmitShare(in interface{}) {
+	share := in.(*JsonrpcShare)
 	share.MinerId = c.minerId
-	sendMessage(c.conn, &Message{
+	c.conn.putMessage(&message{
 		Id:     1,
 		Method: "submit",
 		Params: share,
@@ -140,7 +137,7 @@ func (c *jsonrpcClient) SubmitShare(share *Share) {
 func (c *jsonrpcClient) Close() error {
 	c.closed.Store(true)
 	close(c.jobs)
-	return c.conn.Close()
+	return c.conn.close()
 }
 
 func (c *jsonrpcClient) parseJob(data *gabs.Container) {
@@ -162,13 +159,11 @@ func (c *jsonrpcClient) parseJob(data *gabs.Container) {
 		return
 	}
 
-	job := Job{
+	job := JsonrpcJob{
 		JobId:  jobId,
 		Blob:   blob,
 		Target: target,
 	}
-
-	log.Debugf("got job '%+v'", jobId)
 
 	c.jobs <- job
 }
