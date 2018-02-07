@@ -38,7 +38,7 @@ func TestMiner(t *testing.T) {
 			t.Logf("CPU %v: %.2f H/s", stat.Index, stat.Hashrate)
 		}
 
-		if stats.CPUStats[0].Hashrate < 10 {
+		if stats.CPUStats[0].Hashrate < 5 {
 			t.Logf("extremely low stats")
 			t.Fail()
 		}
