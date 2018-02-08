@@ -12,11 +12,6 @@ architectures:
 grade: devel
 confinement: strict
 
-apps:
-  blockforge:
-    command: bin/blockforge
-    plugs: [home, opengl]
-
 parts:
   hash:
     plugin: cmake
@@ -48,3 +43,14 @@ parts:
       go generate
       rm -f $GOPATH/bin/dep
       rm -f $GOPATH/bin/packr
+
+apps:
+  blockforge:
+    command: bin/blockforge
+    plugs:
+      - home
+      - opengl
+      - desktop
+      - network
+      - wayland
+      - x11
