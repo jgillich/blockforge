@@ -38,8 +38,6 @@ parts:
       - libhwloc5
       - ocl-icd-libopencl1
       - libwebkit2gtk-4.0-37
-      # not sure why this is needed, since it's a sub dependency of webkitgtk
-      - libgcrypt20
     go-importpath: gitlab.com/blockforge/blockforge
     prepare: |
       export GOPATH=$(dirname $SNAPCRAFT_PART_INSTALL)/go
