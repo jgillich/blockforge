@@ -80,6 +80,8 @@ func newJsonrpcClient(pool Pool) (Client, error) {
 		conn:    conn,
 	}
 
+	c.jobs <- result.Job
+
 	go c.loop()
 
 	return c, nil
