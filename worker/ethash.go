@@ -1,13 +1,19 @@
 package worker
 
 import (
+	crand "crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
+	"math/rand"
 	"strings"
+	"sync"
+	"time"
 
 	"gitlab.com/blockforge/blockforge/hash"
+	"gitlab.com/blockforge/blockforge/log"
 	"gitlab.com/blockforge/blockforge/stratum"
 )
 
@@ -21,13 +27,47 @@ var maxUint256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), big.NewInt(0))
 
 type ethash struct {
 	config Config
+	// random source for nonces
+	rand *rand.Rand
+
+	hash     *hash.Ethash
+	seedhash string
+
+	lock sync.RWMutex
+}
+
+type ethashWork struct {
+	jobId      string
+	header     []byte
+	target     *big.Int
+	extraNonce uint64
+	nonce      uint64
 }
 
 func newEthash(config Config) Worker {
-	return &ethash{config}
+	seed, err := crand.Int(crand.Reader, big.NewInt(math.MaxInt64))
+	if err != nil {
+		panic(err)
+	}
+
+	return &ethash{
+		config: config,
+		rand:   rand.New(rand.NewSource(seed.Int64())),
+	}
 }
 
 func (w *ethash) Work() error {
+	totalThreads := 1
+
+	workChannels := make([]chan *ethashWork, totalThreads)
+	for i := 0; i < totalThreads; i++ {
+		workChannels[i] = make(chan *ethashWork, 1)
+		index := i
+		defer close(workChannels[index])
+	}
+
+	go w.thread(workChannels[0])
+
 	for {
 		j := w.config.Stratum.GetJob()
 		if j == nil {
@@ -35,24 +75,89 @@ func (w *ethash) Work() error {
 		}
 
 		job := j.(stratum.NicehashJob)
+		target := diffToTarget(job.Difficulty)
 
-		//target := new(big.Int).Div(maxUint256, job.Difficulty)
-		fmt.Printf("diff: %v\n", job.Difficulty)
+		log.Debugf("ethash difficulty '%v', target '%x'", job.Difficulty, target)
 
-		//target := new(big.Int).Div(maxUint256, job.Difficulty)
+		if w.seedhash != job.SeedHash {
+			w.seedhash = job.SeedHash
+			seedHash, err := hex.DecodeString(strings.TrimPrefix(job.SeedHash, "0x"))
+			if err != nil {
+				return err
+			}
 
-		fmt.Printf("target: %x\n", diffToTarget(job.Difficulty))
+			log.Info("initializing DAG, this may take a while")
+			w.lock.Lock()
+			w.hash, err = hash.NewEthash(seedHash)
+			w.lock.Unlock()
+			if err != nil {
+				return err
+			}
+			log.Info("DAG initialized")
+		}
 
-		seedHash, err := hex.DecodeString(strings.TrimPrefix(job.SeedHash, "0x"))
+		header, err := hex.DecodeString(strings.TrimPrefix(job.SeedHash, "0x"))
 		if err != nil {
 			return err
 		}
 
-		_, err = hash.NewEthash(seedHash)
+		for i := len(job.ExtraNonce); i < 16; i++ {
+			job.ExtraNonce += "0"
+		}
+		extraNonceBytes, err := hex.DecodeString(job.ExtraNonce)
 		if err != nil {
 			return err
 		}
+		extraNonce := binary.BigEndian.Uint64(extraNonceBytes)
 
+		for _, ch := range workChannels {
+			ch <- &ethashWork{
+				jobId:      job.JobId,
+				header:     header,
+				target:     target,
+				extraNonce: extraNonce,
+				// TODO ?
+				nonce: uint64(w.rand.Uint32()),
+			}
+		}
+	}
+}
+
+func (w *ethash) thread(workChan chan *ethashWork) {
+	work := <-workChan
+	var ok bool
+	start := time.Now()
+	hashes := float64(0)
+
+	for {
+		select {
+		case work, ok = <-workChan:
+			if !ok {
+				return
+			}
+
+			log.Infof("ethash hashrate %v H/s", hashes/time.Since(start).Seconds())
+
+			start = time.Now()
+			hashes = 0
+		default:
+			w.lock.RLock()
+			success, _, result := w.hash.Compute(work.header, work.extraNonce+work.nonce)
+			w.lock.RUnlock()
+			if !success {
+				log.Error("ethash compute failed")
+			} else {
+				if new(big.Int).SetBytes(result[:]).Cmp(work.target) <= 0 {
+					w.config.Stratum.SubmitShare(stratum.NicehashShare{
+						JobId: work.jobId,
+						Nonce: fmt.Sprintf("%x", work.nonce),
+					})
+				}
+			}
+
+			work.nonce++
+			hashes++
+		}
 	}
 }
 

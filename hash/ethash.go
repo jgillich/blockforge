@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 )
 
@@ -31,7 +30,7 @@ func NewEthash(seedHash []byte) (*Ethash, error) {
 	return &Ethash{light, full}, nil
 }
 
-func (e *Ethash) Compute(hash common.Hash, nonce uint64) (success bool, mixDigest, result common.Hash) {
+func (e *Ethash) Compute(hash []byte, nonce uint64) (success bool, mixDigest, result [32]byte) {
 	ret := C.ethash_full_compute(e.full, hashToH256(hash), C.uint64_t(nonce))
 	return bool(ret.success), h256ToHash(ret.mix_hash), h256ToHash(ret.result)
 }
@@ -68,10 +67,10 @@ func seedHashToBlockNum(seedHash []byte) (uint64, error) {
 	return 0, fmt.Errorf("no block number found for seed hash '%x'", seedHash)
 }
 
-func h256ToHash(in C.ethash_h256_t) common.Hash {
-	return *(*common.Hash)(unsafe.Pointer(&in.b))
+func h256ToHash(in C.ethash_h256_t) [32]byte {
+	return *(*[32]byte)(unsafe.Pointer(&in.b))
 }
 
-func hashToH256(in common.Hash) C.ethash_h256_t {
+func hashToH256(in []byte) C.ethash_h256_t {
 	return C.ethash_h256_t{b: *(*[32]C.uint8_t)(unsafe.Pointer(&in[0]))}
 }

@@ -19,16 +19,15 @@ func init() {
 type NicehashJob struct {
 	JobId      string
 	Difficulty float32
+	ExtraNonce string
 	SeedHash   string
 	HeaderHash string
 	CleanJobs  bool
 }
 
 type NicehashShare struct {
-	MinerId string `json:"id"`
-	JobId   string `json:"job_id"`
-	Nonce   string `json:"nonce"`
-	Result  string `json:"result"`
+	JobId string `json:"id"`
+	Nonce string `json:"nonce"`
 }
 
 type nicehashClient struct {
@@ -98,14 +97,12 @@ func newNicehashClient(pool Pool) (Client, error) {
 		return nil, err
 	}
 
-	/*
-		if err := sendMessage(conn, &message{
-			Id:     1,
-			Method: "mining.extranonce.subscribe",
-		}); err != nil {
-			return nil, err
-		}
-	*/
+	if err := conn.putMessage(&message{
+		Id:     1,
+		Method: "mining.extranonce.subscribe",
+	}); err != nil {
+		return nil, err
+	}
 
 	authorizeParams, err := json.Marshal([]string{pool.User, pool.Pass})
 	if err != nil {
@@ -157,7 +154,9 @@ func (c *nicehashClient) loop() {
 				return
 			}
 			if err == io.EOF {
+				// TODO log error and reconnect
 				log.Error("stratum server closed the connection, aborting")
+				c.Close()
 				return
 			}
 			log.Error(err)
@@ -166,11 +165,10 @@ func (c *nicehashClient) loop() {
 
 		switch msg.Method {
 		case "mining.notify":
-
 			var params []interface{}
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Errorw(NicehashProtocolError.Error(), "err", err)
+				log.Errorw("error while parsing job", "err", err)
 				continue
 			}
 
@@ -179,7 +177,10 @@ func (c *nicehashClient) loop() {
 				continue
 			}
 
-			job := NicehashJob{}
+			job := NicehashJob{
+				Difficulty: c.difficulty,
+				ExtraNonce: c.extraNonce,
+			}
 			var ok bool
 			job.JobId, ok = params[0].(string)
 			if !ok {
@@ -201,14 +202,12 @@ func (c *nicehashClient) loop() {
 				log.Errorw("invalid cleanjobs")
 				continue
 			}
-
 			c.jobs <- job
-
 		case "mining.set_difficulty":
 			var params []float32
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Errorw(NicehashProtocolError.Error(), "err", err)
+				log.Errorw("error while parsing difficulty", "err", err)
 				continue
 			}
 
@@ -222,7 +221,7 @@ func (c *nicehashClient) loop() {
 			var params []string
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Errorw(NicehashProtocolError.Error(), "err", err)
+				log.Errorw("error while parsing extranonce", "err", err)
 				continue
 			}
 
@@ -233,6 +232,7 @@ func (c *nicehashClient) loop() {
 
 			c.extraNonce = params[0]
 		case "client.get_version":
+			// TODO
 		}
 	}
 }
@@ -245,8 +245,25 @@ func (c *nicehashClient) GetJob() interface{} {
 	return j
 }
 
-func (c *nicehashClient) SubmitShare(share interface{}) {
+func (c *nicehashClient) SubmitShare(in interface{}) {
+	share := in.(NicehashShare)
 
+	params, err := json.Marshal([]string{
+		c.pool.User,
+		share.JobId,
+		share.Nonce,
+	})
+	if err != nil {
+		log.Errorw("error while serializing share", "err", err)
+		return
+	}
+	log.Infof("submitting share %+v", params)
+	c.conn.putMessage(&message{
+		Id:     1,
+		Method: "mining.submit",
+		Params: params,
+	})
+	log.Info("share submitted")
 }
 
 func (c *nicehashClient) Close() error {

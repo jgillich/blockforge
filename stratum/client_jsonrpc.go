@@ -95,7 +95,9 @@ func (c *jsonrpcClient) loop() {
 				return
 			}
 			if err == io.EOF {
+				// TODO log error and reconnect
 				log.Error("stratum server closed the connection, aborting")
+				c.Close()
 				return
 			}
 			log.Error(err)

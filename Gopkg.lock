@@ -3,11 +3,7 @@
 
 [[projects]]
   name = "github.com/ethereum/go-ethereum"
-  packages = [
-    "common",
-    "common/hexutil",
-    "crypto/sha3"
-  ]
+  packages = ["crypto/sha3"]
   revision = "4bb3c89d44e372e6a9ab85a8be0c9345265c763a"
   version = "v1.7.3"
 
@@ -117,6 +113,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1ea05d310985701942a1e8dfa5c30cb38e9513724acb1325246257dac9a40b9d"
+  inputs-digest = "8fcf948b9c8bc51b6605f00cccc6ce031d2efbcdc6e07cc8eac96198c97678a1"
   solver-name = "gps-cdcl"
   solver-version = 1
