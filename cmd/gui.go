@@ -124,8 +124,10 @@ var guiCmd = &cobra.Command{
 
 		go func() {
 			err := <-errors
-			view.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Unexpected Error", fmt.Sprintf("%+v", err))
-			os.Exit(1)
+			view.Dispatch(func() {
+				view.Dialog(webview.DialogTypeAlert, webview.DialogFlagError, "Unexpected Error", fmt.Sprintf("%+v", err))
+				os.Exit(1)
+			})
 		}()
 
 		view.Run()
