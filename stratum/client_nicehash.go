@@ -17,7 +17,7 @@ func init() {
 }
 
 type NicehashJob struct {
-	Difficulty float64
+	Difficulty float32
 	SeedHash   string
 	HeaderHash string
 }
@@ -36,7 +36,7 @@ type nicehashClient struct {
 	pool       Pool
 	closed     atomic.Bool
 	extraNonce string
-	difficulty float64
+	difficulty float32
 }
 
 type subscribeResult struct {
@@ -165,26 +165,26 @@ func (c *nicehashClient) loop() {
 		switch msg.Method {
 		case "mining.notify":
 
-			var params []string
+			var params []interface{}
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
 				log.Errorw(NicehashProtocolError.Error(), "err", err)
 				continue
 			}
 
-			if len(params) != 3 {
+			if len(params) < 3 {
 				log.Errorw("invalid job params length")
 				continue
 			}
 
 			c.jobs <- NicehashJob{
 				Difficulty: c.difficulty,
-				SeedHash:   params[0],
-				HeaderHash: params[1],
+				SeedHash:   params[0].(string),
+				HeaderHash: params[1].(string),
 			}
 
 		case "mining.set_difficulty":
-			var params []float64
+			var params []float32
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
 				log.Errorw(NicehashProtocolError.Error(), "err", err)

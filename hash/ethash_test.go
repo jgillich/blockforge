@@ -1,8 +1,9 @@
 package hash
 
 import (
-	"encoding/hex"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestEthash(t *testing.T) {
@@ -16,10 +17,7 @@ func TestEthash(t *testing.T) {
 
 	ethash := NewEthash(22)
 
-	header, err := hex.DecodeString("372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d")
-	if err != nil {
-		t.Fatal(err)
-	}
+	hash := common.HexToHash("372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d")
 
 	success, result, mixHash := ethash.Compute(header, 132416)
 	if !success {

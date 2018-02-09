@@ -4,9 +4,11 @@ package hash
 // #include "ethash/ethash.h"
 // #cgo LDFLAGS: -L${SRCDIR}/build/ -lhash
 import "C"
-import "math/big"
+import (
+	"unsafe"
 
-var maxUint256 = new(big.Int).Exp(big.NewInt(2), big.NewInt(256), big.NewInt(0))
+	"github.com/ethereum/go-ethereum/common"
+)
 
 type Ethash struct {
 	light C.ethash_light_t
@@ -19,31 +21,20 @@ func NewEthash(blockNumber uint64) *Ethash {
 	return &Ethash{light, full}
 }
 
-func (e *Ethash) Compute(header []uint8, nonce uint64) (bool, *[32]uint8, *[32]uint8) {
-	// TODO can we avoid copying here?
-	b := [32]C.uint8_t{}
-	for i := 0; i < 32; i++ {
-		b[i] = C.uint8_t(header[i])
-	}
-	val := C.ethash_full_compute(e.full, C.ethash_h256_t{b}, C.uint64_t(nonce))
-
-	if !val.success {
-		return false, nil, nil
-	}
-
-	result := [32]uint8{}
-	for i := 0; i < 32; i++ {
-		result[i] = uint8(val.result.b[i])
-	}
-	mixHash := [32]uint8{}
-	for i := 0; i < 32; i++ {
-		mixHash[i] = uint8(val.mix_hash.b[i])
-	}
-
-	return true, &result, &mixHash
+func (e *Ethash) Compute(hash common.Hash, nonce uint64) (success bool, mixDigest, result common.Hash) {
+	ret := C.ethash_full_compute(e.full, hashToH256(hash), C.uint64_t(nonce))
+	return bool(ret.success), h256ToHash(ret.mix_hash), h256ToHash(ret.result)
 }
 
 func (e *Ethash) Release() {
 	C.ethash_light_delete(e.light)
 	C.ethash_full_delete(e.full)
+}
+
+func h256ToHash(in C.ethash_h256_t) common.Hash {
+	return *(*common.Hash)(unsafe.Pointer(&in.b))
+}
+
+func hashToH256(in common.Hash) C.ethash_h256_t {
+	return C.ethash_h256_t{b: *(*[32]C.uint8_t)(unsafe.Pointer(&in[0]))}
 }
