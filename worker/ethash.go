@@ -2,9 +2,12 @@ package worker
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 
+	"gitlab.com/blockforge/blockforge/hash"
 	"gitlab.com/blockforge/blockforge/stratum"
 )
 
@@ -39,6 +42,16 @@ func (w *ethash) Work() error {
 		//target := new(big.Int).Div(maxUint256, job.Difficulty)
 
 		fmt.Printf("target: %x\n", diffToTarget(job.Difficulty))
+
+		seedHash, err := hex.DecodeString(strings.TrimPrefix(job.SeedHash, "0x"))
+		if err != nil {
+			return err
+		}
+
+		_, err = hash.NewEthash(seedHash)
+		if err != nil {
+			return err
+		}
 
 	}
 }

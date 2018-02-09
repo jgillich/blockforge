@@ -17,9 +17,11 @@ func init() {
 }
 
 type NicehashJob struct {
+	JobId      string
 	Difficulty float32
 	SeedHash   string
 	HeaderHash string
+	CleanJobs  bool
 }
 
 type NicehashShare struct {
@@ -177,11 +179,30 @@ func (c *nicehashClient) loop() {
 				continue
 			}
 
-			c.jobs <- NicehashJob{
-				Difficulty: c.difficulty,
-				SeedHash:   params[0].(string),
-				HeaderHash: params[1].(string),
+			job := NicehashJob{}
+			var ok bool
+			job.JobId, ok = params[0].(string)
+			if !ok {
+				log.Errorw("invalid job id")
+				continue
 			}
+			job.SeedHash, ok = params[1].(string)
+			if !ok {
+				log.Errorw("invalid seed hash")
+				continue
+			}
+			job.HeaderHash, ok = params[2].(string)
+			if !ok {
+				log.Errorw("invalid header hash")
+				continue
+			}
+			job.CleanJobs, ok = params[3].(bool)
+			if !ok {
+				log.Errorw("invalid cleanjobs")
+				continue
+			}
+
+			c.jobs <- job
 
 		case "mining.set_difficulty":
 			var params []float32
