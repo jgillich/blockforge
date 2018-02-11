@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.com/blockforge/blockforge/coin"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"
@@ -16,7 +18,6 @@ import (
 
 	"gitlab.com/blockforge/blockforge/log"
 	"gitlab.com/blockforge/blockforge/miner"
-	"gitlab.com/blockforge/blockforge/worker"
 )
 
 var initArg bool
@@ -29,8 +30,8 @@ func init() {
 
 func coinList() string {
 	coins := []string{}
-	for name := range worker.List() {
-		coins = append(coins, name)
+	for _, coin := range coin.Coins {
+		coins = append(coins, fmt.Sprintf("%v (%v)", coin.LongName, coin.ShortName))
 	}
 	sort.Strings(coins)
 	return strings.Join(coins, ", ")

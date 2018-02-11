@@ -10,6 +10,7 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/jgillich/go-opencl/cl"
 	"github.com/pkg/errors"
+	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 )
 
 type cryptonightCLWorker struct {
@@ -55,23 +56,23 @@ func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWor
 
 	var memory uint32
 	if lite {
-		memory = CryptonightLiteMemory
+		memory = cryptonight.CryptonightLiteMemory
 	} else {
-		memory = CryptonightMemory
+		memory = cryptonight.CryptonightMemory
 	}
 
 	var iterations uint32
 	if lite {
-		iterations = CryptonightLiteIter
+		iterations = cryptonight.CryptonightLiteIter
 	} else {
-		iterations = CryptonightIter
+		iterations = cryptonight.CryptonightIter
 	}
 
 	var mask uint32
 	if lite {
-		mask = CryptonightLiteMask
+		mask = cryptonight.CryptonightLiteMask
 	} else {
-		mask = CryptonightMask
+		mask = cryptonight.CryptonightMask
 	}
 
 	w := cryptonightCLWorker{

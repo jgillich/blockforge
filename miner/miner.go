@@ -3,12 +3,11 @@ package miner
 import (
 	"fmt"
 
+	"gitlab.com/blockforge/blockforge/coin"
 	"gitlab.com/blockforge/blockforge/hardware/opencl"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 	"gitlab.com/blockforge/blockforge/log"
-
 	"gitlab.com/blockforge/blockforge/stratum"
-
 	"gitlab.com/blockforge/blockforge/worker"
 )
 
@@ -38,7 +37,12 @@ func New(config Config) (*Miner, error) {
 		}
 	}
 
-	for name, coin := range config.Coins {
+	for name, coinConfig := range config.Coins {
+
+		coin := coin.Lookup(name)
+		if coin == nil {
+			return nil, fmt.Errorf("coin '%v' is not supported", name)
+		}
 
 		var pConf []worker.ProcessorConfig
 		for _, conf := range config.Processors {
@@ -100,20 +104,19 @@ func New(config Config) (*Miner, error) {
 			continue
 		}
 
-		stratum, err := stratum.NewClient("jsonrpc", coin.Pool)
+		stratum, err := stratum.NewClient(coin.Protocol, coinConfig.Pool)
 		if err != nil {
 			return nil, err
 		}
 
 		workerConfig := worker.Config{
-			Stratum:    stratum,
 			Donate:     config.Donate,
 			Processors: pConf,
 			CLDevices:  clConf,
 		}
 
-		worker, err := worker.New(name, workerConfig)
-		if err != nil {
+		worker := stratum.Worker(coin.Algo)
+		if err := worker.Configure(workerConfig); err != nil {
 			return nil, err
 		}
 
@@ -136,7 +139,7 @@ func New(config Config) (*Miner, error) {
 func (m *Miner) Start() error {
 	for _, worker := range m.workers {
 		go func() {
-			err := worker.Work()
+			err := worker.Start()
 			if err != nil {
 				m.err <- err
 			}

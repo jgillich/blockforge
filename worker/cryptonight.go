@@ -1,212 +1,78 @@
 package worker
 
 import (
-	"encoding/binary"
-	"encoding/hex"
-	"fmt"
-	"math"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
-	"gitlab.com/blockforge/blockforge/hash"
+	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 	"gitlab.com/blockforge/blockforge/log"
-
-	"gitlab.com/blockforge/blockforge/stratum"
 )
 
-var (
-	CryptonightMemory     uint32 = 2097152
-	CryptonightMask       uint32 = 0x1FFFF0
-	CryptonightIter       uint32 = 0x80000
-	CryptonightLiteMemory uint32 = 1048576
-	CryptonightLiteMask   uint32 = 0xFFFF0
-	CryptonightLiteIter   uint32 = 0x40000
-)
+type Cryptonight struct {
+	Lite   bool
+	Work   <-chan *cryptonight.Work
+	Shares chan<- cryptonight.Share
 
-// NonceIndex is the starting location of nonce in binary blob
-var NonceIndex = 39
-
-func init() {
-	for _, c := range []string{"XMR", "ETN", "ITNS", "SUMO", "BCN"} {
-		workers[c] = func(config Config) Worker {
-			return NewCryptonight(config, false)
-		}
-	}
-	for _, c := range []string{"AEON"} {
-		workers[c] = func(config Config) Worker {
-			return NewCryptonight(config, true)
-		}
-	}
-}
-
-type cryptonight struct {
 	clDevices  []CLDeviceConfig
 	processors []ProcessorConfig
-	stratum    stratum.Client
-	lite       bool
 	cpuStats   map[int]map[int]float32
 	gpuStats   map[int]map[int]float32
 	statMu     sync.RWMutex
 }
 
-type cryptonightWork struct {
-	jobId  string
-	input  []byte
-	target uint64
-	nonce  uint32
+func (worker *Cryptonight) Configure(config Config) error {
+	worker.clDevices = config.CLDevices
+	worker.processors = config.Processors
+	worker.cpuStats = map[int]map[int]float32{}
+	worker.gpuStats = map[int]map[int]float32{}
+	return nil
 }
 
-type cryptonightShare struct {
-	jobId  string
-	result []byte
-	nonce  uint32
-}
-
-func (w *cryptonightWork) nextNonce(size uint32) uint32 {
-	for {
-		val := atomic.LoadUint32(&w.nonce)
-		if val > math.MaxUint32-size {
-			log.Error("nonce space exceeded")
-			time.Sleep(time.Second * 5)
-			return val
-		}
-		if atomic.CompareAndSwapUint32(&w.nonce, val, val+size) {
-			return val
-		}
-	}
-}
-
-func NewCryptonight(config Config, lite bool) Worker {
-	return &cryptonight{
-		clDevices:  config.CLDevices,
-		processors: config.Processors,
-		stratum:    config.Stratum,
-		lite:       lite,
-		cpuStats:   map[int]map[int]float32{},
-		gpuStats:   map[int]map[int]float32{},
-	}
-}
-
-func (w *cryptonight) Work() error {
-	totalThreads := len(w.clDevices)
-	for _, c := range w.processors {
+func (worker *Cryptonight) Start() error {
+	totalThreads := len(worker.clDevices)
+	for _, c := range worker.processors {
 		totalThreads += c.Threads
 	}
 
-	workChannels := make([]chan *cryptonightWork, totalThreads)
+	workChannels := make([]chan *cryptonight.Work, totalThreads)
 	for i := 0; i < totalThreads; i++ {
-		workChannels[i] = make(chan *cryptonightWork, 1)
+		workChannels[i] = make(chan *cryptonight.Work, 1)
 		index := i
 		defer close(workChannels[index])
 	}
 
-	shareChan := make(chan cryptonightShare, 10)
-	// TODO this is a bad workaround
-	// When stratum client closes the connection, the Work function returns and closes all channels.
-	// But some worker threads might not have gotten the news yet and might try to
-	// send on a closed channel, resulting in a data race. Not sure how to fix this properly.
-	defer func() {
-		time.Sleep(time.Second * 10)
-		close(shareChan)
-	}()
-
-	w.statMu.Lock()
+	worker.statMu.Lock()
 	{
-		if len(w.clDevices) > 0 {
-			for i, d := range w.clDevices {
-				w.gpuStats[d.Device.Platform.Index] = map[int]float32{}
-				worker, err := newCryptonightCLWorker(d, w.lite)
+		if len(worker.clDevices) > 0 {
+			for i, d := range worker.clDevices {
+				worker.gpuStats[d.Device.Platform.Index] = map[int]float32{}
+				cl, err := newCryptonightCLWorker(d, worker.Lite)
 				if err != nil {
 					return err
 				}
-				go w.gpuThread(d.Device.Platform.Index, d.Device.Index, worker, workChannels[i], shareChan)
+				go worker.gpuThread(d.Device.Platform.Index, d.Device.Index, cl, workChannels[i])
 			}
 		}
 
-		for cpuIndex, conf := range w.processors {
-			w.cpuStats[cpuIndex] = map[int]float32{}
+		for cpuIndex, conf := range worker.processors {
+			worker.cpuStats[cpuIndex] = map[int]float32{}
 			for i := 0; i < conf.Threads; i++ {
-				go w.cpuThread(cpuIndex, i, workChannels[len(w.clDevices)+i], shareChan)
+				go worker.cpuThread(cpuIndex, i, workChannels[len(worker.clDevices)+i])
 			}
 		}
 	}
-	w.statMu.Unlock()
+	worker.statMu.Unlock()
 
-	var job stratum.JsonrpcJob
-	var jobMu sync.RWMutex
-
-	go func() {
-		for share := range shareChan {
-			jobMu.RLock()
-			if share.jobId != job.JobId {
-				jobMu.RUnlock()
-				log.Info("skipping outdated share")
-				continue
-			}
-			jobMu.RUnlock()
-
-			w.stratum.SubmitShare(&stratum.JsonrpcShare{
-				JobId:  share.jobId,
-				Result: fmt.Sprintf("%x", share.result),
-				Nonce:  fmt.Sprintf("%08x", share.nonce),
-			})
-		}
-	}()
-
-	for {
-		j := w.stratum.GetJob()
-		if j == nil {
-			return nil
-		}
-		jobMu.Lock()
-		job = j.(stratum.JsonrpcJob)
-		work, err := w.getWork(job)
-		jobMu.Unlock()
-		if err != nil {
-			log.Errorw(err.Error(), "job", job)
-			continue
-		}
+	for work := range worker.Work {
 		for _, ch := range workChannels {
 			ch <- work
 		}
 	}
+
+	return nil
 }
 
-func (w *cryptonight) getWork(job stratum.JsonrpcJob) (*cryptonightWork, error) {
-	input, err := hex.DecodeString(job.Blob)
-	if err != nil {
-		log.Errorw("malformed blob", "job", job)
-		return nil, errors.New("malformed blob")
-	}
-
-	t, err := hex.DecodeString(job.Target)
-	if err != nil {
-		return nil, errors.New("malformed target")
-	}
-
-	var target uint64
-	switch len(job.Target) {
-	case 8:
-		t32 := uint64(binary.LittleEndian.Uint32(t))
-		target = math.MaxUint64 / (math.MaxUint32 / t32)
-	case 16:
-		target = binary.LittleEndian.Uint64(t)
-	default:
-		return nil, errors.New("unsupported target length")
-	}
-
-	log.Infof("job difficulty %v", math.MaxUint64/target)
-
-	return &cryptonightWork{
-		jobId:  job.JobId,
-		input:  input,
-		target: target,
-	}, nil
-}
-
-func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
+func (worker *Cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, workChan chan *cryptonight.Work) {
 	log.Debugf("gpu thread %v/%v started", platform, index)
 	defer log.Debugf("gpu thread %v/%v stopped", platform, index)
 	defer cl.Release()
@@ -215,34 +81,21 @@ func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, wo
 	start := time.Now()
 
 	work := <-workChan
-	cl.SetJob(work.input, work.target)
+	cl.SetJob(work.Input, work.Target)
 
 	for {
 		select {
 		default:
 			results := make([]uint32, 0x100)
 
-			err := cl.RunJob(results, work.nextNonce(cl.Intensity))
+			err := cl.RunJob(results, work.NextNonce(cl.Intensity))
 			if err != nil {
 				log.Errorw("cl error", "error", err)
 				return
 			}
 
 			for i := uint32(0); i < results[0xFF]; i++ {
-				input := make([]byte, len(work.input))
-				copy(input, work.input)
-				binary.LittleEndian.PutUint32(input[NonceIndex:], results[i])
-
-				var result []byte
-				if w.lite {
-					result = hash.CryptonightLite(input)
-				} else {
-					result = hash.Cryptonight(input)
-				}
-
-				if binary.LittleEndian.Uint64(result[24:]) < work.target {
-					shareChan <- cryptonightShare{work.jobId, result, binary.BigEndian.Uint32(input[NonceIndex:])}
-				} else {
+				if !work.VerifySend(worker.Lite, results[i], worker.Shares) {
 					log.Errorw("invalid result from CL worker")
 				}
 			}
@@ -251,9 +104,9 @@ func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, wo
 		case newWork, ok := <-workChan:
 			elapsed := time.Since(start).Seconds()
 			if elapsed > 0 {
-				w.statMu.Lock()
-				w.gpuStats[platform][index] = float32(hashes) / float32(elapsed)
-				w.statMu.Unlock()
+				worker.statMu.Lock()
+				worker.gpuStats[platform][index] = float32(hashes) / float32(elapsed)
+				worker.statMu.Unlock()
 				start = time.Now()
 				hashes = 0
 			}
@@ -261,13 +114,13 @@ func (w *cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, wo
 				return
 			}
 			work = newWork
-			cl.SetJob(work.input, work.target)
+			cl.SetJob(work.Input, work.Target)
 		}
 
 	}
 }
 
-func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, shareChan chan cryptonightShare) {
+func (worker *Cryptonight) cpuThread(cpu, index int, workChan chan *cryptonight.Work) {
 	log.Debugf("cpu thread %v/%v started", cpu, index)
 	defer log.Debugf("cpu thread %v/%v stopped", cpu, index)
 
@@ -275,57 +128,39 @@ func (w *cryptonight) cpuThread(cpu, index int, workChan chan *cryptonightWork, 
 	start := time.Now()
 
 	work := <-workChan
+	var ok bool
 
 	for {
 		select {
 		default:
-			n := work.nextNonce(64)
-			input := make([]byte, len(work.input))
-			copy(input, work.input)
-
-			for i := n; i < n+64; i++ {
-				binary.LittleEndian.PutUint32(input[NonceIndex:], i)
-
-				var result []byte
-				if w.lite {
-					result = hash.CryptonightLite(input)
-				} else {
-					result = hash.Cryptonight(input)
-				}
-
-				if binary.LittleEndian.Uint64(result[24:]) < work.target {
-					shareChan <- cryptonightShare{work.jobId, result, binary.BigEndian.Uint32(input[NonceIndex:])}
-				}
-			}
-
+			work.VerifyRange(worker.Lite, 64, worker.Shares)
 			hashes += 64
-		case newWork, ok := <-workChan:
+		case work, ok = <-workChan:
 			elapsed := time.Since(start).Seconds()
 			if elapsed > 0 {
-				w.statMu.Lock()
-				w.cpuStats[cpu][index] = float32(hashes) / float32(elapsed)
-				w.statMu.Unlock()
+				worker.statMu.Lock()
+				worker.cpuStats[cpu][index] = float32(hashes) / float32(elapsed)
+				worker.statMu.Unlock()
 				start = time.Now()
 				hashes = 0
 			}
 			if !ok {
 				return
 			}
-			work = newWork
 		}
 	}
 }
 
-func (w *cryptonight) Stats() Stats {
+func (worker *Cryptonight) Stats() Stats {
 	stats := Stats{
 		CPUStats: []CPUStats{},
 		GPUStats: []GPUStats{},
 	}
 
-	w.statMu.RLock()
-	defer w.statMu.RUnlock()
+	worker.statMu.RLock()
+	defer worker.statMu.RUnlock()
 
-	for platform, indexes := range w.gpuStats {
+	for platform, indexes := range worker.gpuStats {
 		for index, stat := range indexes {
 			stats.GPUStats = append(stats.GPUStats, GPUStats{
 				Platform: platform,
@@ -335,7 +170,7 @@ func (w *cryptonight) Stats() Stats {
 		}
 	}
 
-	for cpu, stat := range w.cpuStats {
+	for cpu, stat := range worker.cpuStats {
 		hashrate := float32(0)
 		for _, hps := range stat {
 			hashrate += hps
@@ -349,7 +184,7 @@ func (w *cryptonight) Stats() Stats {
 	return stats
 }
 
-func (w *cryptonight) Capabilities() Capabilities {
+func (worker *Cryptonight) Capabilities() Capabilities {
 	return Capabilities{
 		CPU:    true,
 		OpenCL: true,

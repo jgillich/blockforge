@@ -13,8 +13,6 @@ import (
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 	"gitlab.com/blockforge/blockforge/log"
 
-	"gitlab.com/blockforge/blockforge/worker"
-
 	"gopkg.in/yaml.v2"
 
 	"github.com/gobuffalo/packr"
@@ -99,7 +97,8 @@ var guiCmd = &cobra.Command{
 						miner:      nil,
 						Config:     config,
 						Processors: processors,
-						Coins:      worker.List(),
+						// TODO
+						// Coins:      worker.List(),
 					})
 
 					if err != nil {
@@ -138,10 +137,11 @@ type guiBackend struct {
 	errors     chan error
 	webview    webview.WebView
 	miner      *miner.Miner
-	Config     miner.Config                   `json:"config"`
-	Processors []*processor.Processor         `json:"processors"`
-	Coins      map[string]worker.Capabilities `json:"coins"`
-	mu         sync.Mutex
+	Config     miner.Config           `json:"config"`
+	Processors []*processor.Processor `json:"processors"`
+	// TODO
+	// Coins      map[string]worker.Capabilities `json:"coins"`
+	mu sync.Mutex
 }
 
 func (g *guiBackend) Start() {

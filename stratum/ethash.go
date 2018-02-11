@@ -1,49 +1,56 @@
 package stratum
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
+	"strings"
+
+	"gitlab.com/blockforge/blockforge/algo"
 
 	"go.uber.org/atomic"
 
+	"gitlab.com/blockforge/blockforge/algo/ethash"
 	"gitlab.com/blockforge/blockforge/log"
+	"gitlab.com/blockforge/blockforge/worker"
 )
 
 var NicehashProtocolError = fmt.Errorf("EthereumStratum protocol error")
 
 func init() {
-	clients[ProtocolNicehash] = newNicehashClient
+	clients[ProtocolEthereum] = NewEthash
 }
 
-type NicehashJob struct {
+type ethashJob struct {
 	JobId      string
-	Difficulty float32
-	ExtraNonce string
 	SeedHash   string
 	HeaderHash string
 	CleanJobs  bool
 }
 
-type NicehashShare struct {
+type ethashShare struct {
 	JobId string `json:"id"`
 	Nonce string `json:"nonce"`
 }
 
-type nicehashClient struct {
-	conn       *poolConn
-	jobs       chan NicehashJob
+type Ethash struct {
+	Work chan *ethash.Work
+	conn *poolConn
+
 	minerId    string
 	pool       Pool
 	closed     atomic.Bool
-	extraNonce string
-	difficulty float32
+	extraNonce uint64
+	target     *big.Int
 }
 
 type subscribeResult struct {
 }
 
-func newNicehashClient(pool Pool) (Client, error) {
+func NewEthash(pool Pool) (Client, error) {
 	conn, err := pool.dial()
 	if err != nil {
 		return nil, err
@@ -132,31 +139,31 @@ func newNicehashClient(pool Pool) (Client, error) {
 		return nil, fmt.Errorf("login failed")
 	}
 
-	c := &nicehashClient{
-		jobs:       make(chan NicehashJob, 10),
-		pool:       pool,
-		conn:       conn,
-		extraNonce: extraNonce,
+	stratum := &Ethash{
+		pool: pool,
+		conn: conn,
 		// If pool does not set difficulty before first job, then miner can assume difficulty 1 was being set
-		difficulty: 1,
+		target: ethash.DiffToTarget(1),
 	}
 
-	go c.loop()
+	stratum.setExtraNonce(extraNonce)
 
-	return c, nil
+	go stratum.loop()
+
+	return stratum, nil
 }
 
-func (c *nicehashClient) loop() {
+func (stratum *Ethash) loop() {
 	for {
-		msg, err := c.conn.getMessage()
+		msg, err := stratum.conn.getMessage()
 		if err != nil {
-			if c.closed.Load() {
+			if stratum.closed.Load() {
 				return
 			}
 			if err == io.EOF {
 				// TODO log error and reconnect
 				log.Error("stratum server closed the connection, aborting")
-				c.Close()
+				stratum.Close()
 				return
 			}
 			log.Error(err)
@@ -177,10 +184,7 @@ func (c *nicehashClient) loop() {
 				continue
 			}
 
-			job := NicehashJob{
-				Difficulty: c.difficulty,
-				ExtraNonce: c.extraNonce,
-			}
+			var job ethashJob
 			var ok bool
 			job.JobId, ok = params[0].(string)
 			if !ok {
@@ -202,7 +206,12 @@ func (c *nicehashClient) loop() {
 				log.Errorw("invalid cleanjobs")
 				continue
 			}
-			c.jobs <- job
+
+			work, err := stratum.getWork(job)
+			if err != nil {
+				log.Error(err)
+			}
+			stratum.Work <- work
 		case "mining.set_difficulty":
 			var params []float32
 			err = json.Unmarshal(msg.Params, &params)
@@ -216,7 +225,7 @@ func (c *nicehashClient) loop() {
 				continue
 			}
 
-			c.difficulty = params[0]
+			stratum.target = ethash.DiffToTarget(params[0])
 		case "mining.set_extranonce":
 			var params []string
 			err = json.Unmarshal(msg.Params, &params)
@@ -230,35 +239,52 @@ func (c *nicehashClient) loop() {
 				continue
 			}
 
-			c.extraNonce = params[0]
+			stratum.setExtraNonce(params[0])
 		case "client.get_version":
 			// TODO
 		}
 	}
 }
 
-func (c *nicehashClient) GetJob() interface{} {
-	j, ok := <-c.jobs
-	if !ok {
-		return nil
+func (stratum *Ethash) getWork(job ethashJob) (*ethash.Work, error) {
+	header, err := hex.DecodeString(strings.TrimPrefix(job.SeedHash, "0x"))
+	if err != nil {
+		return nil, err
 	}
-	return j
+
+	return &ethash.Work{
+		JobId:      job.JobId,
+		Header:     header,
+		Target:     stratum.target,
+		ExtraNonce: stratum.extraNonce,
+	}, nil
+
 }
 
-func (c *nicehashClient) SubmitShare(in interface{}) {
-	share := in.(NicehashShare)
+func (stratum *Ethash) setExtraNonce(nonce string) {
+	for i := len(nonce); i < 16; i++ {
+		nonce += "0"
+	}
+	extraNonceBytes, err := hex.DecodeString(nonce)
+	if err != nil {
+		log.Errorw("error while decoding extraNonce", "extraNonce", nonce)
+		return
+	}
+	stratum.extraNonce = binary.BigEndian.Uint64(extraNonceBytes)
+}
 
+func (stratum *Ethash) submit(share ethash.Share) {
 	params, err := json.Marshal([]string{
-		c.pool.User,
+		stratum.pool.User,
 		share.JobId,
-		share.Nonce,
+		fmt.Sprintf("%v", share.Nonce),
 	})
 	if err != nil {
 		log.Errorw("error while serializing share", "err", err)
 		return
 	}
 	log.Infof("submitting share %+v", params)
-	c.conn.putMessage(&message{
+	stratum.conn.putMessage(&message{
 		Id:     1,
 		Method: "mining.submit",
 		Params: params,
@@ -266,8 +292,30 @@ func (c *nicehashClient) SubmitShare(in interface{}) {
 	log.Info("share submitted")
 }
 
-func (c *nicehashClient) Close() error {
-	c.closed.Store(true)
-	close(c.jobs)
-	return c.conn.close()
+func (stratum *Ethash) Close() error {
+	stratum.closed.Store(true)
+	close(stratum.Work)
+	return stratum.conn.close()
+}
+
+func (stratum *Ethash) Worker(a algo.Algo) worker.Worker {
+	if a != algo.Ethash {
+		panic("invalid algorithm requested in ethash stratum")
+	}
+
+	shares := make(chan ethash.Share, 1)
+	go func() {
+		defer close(shares)
+		for share := range shares {
+			if stratum.closed.Load() {
+				break
+			}
+			stratum.submit(share)
+		}
+	}()
+
+	return &worker.Ethash{
+		Work:   stratum.Work,
+		Shares: shares,
+	}
 }

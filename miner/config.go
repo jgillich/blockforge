@@ -3,10 +3,10 @@ package miner
 import (
 	"strings"
 
+	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 	"gitlab.com/blockforge/blockforge/hardware/opencl"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 	"gitlab.com/blockforge/blockforge/stratum"
-	"gitlab.com/blockforge/blockforge/worker"
 )
 
 var currentConfigVersion = 1
@@ -84,7 +84,7 @@ func GenerateConfig() (*Config, error) {
 	for _, platform := range clPlatforms {
 		for _, device := range platform.Devices {
 
-			hashMemSize := worker.CryptonightMemory
+			hashMemSize := cryptonight.CryptonightMemory
 			computeUnits := int64(device.CL().MaxComputeUnits())
 
 			// 224byte extra memory is used per thread for meta data
