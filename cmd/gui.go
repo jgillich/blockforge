@@ -145,87 +145,78 @@ type guiBackend struct {
 }
 
 func (g *guiBackend) Start() {
-	go func() {
-		g.mu.Lock()
-		defer g.mu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-		miner, err := miner.New(g.Config)
+	miner, err := miner.New(g.Config)
+	if err != nil {
+		g.errors <- err
+		return
+	}
+	go func() {
+		err := miner.Start()
 		if err != nil {
 			g.errors <- err
-			return
 		}
-		go func() {
-			err := miner.Start()
-			if err != nil {
-				g.errors <- err
-			}
-		}()
-		g.miner = miner
 	}()
+	g.miner = miner
 }
 
 func (g *guiBackend) Stop() {
-	go func() {
-		g.mu.Lock()
-		defer g.mu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-		if g.miner != nil {
-			g.miner.Stop()
-			g.miner = nil
-		}
-	}()
+	if g.miner != nil {
+		g.miner.Stop()
+		g.miner = nil
+	}
 }
 
 func (g *guiBackend) Stats() {
-	go func() {
-		g.mu.Lock()
-		defer g.mu.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 
-		if g.miner != nil {
-			stats := g.miner.Stats()
-			buf, err := json.Marshal(stats)
-			if err != nil {
-				log.Debugf("%+v", stats)
-				g.errors <- errors.WithStack(err)
-				return
-			}
-			g.webview.Dispatch(func() {
-				g.webview.Eval(fmt.Sprintf("miner.trigger('stats', %v)", string(buf)))
-			})
+	if g.miner != nil {
+		stats := g.miner.Stats()
+		buf, err := json.Marshal(stats)
+		if err != nil {
+			log.Debugf("%+v", stats)
+			g.errors <- errors.WithStack(err)
+			return
 		}
-	}()
+		g.webview.Dispatch(func() {
+			g.webview.Eval(fmt.Sprintf("miner.trigger('stats', %v)", string(buf)))
+		})
+	}
 }
 
 func (g *guiBackend) UpdateConfig(s string) {
-	go func() {
-		g.mu.Lock()
-		var config miner.Config
-		err := json.Unmarshal([]byte(s), &config)
-		if err != nil {
-			g.errors <- err
-			return
-		}
+	g.mu.Lock()
+	var config miner.Config
+	err := json.Unmarshal([]byte(s), &config)
+	if err != nil {
+		g.errors <- err
+		return
+	}
 
-		out, err := yaml.Marshal(&config)
-		if err != nil {
-			g.errors <- err
-			return
-		}
+	out, err := yaml.Marshal(&config)
+	if err != nil {
+		g.errors <- err
+		return
+	}
 
-		err = ioutil.WriteFile(configPath, []byte(out), os.ModePerm)
-		if err != nil {
-			g.errors <- err
-			return
-		}
+	err = ioutil.WriteFile(configPath, []byte(out), os.ModePerm)
+	if err != nil {
+		g.errors <- err
+		return
+	}
 
-		g.Config = config
+	g.Config = config
 
-		if g.miner != nil {
-			g.mu.Unlock()
-			g.Stop()
-			g.Start()
-		} else {
-			g.mu.Unlock()
-		}
-	}()
+	// defers are executed in last-in-first-out order (unlock -> stop -> start)
+	if g.miner != nil {
+		defer g.Start()
+		defer g.Stop()
+	}
+	defer g.mu.Unlock()
 }
