@@ -32,13 +32,7 @@ func TestMiner(t *testing.T) {
 	go func() {
 		time.Sleep(time.Minute * 2)
 
-		stats := miner.Stats()
-
-		for _, stat := range stats.CPUStats {
-			t.Logf("CPU %v: %.2f H/s", stat.Index, stat.Hashrate)
-		}
-
-		if stats.CPUStats[0].Hashrate < 5 {
+		if miner.Stats()["worker.cpu.0.0"] < 5 {
 			t.Logf("extremely low stats")
 			t.Fail()
 		}
