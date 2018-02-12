@@ -12,7 +12,7 @@
             <label class="label">Coin</label>
             <div class="control">
               <select class="select" ref="coin">
-                <option each={ name in coins } value={ name }>{ name }</option>
+                <option each={ coins } value={ short_name }>{ short_name }</option>
               </select>
             </div>
           </div>
@@ -56,9 +56,12 @@
     this.pool = opts.coin ? opts.miner.config.coins[opts.coin].pool : {}
 
     var configuredCoins = Object.keys(opts.miner.config.coins)
-    this.coins = Object.keys(opts.miner.availableCoins).filter(function (available) {
-      return !configuredCoins.find(function (configured) { return available == configured})
+    this.coins = opts.miner.availableCoins.filter(function (available) {
+      return !configuredCoins.find(function (configured) { return available.short_name == configured})
     })
+    console.log(this.coins)
+        console.log(opts.miner.availableCoins)
+
 
     save() {
       var a = document.createElement('a')

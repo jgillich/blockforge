@@ -17,9 +17,6 @@ type Work struct {
 	Nonce      uint64
 }
 
-// TODO !!!
-// Nonce: uint64(w.rand.Uint32()),
-
 // DiffToTarget converts a stratum pool difficulty to target
 func DiffToTarget(diff float32) *big.Int {
 	var k int
@@ -67,4 +64,13 @@ func (work *Work) VerifySend(hash *hash.Ethash, nonce uint64, results chan<- Sha
 	} else {
 		return false, err
 	}
+}
+
+func (work *Work) VerifyRange(hash *hash.Ethash, start uint64, size uint64, results chan<- Share) error {
+	for i := start + work.ExtraNonce; i < start+size+work.ExtraNonce; i++ {
+		if _, err := work.VerifySend(hash, i, results); err != nil {
+			return err
+		}
+	}
+	return nil
 }

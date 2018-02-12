@@ -85,17 +85,9 @@ Supported coins: ` + coinList()),
 		go func() {
 			for {
 				time.Sleep(time.Second * 60)
-
-				stats := miner.Stats()
-
-				for _, stat := range stats.CPUStats {
-					log.Infof("CPU %v: %.2f H/s", stat.Index, stat.Hashrate)
+				for key, hps := range miner.Stats() {
+					log.Infof("%v: %.2f H/s", key, hps)
 				}
-
-				for _, stat := range stats.GPUStats {
-					log.Infof("GPU %v/%v: %.2f H/s", stat.Platform, stat.Index, stat.Hashrate)
-				}
-
 			}
 		}()
 

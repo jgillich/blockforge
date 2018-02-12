@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"sync"
 
+	"gitlab.com/blockforge/blockforge/coin"
+
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 	"gitlab.com/blockforge/blockforge/log"
 
@@ -97,8 +99,7 @@ var guiCmd = &cobra.Command{
 						miner:      nil,
 						Config:     config,
 						Processors: processors,
-						// TODO
-						// Coins:      worker.List(),
+						Coins:      coin.Coins,
 					})
 
 					if err != nil {
@@ -139,9 +140,8 @@ type guiBackend struct {
 	miner      *miner.Miner
 	Config     miner.Config           `json:"config"`
 	Processors []*processor.Processor `json:"processors"`
-	// TODO
-	// Coins      map[string]worker.Capabilities `json:"coins"`
-	mu sync.Mutex
+	Coins      []coin.Coin            `json:"coins"`
+	mu         sync.Mutex
 }
 
 func (g *guiBackend) Start() {

@@ -1,6 +1,7 @@
 package worker
 
 import (
+	metrics "github.com/armon/go-metrics"
 	"gitlab.com/blockforge/blockforge/hardware/opencl"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 )
@@ -9,7 +10,6 @@ type Worker interface {
 	Configure(Config) error
 	Start() error
 	Capabilities() Capabilities
-	Stats() Stats
 }
 
 type Capabilities struct {
@@ -22,6 +22,7 @@ type Config struct {
 	Donate     int
 	Processors []ProcessorConfig
 	CLDevices  []CLDeviceConfig
+	Metrics    *metrics.Metrics
 }
 
 type ProcessorConfig struct {
@@ -33,20 +34,4 @@ type CLDeviceConfig struct {
 	Intensity int
 	Worksize  int
 	Device    *opencl.Device
-}
-
-type Stats struct {
-	CPUStats []CPUStats `json:"cpu_stats"`
-	GPUStats []GPUStats `json:"gpu_stats"`
-}
-
-type CPUStats struct {
-	Index    int     `json:"index"`
-	Hashrate float32 `json:"hashrate"`
-}
-
-type GPUStats struct {
-	Platform int     `json:"platform"`
-	Index    int     `json:"index"`
-	Hashrate float32 `json:"hashrate"`
 }

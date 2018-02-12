@@ -135,17 +135,23 @@
       })
     }
 
-    hashrate(i, p) {
+    hashrate(index, platform) {
       if (!this.stats) {
         return 0
       }
 
-      if (p == undefined) {
-        var stat = this.stats.cpu_stats.find(function (s) { return s.index == i })
-        return stat ? stat.hashrate : 0
+      if (platform == undefined) {
+        var processor = this.processor(index)
+        if(!processor.enable) return 0
+        var hps = 0
+        for(var i = 0; i < processor.threads; i++) {
+          hps += this.stats["worker.cpu." + index + "." + i] || 0
+        }
+        return hps
       } else {
-        var stat = this.stats.gpu_stats.find(function (s) { return s.index == i && s.platform == p })
-        return stat ? stat.hashrate : 0
+        var cl = this.cl(index, platform)
+        if(!cl.enable) return 0
+        return this.stats["worker.opencl." + index + "." + platform] || 0
       }
     }
 

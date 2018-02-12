@@ -19,10 +19,10 @@ var Coins = []Coin{
 }
 
 type Coin struct {
-	LongName  string
-	ShortName string
-	Algo      algo.Algo
-	Protocol  stratum.Protocol
+	LongName  string           `json:"long_name"`
+	ShortName string           `json:"short_name"`
+	Algo      algo.Algo        `json:"algo"`
+	Protocol  stratum.Protocol `json:"protocol"`
 }
 
 func Lookup(coinName string) *Coin {

@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/armon/go-metrics"
+  packages = ["."]
+  revision = "7aa49fde808223f8dadfdbfd3a20ff6c19e5f9ec"
+
+[[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = ["crypto/sha3"]
   revision = "4bb3c89d44e372e6a9ab85a8be0c9345265c763a"
@@ -18,6 +24,18 @@
   packages = ["."]
   revision = "64c3dd439b5efc5cd9fb69a8fb209a03cd7c5b86"
   version = "v1.10.3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-immutable-radix"
+  packages = ["."]
+  revision = "7f3cd4390caab3250a57f30efdb2a65dd7649ecf"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = ["simplelru"]
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
   name = "github.com/inconshreveable/mousetrap"
@@ -113,6 +131,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8fcf948b9c8bc51b6605f00cccc6ce031d2efbcdc6e07cc8eac96198c97678a1"
+  inputs-digest = "edb9b754dc9dbc0723352ca48ab5f4ec98028fda0765cd0eab63b0e7782e86b7"
   solver-name = "gps-cdcl"
   solver-version = 1

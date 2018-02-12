@@ -2,7 +2,9 @@ package miner
 
 import (
 	"fmt"
+	"time"
 
+	metrics "github.com/armon/go-metrics"
 	"gitlab.com/blockforge/blockforge/coin"
 	"gitlab.com/blockforge/blockforge/hardware/opencl"
 	"gitlab.com/blockforge/blockforge/hardware/processor"
@@ -15,13 +17,24 @@ type Miner struct {
 	stratums map[string]stratum.Client
 	workers  map[string]worker.Worker
 	err      chan error
+	sink     *metrics.InmemSink
+	metrics  *metrics.Metrics
 }
 
 func New(config Config) (*Miner, error) {
+	sink := metrics.NewInmemSink(time.Minute, 10*time.Minute)
+
+	metrics, err := metrics.New(metrics.DefaultConfig("worker"), sink)
+	if err != nil {
+		return nil, err
+	}
+
 	miner := Miner{
 		stratums: map[string]stratum.Client{},
 		workers:  map[string]worker.Worker{},
 		err:      make(chan error),
+		sink:     sink,
+		metrics:  metrics,
 	}
 
 	processors, err := processor.GetProcessors()
@@ -113,6 +126,7 @@ func New(config Config) (*Miner, error) {
 			Donate:     config.Donate,
 			Processors: pConf,
 			CLDevices:  clConf,
+			Metrics:    miner.metrics,
 		}
 
 		worker := stratum.Worker(coin.Algo)
@@ -136,45 +150,34 @@ func New(config Config) (*Miner, error) {
 	return &miner, nil
 }
 
-func (m *Miner) Start() error {
-	for _, worker := range m.workers {
+func (miner *Miner) Start() error {
+	for _, worker := range miner.workers {
 		go func() {
 			err := worker.Start()
 			if err != nil {
-				m.err <- err
+				miner.err <- err
 			}
 		}()
 	}
+
 	log.Debug("miner started")
 	defer log.Debug("miner stopped")
-	return <-m.err
+	return <-miner.err
 }
 
-func (m *Miner) Stop() {
-	for _, stratum := range m.stratums {
+func (miner *Miner) Stop() {
+	for _, stratum := range miner.stratums {
 		stratum.Close()
 	}
-	m.err <- nil
-	close(m.err)
+	miner.err <- nil
+	close(miner.err)
 }
 
-func (m *Miner) Stats() worker.Stats {
-	stats := worker.Stats{
-		CPUStats: []worker.CPUStats{},
-		GPUStats: []worker.GPUStats{},
+func (miner *Miner) Stats() map[string]float64 {
+	stats := map[string]float64{}
+	data := miner.sink.Data()
+	for key, counter := range data[len(data)-1].Counters {
+		stats[key] = counter.AggregateSample.Mean()
 	}
-
-	for _, worker := range m.workers {
-		s := worker.Stats()
-
-		for _, cpuStat := range s.CPUStats {
-			stats.CPUStats = append(stats.CPUStats, cpuStat)
-		}
-
-		for _, gpuStat := range s.GPUStats {
-			stats.GPUStats = append(stats.GPUStats, gpuStat)
-		}
-	}
-
 	return stats
 }

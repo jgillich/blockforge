@@ -1,9 +1,10 @@
 package worker
 
 import (
-	"sync"
+	"fmt"
 	"time"
 
+	metrics "github.com/armon/go-metrics"
 	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 	"gitlab.com/blockforge/blockforge/log"
 )
@@ -15,16 +16,13 @@ type Cryptonight struct {
 
 	clDevices  []CLDeviceConfig
 	processors []ProcessorConfig
-	cpuStats   map[int]map[int]float32
-	gpuStats   map[int]map[int]float32
-	statMu     sync.RWMutex
+	metrics    *metrics.Metrics
 }
 
 func (worker *Cryptonight) Configure(config Config) error {
 	worker.clDevices = config.CLDevices
 	worker.processors = config.Processors
-	worker.cpuStats = map[int]map[int]float32{}
-	worker.gpuStats = map[int]map[int]float32{}
+	worker.metrics = config.Metrics
 	return nil
 }
 
@@ -41,27 +39,24 @@ func (worker *Cryptonight) Start() error {
 		defer close(workChannels[index])
 	}
 
-	worker.statMu.Lock()
-	{
-		if len(worker.clDevices) > 0 {
-			for i, d := range worker.clDevices {
-				worker.gpuStats[d.Device.Platform.Index] = map[int]float32{}
-				cl, err := newCryptonightCLWorker(d, worker.Lite)
-				if err != nil {
-					return err
-				}
-				go worker.gpuThread(d.Device.Platform.Index, d.Device.Index, cl, workChannels[i])
+	if len(worker.clDevices) > 0 {
+		for i, d := range worker.clDevices {
+			cl, err := newCryptonightCLWorker(d, worker.Lite)
+			if err != nil {
+				return err
 			}
-		}
+			key := []string{"opencl", fmt.Sprintf("%v", d.Device.Platform.Index), fmt.Sprintf("%v", d.Device.Index)}
 
-		for cpuIndex, conf := range worker.processors {
-			worker.cpuStats[cpuIndex] = map[int]float32{}
-			for i := 0; i < conf.Threads; i++ {
-				go worker.cpuThread(cpuIndex, i, workChannels[len(worker.clDevices)+i])
-			}
+			go worker.gpuThread(key, cl, workChannels[i])
 		}
 	}
-	worker.statMu.Unlock()
+
+	for cpuIndex, conf := range worker.processors {
+		for i := 0; i < conf.Threads; i++ {
+			key := []string{"cpu", fmt.Sprintf("%v", cpuIndex), fmt.Sprintf("%v", i)}
+			go worker.cpuThread(key, workChannels[len(worker.clDevices)+i])
+		}
+	}
 
 	for work := range worker.Work {
 		for _, ch := range workChannels {
@@ -72,20 +67,17 @@ func (worker *Cryptonight) Start() error {
 	return nil
 }
 
-func (worker *Cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorker, workChan chan *cryptonight.Work) {
-	log.Debugf("gpu thread %v/%v started", platform, index)
-	defer log.Debugf("gpu thread %v/%v stopped", platform, index)
+func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCLWorker, workChan chan *cryptonight.Work) {
 	defer cl.Release()
 
-	hashes := uint32(0)
-	start := time.Now()
-
+	var ok bool
 	work := <-workChan
 	cl.SetJob(work.Input, work.Target)
 
 	for {
 		select {
 		default:
+			start := time.Now()
 			results := make([]uint32, 0x100)
 
 			err := cl.RunJob(results, work.NextNonce(cl.Intensity))
@@ -100,88 +92,33 @@ func (worker *Cryptonight) gpuThread(platform, index int, cl *cryptonightCLWorke
 				}
 			}
 
-			hashes += cl.Intensity
-		case newWork, ok := <-workChan:
-			elapsed := time.Since(start).Seconds()
-			if elapsed > 0 {
-				worker.statMu.Lock()
-				worker.gpuStats[platform][index] = float32(hashes) / float32(elapsed)
-				worker.statMu.Unlock()
-				start = time.Now()
-				hashes = 0
-			}
+			worker.metrics.IncrCounter(key, float32(float64(cl.Intensity)/time.Since(start).Seconds()))
+		case work, ok = <-workChan:
 			if !ok {
 				return
 			}
-			work = newWork
 			cl.SetJob(work.Input, work.Target)
 		}
 
 	}
 }
 
-func (worker *Cryptonight) cpuThread(cpu, index int, workChan chan *cryptonight.Work) {
-	log.Debugf("cpu thread %v/%v started", cpu, index)
-	defer log.Debugf("cpu thread %v/%v stopped", cpu, index)
-
-	hashes := 0
-	start := time.Now()
-
+func (worker *Cryptonight) cpuThread(key []string, workChan chan *cryptonight.Work) {
 	work := <-workChan
 	var ok bool
 
 	for {
 		select {
 		default:
+			start := time.Now()
 			work.VerifyRange(worker.Lite, 64, worker.Shares)
-			hashes += 64
+			worker.metrics.IncrCounter(key, float32(64/time.Since(start).Seconds()))
 		case work, ok = <-workChan:
-			elapsed := time.Since(start).Seconds()
-			if elapsed > 0 {
-				worker.statMu.Lock()
-				worker.cpuStats[cpu][index] = float32(hashes) / float32(elapsed)
-				worker.statMu.Unlock()
-				start = time.Now()
-				hashes = 0
-			}
 			if !ok {
 				return
 			}
 		}
 	}
-}
-
-func (worker *Cryptonight) Stats() Stats {
-	stats := Stats{
-		CPUStats: []CPUStats{},
-		GPUStats: []GPUStats{},
-	}
-
-	worker.statMu.RLock()
-	defer worker.statMu.RUnlock()
-
-	for platform, indexes := range worker.gpuStats {
-		for index, stat := range indexes {
-			stats.GPUStats = append(stats.GPUStats, GPUStats{
-				Platform: platform,
-				Hashrate: stat,
-				Index:    index,
-			})
-		}
-	}
-
-	for cpu, stat := range worker.cpuStats {
-		hashrate := float32(0)
-		for _, hps := range stat {
-			hashrate += hps
-		}
-		stats.CPUStats = append(stats.CPUStats, CPUStats{
-			Hashrate: hashrate,
-			Index:    cpu,
-		})
-	}
-
-	return stats
 }
 
 func (worker *Cryptonight) Capabilities() Capabilities {

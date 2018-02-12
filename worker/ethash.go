@@ -3,13 +3,14 @@ package worker
 import (
 	crand "crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"math/big"
 	"math/rand"
 	"strings"
 	"sync"
-	"time"
 
+	metrics "github.com/armon/go-metrics"
 	"gitlab.com/blockforge/blockforge/algo/ethash"
 	"gitlab.com/blockforge/blockforge/hash"
 	"gitlab.com/blockforge/blockforge/log"
@@ -27,8 +28,9 @@ type Ethash struct {
 
 	hash     *hash.Ethash
 	seedhash string
+	lock     sync.RWMutex
 
-	lock sync.RWMutex
+	metrics *metrics.Metrics
 }
 
 func (worker *Ethash) Configure(config Config) error {
@@ -39,6 +41,8 @@ func (worker *Ethash) Configure(config Config) error {
 
 	worker.config = config
 	worker.rand = rand.New(rand.NewSource(seed.Int64()))
+
+	worker.metrics = config.Metrics
 
 	return nil
 }
@@ -53,7 +57,8 @@ func (worker *Ethash) Start() error {
 		defer close(workChannels[index])
 	}
 
-	go worker.thread(workChannels[0])
+	key := []string{"worker", "ethash", "cpu", fmt.Sprintf("%v", 0), fmt.Sprintf("%v", 0)}
+	go worker.thread(key, workChannels[0])
 
 	for work := range worker.Work {
 		if worker.seedhash != work.Seedhash {
@@ -81,11 +86,9 @@ func (worker *Ethash) Start() error {
 	return nil
 }
 
-func (worker *Ethash) thread(workChan chan *ethash.Work) {
+func (worker *Ethash) thread(key []string, workChan chan *ethash.Work) {
 	work := <-workChan
 	var ok bool
-	start := time.Now()
-	hashes := float64(0)
 
 	for {
 		select {
@@ -94,29 +97,15 @@ func (worker *Ethash) thread(workChan chan *ethash.Work) {
 				return
 			}
 
-			log.Infof("ethash hashrate %v H/s", hashes/time.Since(start).Seconds())
-
-			start = time.Now()
-			hashes = 0
 		default:
 			worker.lock.RLock()
-			if _, err := work.VerifySend(worker.hash, work.ExtraNonce+work.Nonce, worker.Shares); err != nil {
+			if err := work.VerifyRange(worker.hash, uint64(worker.rand.Uint32()), 10*1024, worker.Shares); err != nil {
 				log.Error(err)
 			}
+			worker.metrics.IncrCounter(key, 10*1024)
 			worker.lock.RUnlock()
-			work.Nonce++
-			hashes++
 		}
 	}
-}
-
-func (w *Ethash) Stats() Stats {
-	stats := Stats{
-		CPUStats: []CPUStats{},
-		GPUStats: []GPUStats{},
-	}
-
-	return stats
 }
 
 func (w *Ethash) Capabilities() Capabilities {
