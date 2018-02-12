@@ -13,7 +13,6 @@ import (
 	"gitlab.com/blockforge/blockforge/coin"
 
 	"gitlab.com/blockforge/blockforge/hardware/processor"
-	"gitlab.com/blockforge/blockforge/log"
 
 	"gopkg.in/yaml.v2"
 
@@ -180,7 +179,6 @@ func (g *guiBackend) Stats() {
 		stats := g.miner.Stats()
 		buf, err := json.Marshal(stats)
 		if err != nil {
-			log.Debugf("%+v", stats)
 			g.errors <- errors.WithStack(err)
 			return
 		}

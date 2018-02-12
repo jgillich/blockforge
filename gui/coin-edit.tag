@@ -59,9 +59,6 @@
     this.coins = opts.miner.availableCoins.filter(function (available) {
       return !configuredCoins.find(function (configured) { return available.short_name == configured})
     })
-    console.log(this.coins)
-        console.log(opts.miner.availableCoins)
-
 
     save() {
       var a = document.createElement('a')

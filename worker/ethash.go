@@ -9,10 +9,10 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
+	"time"
 
 	metrics "github.com/armon/go-metrics"
 	"gitlab.com/blockforge/blockforge/algo/ethash"
-	"gitlab.com/blockforge/blockforge/hash"
 	"gitlab.com/blockforge/blockforge/log"
 )
 
@@ -26,7 +26,7 @@ type Ethash struct {
 	// random source for nonces
 	rand *rand.Rand
 
-	hash     *hash.Ethash
+	hash     *ethash.Ethash
 	seedhash string
 	lock     sync.RWMutex
 
@@ -57,7 +57,7 @@ func (worker *Ethash) Start() error {
 		defer close(workChannels[index])
 	}
 
-	key := []string{"worker", "ethash", "cpu", fmt.Sprintf("%v", 0), fmt.Sprintf("%v", 0)}
+	key := []string{"cpu", fmt.Sprintf("%v", 0), fmt.Sprintf("%v", 0)}
 	go worker.thread(key, workChannels[0])
 
 	for work := range worker.Work {
@@ -70,7 +70,7 @@ func (worker *Ethash) Start() error {
 
 			log.Info("DAG is being initialized, this may take a while")
 			worker.lock.Lock()
-			worker.hash, err = hash.NewEthash(seedhash)
+			worker.hash, err = ethash.NewEthash(seedhash)
 			worker.lock.Unlock()
 			if err != nil {
 				return err
@@ -98,12 +98,13 @@ func (worker *Ethash) thread(key []string, workChan chan *ethash.Work) {
 			}
 
 		default:
+			start := time.Now()
 			worker.lock.RLock()
 			if err := work.VerifyRange(worker.hash, uint64(worker.rand.Uint32()), 10*1024, worker.Shares); err != nil {
 				log.Error(err)
 			}
-			worker.metrics.IncrCounter(key, 10*1024)
 			worker.lock.RUnlock()
+			worker.metrics.IncrCounter(key, float32(10*1024/time.Since(start).Seconds()))
 		}
 	}
 }

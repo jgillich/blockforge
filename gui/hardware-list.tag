@@ -171,7 +171,6 @@
       if (isNaN(platform)) {
         var processor = this.processor(index)
         processor.coin = e.srcElement.value
-        console.log(opts.miner.config)
       } else {
         var cl = this.cl(index, platform)
         cl.coin = e.srcElement.value

@@ -37,7 +37,7 @@ type ethashShare struct {
 }
 
 type Ethash struct {
-	Work chan *ethash.Work
+	work chan *ethash.Work
 	conn *poolConn
 
 	minerId    string
@@ -140,6 +140,7 @@ func NewEthash(pool Pool) (Client, error) {
 	}
 
 	stratum := &Ethash{
+		work: make(chan *ethash.Work),
 		pool: pool,
 		conn: conn,
 		// If pool does not set difficulty before first job, then miner can assume difficulty 1 was being set
@@ -211,7 +212,7 @@ func (stratum *Ethash) loop() {
 			if err != nil {
 				log.Error(err)
 			}
-			stratum.Work <- work
+			stratum.work <- work
 		case "mining.set_difficulty":
 			var params []float32
 			err = json.Unmarshal(msg.Params, &params)
@@ -254,6 +255,7 @@ func (stratum *Ethash) getWork(job ethashJob) (*ethash.Work, error) {
 
 	return &ethash.Work{
 		JobId:      job.JobId,
+		Seedhash:   job.SeedHash,
 		Header:     header,
 		Target:     stratum.target,
 		ExtraNonce: stratum.extraNonce,
@@ -294,7 +296,7 @@ func (stratum *Ethash) submit(share ethash.Share) {
 
 func (stratum *Ethash) Close() error {
 	stratum.closed.Store(true)
-	close(stratum.Work)
+	close(stratum.work)
 	return stratum.conn.close()
 }
 
@@ -315,7 +317,7 @@ func (stratum *Ethash) Worker(a algo.Algo) worker.Worker {
 	}()
 
 	return &worker.Ethash{
-		Work:   stratum.Work,
+		Work:   stratum.work,
 		Shares: shares,
 	}
 }
