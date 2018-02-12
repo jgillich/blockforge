@@ -176,7 +176,10 @@ func (miner *Miner) Stop() {
 func (miner *Miner) Stats() map[string]float64 {
 	stats := map[string]float64{}
 	data := miner.sink.Data()
-	for key, counter := range data[len(data)-1].Counters {
+	metrics := data[len(data)-1]
+	metrics.RLock()
+	defer metrics.RUnlock()
+	for key, counter := range metrics.Counters {
 		stats[key] = counter.AggregateSample.Mean()
 	}
 	return stats
