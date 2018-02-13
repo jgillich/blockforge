@@ -41,7 +41,7 @@ func (worker *Cryptonight) Start() error {
 
 	if len(worker.clDevices) > 0 {
 		for i, d := range worker.clDevices {
-			cl, err := newCryptonightCLWorker(d, worker.Lite)
+			cl, err := newCryptonightCL(d, worker.Lite)
 			if err != nil {
 				return err
 			}
@@ -67,7 +67,7 @@ func (worker *Cryptonight) Start() error {
 	return nil
 }
 
-func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCLWorker, workChan chan *cryptonight.Work) {
+func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCL, workChan chan *cryptonight.Work) {
 	defer cl.Release()
 
 	var ok bool
@@ -86,6 +86,7 @@ func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCLWorker, work
 				return
 			}
 
+			// number of results is stored in last item of results array
 			for i := uint32(0); i < results[0xFF]; i++ {
 				if !work.VerifySend(worker.Lite, results[i], worker.Shares) {
 					log.Errorw("invalid result from CL worker")

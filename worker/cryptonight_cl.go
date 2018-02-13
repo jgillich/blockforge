@@ -14,9 +14,10 @@ import (
 	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 )
 
-type cryptonightCLWorker struct {
+type cryptonightCL struct {
 	Intensity     uint32
 	worksize      uint32
+	ctx           *cl.Context
 	queue         *cl.CommandQueue
 	inputBuf      *cl.MemObject
 	scratchpadBuf *cl.MemObject
@@ -30,7 +31,7 @@ type cryptonightCLWorker struct {
 	kernels       []*cl.Kernel
 }
 
-func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWorker, error) {
+func newCryptonightCL(config CLDeviceConfig, lite bool) (*cryptonightCL, error) {
 
 	var cryptonightKernel string
 	{
@@ -76,7 +77,8 @@ func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWor
 		mask = cryptonight.CryptonightMask
 	}
 
-	w := cryptonightCLWorker{
+	w := cryptonightCL{
+		ctx:       ctx,
 		Intensity: uint32(config.Intensity),
 		worksize:  uint32(config.Worksize),
 	}
@@ -154,7 +156,7 @@ func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWor
 	return &w, nil
 }
 
-func (w *cryptonightCLWorker) SetJob(input []byte, target uint64) error {
+func (w *cryptonightCL) SetJob(input []byte, target uint64) error {
 
 	uintensity := uint64(w.Intensity)
 
@@ -266,7 +268,7 @@ func (w *cryptonightCLWorker) SetJob(input []byte, target uint64) error {
 	return nil
 }
 
-func (w *cryptonightCLWorker) RunJob(results []uint32, nonce uint32) error {
+func (w *cryptonightCL) RunJob(results []uint32, nonce uint32) error {
 
 	// round up to next multiple of worksize
 	threads := ((w.Intensity + w.worksize - 1) / w.worksize) * w.worksize
@@ -378,7 +380,7 @@ func (w *cryptonightCLWorker) RunJob(results []uint32, nonce uint32) error {
 	return nil
 }
 
-func (w *cryptonightCLWorker) Release() {
+func (w *cryptonightCL) Release() {
 	w.queue.Release()
 	w.inputBuf.Release()
 	w.scratchpadBuf.Release()
@@ -391,4 +393,5 @@ func (w *cryptonightCLWorker) Release() {
 		k.Release()
 	}
 	w.program.Release()
+	w.ctx.Release()
 }
