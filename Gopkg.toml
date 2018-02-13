@@ -62,3 +62,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/armon/go-metrics"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/getsentry/raven-go"

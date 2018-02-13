@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/getsentry/raven-go"
+
 	"gitlab.com/blockforge/blockforge/algo"
 
 	"go.uber.org/atomic"
@@ -17,8 +19,6 @@ import (
 	"gitlab.com/blockforge/blockforge/log"
 	"gitlab.com/blockforge/blockforge/worker"
 )
-
-var NicehashProtocolError = fmt.Errorf("EthereumStratum protocol error")
 
 func init() {
 	clients[ProtocolEthereum] = NewEthash
@@ -81,7 +81,7 @@ func NewEthash(pool Pool) (Client, error) {
 	}
 
 	if len(result) != 2 {
-		return nil, NicehashProtocolError
+		return nil, ProtocolError
 	}
 
 	var first []string
@@ -91,11 +91,11 @@ func NewEthash(pool Pool) (Client, error) {
 	}
 
 	if len(first) != 3 {
-		return nil, NicehashProtocolError
+		return nil, ProtocolError
 	}
 
 	if first[2] != "EthereumStratum/1.0.0" {
-		return nil, NicehashProtocolError
+		return nil, ProtocolError
 	}
 
 	var extraNonce string
@@ -167,7 +167,7 @@ func (stratum *Ethash) loop() {
 				stratum.Close()
 				return
 			}
-			log.Error(err)
+			stratum.protoErr(err)
 			continue
 		}
 
@@ -176,12 +176,12 @@ func (stratum *Ethash) loop() {
 			var params []interface{}
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Errorw("error while parsing job", "err", err)
+				stratum.protoErr(err)
 				continue
 			}
 
 			if len(params) < 3 {
-				log.Errorw("invalid job params length")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 
@@ -189,40 +189,41 @@ func (stratum *Ethash) loop() {
 			var ok bool
 			job.JobId, ok = params[0].(string)
 			if !ok {
-				log.Errorw("invalid job id")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 			job.SeedHash, ok = params[1].(string)
 			if !ok {
-				log.Errorw("invalid seed hash")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 			job.HeaderHash, ok = params[2].(string)
 			if !ok {
-				log.Errorw("invalid header hash")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 			job.CleanJobs, ok = params[3].(bool)
 			if !ok {
-				log.Errorw("invalid cleanjobs")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 
 			work, err := stratum.getWork(job)
 			if err != nil {
-				log.Error(err)
+				stratum.protoErr(err)
+				continue
 			}
 			stratum.work <- work
 		case "mining.set_difficulty":
 			var params []float32
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Errorw("error while parsing difficulty", "err", err)
+				stratum.protoErr(err)
 				continue
 			}
 
 			if len(params) != 1 {
-				log.Errorw("invalid set_difficulty params length")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 
@@ -231,12 +232,12 @@ func (stratum *Ethash) loop() {
 			var params []string
 			err = json.Unmarshal(msg.Params, &params)
 			if err != nil {
-				log.Errorw("error while parsing extranonce", "err", err)
+				stratum.protoErr(err)
 				continue
 			}
 
 			if len(params) != 1 {
-				log.Errorw("invalid set_extranonce params length")
+				stratum.protoErr(ProtocolError)
 				continue
 			}
 
@@ -269,7 +270,7 @@ func (stratum *Ethash) setExtraNonce(nonce string) {
 	}
 	extraNonceBytes, err := hex.DecodeString(nonce)
 	if err != nil {
-		log.Errorw("error while decoding extraNonce", "extraNonce", nonce)
+		stratum.protoErr(err)
 		return
 	}
 	stratum.extraNonce = binary.BigEndian.Uint64(extraNonceBytes)
@@ -282,7 +283,7 @@ func (stratum *Ethash) submit(share ethash.Share) {
 		fmt.Sprintf("%v", share.Nonce),
 	})
 	if err != nil {
-		log.Errorw("error while serializing share", "err", err)
+		stratum.protoErr(err)
 		return
 	}
 	log.Infof("submitting share %+v", params)
@@ -302,7 +303,7 @@ func (stratum *Ethash) Close() error {
 
 func (stratum *Ethash) Worker(a algo.Algo) worker.Worker {
 	if a != algo.Ethash {
-		panic("invalid algorithm requested in ethash stratum")
+		log.Panic("invalid algorithm requested in ethash stratum")
 	}
 
 	shares := make(chan ethash.Share, 1)
@@ -320,4 +321,11 @@ func (stratum *Ethash) Worker(a algo.Algo) worker.Worker {
 		Work:   stratum.work,
 		Shares: shares,
 	}
+}
+
+func (stratum *Ethash) protoErr(err error) {
+	raven.CaptureError(err, map[string]string{
+		"url": stratum.pool.URL,
+	})
+	log.Error(err)
 }

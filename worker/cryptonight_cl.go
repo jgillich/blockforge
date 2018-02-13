@@ -3,6 +3,7 @@ package worker
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"regexp"
 	"text/template"
 	"unsafe"
@@ -42,7 +43,7 @@ func newCryptonightCLWorker(config CLDeviceConfig, lite bool) (*cryptonightCLWor
 		}
 		cl = regexp.MustCompile(`(#include "(.*\.cl)")`).ReplaceAllString(cl, `{{ .String "$2" }}`)
 		if err := template.Must(template.New("cryptonight").Parse(cl)).Execute(&out, box); err != nil {
-			panic(err)
+			log.Panic(err)
 		}
 		cryptonightKernel = out.String()
 	}

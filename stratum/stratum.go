@@ -26,6 +26,8 @@ var (
 	// ProtocolEthereum implements the NiceHash stratum protocol
 	// https://github.com/nicehash/Specifications/blob/master/EthereumStratum_NiceHash_v1.0.0.txt
 	ProtocolEthereum Protocol = "ethereum"
+
+	ProtocolError = fmt.Errorf("Stratum protocol error")
 )
 
 type Pool struct {

@@ -29,6 +29,7 @@ func Initialize(debug bool) {
 		config = zap.NewProductionConfig()
 		config.Encoding = "console"
 		config.EncoderConfig.EncodeCaller = NopCallerEncoder
+		config.DisableStacktrace = true
 	}
 
 	config.EncoderConfig.EncodeTime = ShortTimeEncoder

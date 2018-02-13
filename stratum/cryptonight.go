@@ -9,6 +9,7 @@ import (
 	"io"
 	"math"
 
+	raven "github.com/getsentry/raven-go"
 	"gitlab.com/blockforge/blockforge/algo"
 	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 	"gitlab.com/blockforge/blockforge/worker"
@@ -114,7 +115,7 @@ func (stratum *Cryptonight) loop() {
 				stratum.Close()
 				return
 			}
-			log.Error(err)
+			stratum.protoErr(err)
 			continue
 		}
 
@@ -122,12 +123,12 @@ func (stratum *Cryptonight) loop() {
 		case "job":
 			var job cryptonightJob
 			if err := json.Unmarshal(msg.Params, &job); err != nil {
-				log.Errorw("error parsing job", "err", err)
+				stratum.protoErr(err)
 				continue
 			}
 			work, err := stratum.getWork(job)
 			if err != nil {
-				log.Error(err)
+				stratum.protoErr(err)
 				continue
 			}
 			stratum.work <- work
@@ -139,13 +140,12 @@ func (stratum *Cryptonight) loop() {
 func (stratum *Cryptonight) getWork(job cryptonightJob) (*cryptonight.Work, error) {
 	input, err := hex.DecodeString(job.Blob)
 	if err != nil {
-		log.Errorw("malformed blob", "job", job)
-		return nil, errors.New("malformed blob")
+		return nil, err
 	}
 
 	t, err := hex.DecodeString(job.Target)
 	if err != nil {
-		return nil, errors.New("malformed target")
+		return nil, err
 	}
 
 	var target uint64
@@ -183,7 +183,7 @@ func (stratum *Cryptonight) submit(in cryptonight.Share) {
 
 	params, err := json.Marshal(share)
 	if err != nil {
-		log.Errorw("error while serializing share", "err", err)
+		stratum.protoErr(err)
 		return
 	}
 
@@ -209,7 +209,7 @@ func (stratum *Cryptonight) Worker(a algo.Algo) worker.Worker {
 	case algo.CryptonightLite:
 		lite = true
 	default:
-		panic("invalid algorithm requested in cryptonight stratum")
+		log.Panic("invalid algorithm requested in cryptonight stratum")
 	}
 
 	shares := make(chan cryptonight.Share, 1)
@@ -232,4 +232,11 @@ func (stratum *Cryptonight) Worker(a algo.Algo) worker.Worker {
 		Work:   stratum.work,
 		Shares: shares,
 	}
+}
+
+func (stratum *Cryptonight) protoErr(err error) {
+	raven.CaptureError(err, map[string]string{
+		"url": stratum.pool.URL,
+	})
+	log.Error(err)
 }
