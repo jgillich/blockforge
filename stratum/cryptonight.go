@@ -202,13 +202,8 @@ func (stratum *Cryptonight) Close() error {
 }
 
 func (stratum *Cryptonight) Worker(a algo.Algo) worker.Worker {
-	var lite bool
-	switch a {
-	case algo.Cryptonight:
-		lite = false
-	case algo.CryptonightLite:
-		lite = true
-	default:
+	algo, ok := a.(*cryptonight.Algo)
+	if !ok {
 		log.Panic("invalid algorithm requested in cryptonight stratum")
 	}
 
@@ -228,7 +223,7 @@ func (stratum *Cryptonight) Worker(a algo.Algo) worker.Worker {
 	}()
 
 	return &worker.Cryptonight{
-		Lite:   lite,
+		Algo:   algo,
 		Work:   stratum.work,
 		Shares: shares,
 	}

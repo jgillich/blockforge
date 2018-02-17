@@ -1,10 +1,12 @@
 package ethash
 
 // #include <stdint.h>
-// #include "../../hash/ethash/ethash.h"
+// #include "../../hash/ethash/internal.h"
+// #include "../../hash/ethash/io.h"
 // #cgo LDFLAGS: -L${SRCDIR}/../../hash/build/ -lhash
 import "C"
 import (
+	"encoding/json"
 	"fmt"
 	"unsafe"
 
@@ -14,20 +16,44 @@ import (
 var EthashEpochLength uint64 = 30000
 
 type Ethash struct {
+	Cache []byte
+	DAG   []byte
 	light C.ethash_light_t
 	full  C.ethash_full_t
 }
 
-func NewEthash(seedHash []byte) (*Ethash, error) {
-	blockNumber, err := seedHashToBlockNum(seedHash)
+func NewEthash(seedhash []byte) (*Ethash, error) {
+	blockNumber, err := seedHashToBlockNum(seedhash)
 	if err != nil {
 		return nil, err
 	}
 
-	light := C.ethash_light_new(C.uint64_t(blockNumber))
-	full := C.ethash_full_new(light, nil)
+	sh := hashToH256(seedhash)
 
-	return &Ethash{light, full}, nil
+	light := C.ethash_light_new_internal(C.ethash_get_cachesize(C.uint64_t(blockNumber)), &sh)
+	light.block_number = C.uint64_t(blockNumber)
+
+	dir := make([]byte, 256)
+	if !C.ethash_get_default_dirname((*C.char)(unsafe.Pointer(&dir[0])), 256) {
+		return nil, fmt.Errorf("failed to determine ethash dag storage directory")
+	}
+
+	cache := (*(*[]byte)(unsafe.Pointer(light.cache)))[:light.cache_size]
+
+	fullsize := C.ethash_get_datasize(light.block_number)
+	full := C.ethash_full_new_internal((*C.char)(unsafe.Pointer(&dir[0])), sh, fullsize, light, nil)
+
+	// FIXME full.file_size undefined (type C.ethash_full_t has no field or method file_size)
+	// why do we need a hacky new struct type when it works just fine for light above ???
+	fullInternal := (*(*C.struct_ethash_full_internal)(unsafe.Pointer(full)))
+	dag := (*(*[]byte)(unsafe.Pointer(fullInternal.data)))[:fullInternal.file_size]
+
+	return &Ethash{
+		cache,
+		dag,
+		light,
+		full,
+	}, nil
 }
 
 func (e *Ethash) Release() {
@@ -68,4 +94,11 @@ func h256ToHash(in C.ethash_h256_t) [32]byte {
 
 func hashToH256(in []byte) C.ethash_h256_t {
 	return C.ethash_h256_t{b: *(*[32]C.uint8_t)(unsafe.Pointer(&in[0]))}
+}
+
+type Algo struct {
+}
+
+func (algo *Algo) MarshalJSON() ([]byte, error) {
+	return json.Marshal("ethash")
 }

@@ -1,5 +1,7 @@
 package cryptonight
 
+import "encoding/json"
+
 var (
 	CryptonightMemory     uint32 = 2097152
 	CryptonightMask       uint32 = 0x1FFFF0
@@ -11,3 +13,14 @@ var (
 
 // NonceIndex is the starting location of nonce in binary blob
 var NonceIndex = 39
+
+type Algo struct {
+	Lite bool
+}
+
+func (algo *Algo) MarshalJSON() ([]byte, error) {
+	if algo.Lite {
+		return json.Marshal("cryptonight-lite")
+	}
+	return json.Marshal("cryptonight")
+}

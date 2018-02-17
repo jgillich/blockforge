@@ -302,7 +302,8 @@ func (stratum *Ethash) Close() error {
 }
 
 func (stratum *Ethash) Worker(a algo.Algo) worker.Worker {
-	if a != algo.Ethash {
+	_, ok := a.(*ethash.Algo)
+	if !ok {
 		log.Panic("invalid algorithm requested in ethash stratum")
 	}
 

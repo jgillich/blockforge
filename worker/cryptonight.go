@@ -10,7 +10,7 @@ import (
 )
 
 type Cryptonight struct {
-	Lite   bool
+	Algo   *cryptonight.Algo
 	Work   <-chan *cryptonight.Work
 	Shares chan<- cryptonight.Share
 
@@ -41,7 +41,7 @@ func (worker *Cryptonight) Start() error {
 
 	if len(worker.clDevices) > 0 {
 		for i, d := range worker.clDevices {
-			cl, err := newCryptonightCL(d, worker.Lite)
+			cl, err := newCryptonightCL(d, worker.Algo.Lite)
 			if err != nil {
 				return err
 			}
@@ -88,7 +88,7 @@ func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCL, workChan c
 
 			// number of results is stored in last item of results array
 			for i := uint32(0); i < results[0xFF]; i++ {
-				if !work.VerifySend(worker.Lite, results[i], worker.Shares) {
+				if !work.VerifySend(worker.Algo.Lite, results[i], worker.Shares) {
 					log.Errorw("invalid result from CL worker")
 				}
 			}
@@ -112,7 +112,7 @@ func (worker *Cryptonight) cpuThread(key []string, workChan chan *cryptonight.Wo
 		select {
 		default:
 			start := time.Now()
-			work.VerifyRange(worker.Lite, 64, worker.Shares)
+			work.VerifyRange(worker.Algo.Lite, 64, worker.Shares)
 			worker.metrics.IncrCounter(key, float32(64/time.Since(start).Seconds()))
 		case work, ok = <-workChan:
 			if !ok {

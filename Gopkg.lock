@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = ["crypto/sha3"]
-  revision = "4bb3c89d44e372e6a9ab85a8be0c9345265c763a"
-  version = "v1.7.3"
+  revision = "5f54075760748ae7f249bf735565924ea885c477"
+  version = "v1.8.0"
 
 [[projects]]
   branch = "master"
@@ -26,16 +26,10 @@
   revision = "563b81fc02b75d664e54da31f787c2cc2186780b"
 
 [[projects]]
-  name = "github.com/gobuffalo/envy"
-  packages = ["."]
-  revision = "e613c80275b86293880eddeb27417c9a7c670ff3"
-  version = "v1.3.0"
-
-[[projects]]
   name = "github.com/gobuffalo/packr"
   packages = ["."]
-  revision = "64c3dd439b5efc5cd9fb69a8fb209a03cd7c5b86"
-  version = "v1.10.3"
+  revision = "6434a292ac52e6964adebfdce3f9ce6d9f16be01"
+  version = "v1.10.4"
 
 [[projects]]
   branch = "master"
@@ -60,18 +54,6 @@
   name = "github.com/jgillich/go-opencl"
   packages = ["cl"]
   revision = "db9961dcc93ff747f6695ae3d18664d0a93c42c6"
-
-[[projects]]
-  name = "github.com/joho/godotenv"
-  packages = ["."]
-  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
-  version = "v1.2.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/go-homedir"
-  packages = ["."]
-  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -107,7 +89,7 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "dbddbff89c177b814be828fe9f3154dec1092ed6"
+  revision = "53ed92bbe59bceac926d24e6854331ee54aa86d2"
 
 [[projects]]
   name = "go.uber.org/atomic"

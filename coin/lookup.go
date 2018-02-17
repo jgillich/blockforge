@@ -4,18 +4,20 @@ import (
 	"strings"
 
 	"gitlab.com/blockforge/blockforge/algo"
+	"gitlab.com/blockforge/blockforge/algo/cryptonight"
+	"gitlab.com/blockforge/blockforge/algo/ethash"
 	"gitlab.com/blockforge/blockforge/stratum"
 )
 
 var Coins = []Coin{
-	Coin{"Monero", "XMR", algo.Cryptonight, stratum.ProtocolCryptonight},
-	Coin{"Electroneum", "ETN", algo.Cryptonight, stratum.ProtocolCryptonight},
-	Coin{"IntenseCoin", "ITNS", algo.Cryptonight, stratum.ProtocolCryptonight},
-	Coin{"Sumokoin", "SUMO", algo.Cryptonight, stratum.ProtocolCryptonight},
-	Coin{"Bytecoin", "BCN", algo.Cryptonight, stratum.ProtocolCryptonight},
-	Coin{"Aeon", "AEON", algo.CryptonightLite, stratum.ProtocolCryptonight},
-	Coin{"Ethereum", "ETH", algo.Ethash, stratum.ProtocolEthereum},
-	Coin{"Ethereum Classic", "ETC", algo.Ethash, stratum.ProtocolEthereum},
+	Coin{"Monero", "XMR", &cryptonight.Algo{}, stratum.ProtocolCryptonight},
+	Coin{"Electroneum", "ETN", &cryptonight.Algo{}, stratum.ProtocolCryptonight},
+	Coin{"IntenseCoin", "ITNS", &cryptonight.Algo{}, stratum.ProtocolCryptonight},
+	Coin{"Sumokoin", "SUMO", &cryptonight.Algo{}, stratum.ProtocolCryptonight},
+	Coin{"Bytecoin", "BCN", &cryptonight.Algo{}, stratum.ProtocolCryptonight},
+	Coin{"Aeon", "AEON", &cryptonight.Algo{Lite: true}, stratum.ProtocolCryptonight},
+	Coin{"Ethereum", "ETH", &ethash.Algo{}, stratum.ProtocolEthereum},
+	Coin{"Ethereum Classic", "ETC", &ethash.Algo{}, stratum.ProtocolEthereum},
 }
 
 type Coin struct {
