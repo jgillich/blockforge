@@ -120,11 +120,6 @@ struct ethash_full {
 	uint64_t file_size;
 	node* data;
 };
-struct ethash_full_internal {
-	FILE* file;
-	uint64_t file_size;
-	node* data;
-};
 
 /**
  * Allocate and initialize a new ethash_full handler. Internal version.

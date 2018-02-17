@@ -38,15 +38,12 @@ func NewEthash(seedhash []byte) (*Ethash, error) {
 		return nil, fmt.Errorf("failed to determine ethash dag storage directory")
 	}
 
-	cache := (*(*[]byte)(unsafe.Pointer(light.cache)))[:light.cache_size]
+	cache := C.GoBytes(unsafe.Pointer(light.cache), C.int(light.cache_size))
 
 	fullsize := C.ethash_get_datasize(light.block_number)
 	full := C.ethash_full_new_internal((*C.char)(unsafe.Pointer(&dir[0])), sh, fullsize, light, nil)
 
-	// FIXME full.file_size undefined (type C.ethash_full_t has no field or method file_size)
-	// why do we need a hacky new struct type when it works just fine for light above ???
-	fullInternal := (*(*C.struct_ethash_full_internal)(unsafe.Pointer(full)))
-	dag := (*(*[]byte)(unsafe.Pointer(fullInternal.data)))[:fullInternal.file_size]
+	dag := C.GoBytes(unsafe.Pointer(C.ethash_full_dag(full)), C.int(C.ethash_full_dag_size(full)/4))
 
 	return &Ethash{
 		cache,

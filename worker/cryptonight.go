@@ -80,8 +80,7 @@ func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCL, workChan c
 			start := time.Now()
 			results := make([]uint32, 0x100)
 
-			err := cl.RunJob(results, work.NextNonce(cl.Intensity))
-			if err != nil {
+			if err := cl.RunJob(results, work.NextNonce(cl.Intensity)); err != nil {
 				log.Errorw("cl error", "error", err)
 				return
 			}

@@ -3,7 +3,9 @@ package worker
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strings"
+	"unsafe"
 
 	"github.com/jgillich/go-opencl/cl"
 	"github.com/pkg/errors"
@@ -13,15 +15,18 @@ import (
 )
 
 type ethashCL struct {
-	ctx          *cl.Context
-	queue        *cl.CommandQueue
-	program      *cl.Program
-	cache        *cl.MemObject
-	dag          *cl.MemObject
-	header       *cl.MemObject
-	search       *cl.MemObject
-	searchKernel *cl.Kernel
-	dagKernel    *cl.Kernel
+	ctx            *cl.Context
+	queue          *cl.CommandQueue
+	program        *cl.Program
+	cache          *cl.MemObject
+	dag            *cl.MemObject
+	header         *cl.MemObject
+	search         *cl.MemObject
+	searchKernel   *cl.Kernel
+	dagKernel      *cl.Kernel
+	localWorkSize  int
+	workgroupSize  int
+	globalWorkSize int
 }
 
 func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error) {
@@ -54,12 +59,32 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 		return nil, errors.WithStack(err)
 	}
 
+	// TODO CreateBuffer results in Invalid Host Ptr, might be a bug in the bindings
+	cache, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, len(ethash.Cache))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if _, err := queue.EnqueueWriteBuffer(cache, true, 0, len(ethash.Cache), unsafe.Pointer(&ethash.Cache[0]), nil); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	dag, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, len(ethash.DAG))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	header, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, 32)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	program, err := ctx.CreateProgramWithSource([]string{kernel})
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	options := []string{
+		fmt.Sprintf("-D%v=%v", "PLATFORM", 0), // TODO 1 for AMD, 2 for NVIDIA
 		fmt.Sprintf("-D%v=%v", "GROUP_SIZE", workgroupSize),
 		fmt.Sprintf("-D%v=%v", "DAG_SIZE", len(ethash.DAG)/128),
 		fmt.Sprintf("-D%v=%v", "LIGHT_SIZE", len(ethash.Cache)/64), // TODO what's the right size?
@@ -74,27 +99,12 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 		return nil, errors.WithStack(err)
 	}
 
-	cache, err := ctx.CreateBuffer(cl.MemReadOnly, ethash.Cache)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	dag, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, len(ethash.DAG))
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	searchKernel, err := program.CreateKernel("ethash_search")
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	dagKernel, err := program.CreateKernel("ethash_calculate_dag_item")
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	header, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, 32)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -136,7 +146,7 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 	}
 
 	for i := 0; i < fullRuns; i++ {
-		dagKernel.SetArg(0, i*globalWorkSize)
+		dagKernel.SetArgUint32(0, uint32(i*globalWorkSize))
 		if _, err := queue.EnqueueNDRangeKernel(dagKernel, nil, []int{globalWorkSize}, []int{workgroupSize}, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -145,5 +155,74 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 		}
 	}
 
-	return &ethashCL{ctx, queue, program, cache, dag, header, search, searchKernel, dagKernel}, nil
+	return &ethashCL{
+		ctx:            ctx,
+		queue:          queue,
+		program:        program,
+		cache:          cache,
+		dag:            dag,
+		header:         header,
+		search:         search,
+		searchKernel:   searchKernel,
+		dagKernel:      dagKernel,
+		localWorkSize:  localWorkSize,
+		workgroupSize:  workgroupSize,
+		globalWorkSize: globalWorkSize,
+	}, nil
+}
+
+func (cl *ethashCL) Update(header []byte, target *big.Int) error {
+	zero := uint32(0)
+	targetBytes := target.Bytes()
+
+	if _, err := cl.queue.EnqueueWriteBuffer(cl.header, false, 0, len(header), unsafe.Pointer(&header[0]), nil); err != nil {
+		return err
+	}
+
+	if _, err := cl.queue.EnqueueWriteBuffer(cl.search, false, 0, 4, unsafe.Pointer(&zero), nil); err != nil {
+		return err
+	}
+
+	if err := cl.searchKernel.SetArgBuffer(0, cl.search); err != nil {
+		return err
+	}
+
+	if err := cl.searchKernel.SetArgUnsafe(0, 64, unsafe.Pointer(&targetBytes[0])); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cl *ethashCL) Run(nonce uint64, results [2]uint32) error {
+
+	if _, err := cl.queue.EnqueueReadBuffer(cl.search, true, 0, 4*len(results), unsafe.Pointer(&results[0]), nil); err != nil {
+		return err
+	}
+
+	if err := cl.searchKernel.SetArgUint64(3, nonce); err != nil {
+		return err
+	}
+
+	if _, err := cl.queue.EnqueueNDRangeKernel(cl.searchKernel, nil, []int{cl.globalWorkSize}, []int{cl.workgroupSize}, nil); err != nil {
+		return err
+	}
+
+	if err := cl.queue.Finish(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cl *ethashCL) Release() {
+	defer cl.ctx.Release()
+	defer cl.queue.Release()
+	defer cl.program.Release()
+	defer cl.cache.Release()
+	defer cl.dag.Release()
+	defer cl.header.Release()
+	defer cl.search.Release()
+	defer cl.searchKernel.Release()
+	defer cl.dagKernel.Release()
 }

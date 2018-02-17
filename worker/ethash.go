@@ -48,7 +48,10 @@ func (worker *Ethash) Configure(config Config) error {
 }
 
 func (worker *Ethash) Start() error {
-	totalThreads := 1
+	totalThreads := len(worker.config.CLDevices)
+	for _, c := range worker.config.Processors {
+		totalThreads += c.Threads
+	}
 
 	workChannels := make([]chan *ethash.Work, totalThreads)
 	for i := 0; i < totalThreads; i++ {
@@ -76,6 +79,18 @@ func (worker *Ethash) Start() error {
 				return err
 			}
 			log.Info("DAG initialized")
+
+			if len(worker.config.CLDevices) > 0 {
+				for i, d := range worker.config.CLDevices {
+					cl, err := newEthashCL(d, worker.hash)
+					if err != nil {
+						return err
+					}
+					key := []string{"opencl", fmt.Sprintf("%v", d.Device.Platform.Index), fmt.Sprintf("%v", d.Device.Index)}
+
+					go worker.clThread(key, cl, workChannels[i])
+				}
+			}
 		}
 
 		for _, ch := range workChannels {
@@ -109,10 +124,45 @@ func (worker *Ethash) thread(key []string, workChan chan *ethash.Work) {
 	}
 }
 
+func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash.Work) {
+	defer cl.Release()
+
+	work := <-workChan
+	cl.Update(work.Header, work.Target)
+	var ok bool
+
+	var results [2]uint32
+
+	for {
+		select {
+		case work, ok = <-workChan:
+			if !ok {
+				return
+			}
+			cl.Update(work.Header, work.Target)
+
+		default:
+			start := time.Now()
+			worker.lock.RLock()
+			startNonce := uint64(worker.rand.Uint32())
+			cl.Run(work.ExtraNonce+startNonce, results)
+			if results[0] > 0 {
+				worker.Shares <- ethash.Share{
+					JobId: work.JobId,
+					Nonce: startNonce + uint64(results[1]),
+				}
+			}
+			worker.lock.RUnlock()
+			worker.metrics.IncrCounter(key, float32(10*1024/time.Since(start).Seconds()))
+		}
+	}
+
+}
+
 func (w *Ethash) Capabilities() Capabilities {
 	return Capabilities{
 		CPU:    true,
-		OpenCL: false,
+		OpenCL: true,
 		CUDA:   false,
 	}
 }
