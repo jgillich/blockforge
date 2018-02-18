@@ -79,7 +79,7 @@ func New(config Config) (*Miner, error) {
 				return nil, fmt.Errorf("threads for cpu '%v' cannot be higher than virtual cores (%v > %v)", conf.Index, conf.Threads, processor.VirtualCores)
 			}
 
-			pConf = append(pConf, worker.ProcessorConfig{conf.Threads, processor})
+			pConf = append(pConf, worker.ProcessorConfig{Threads: conf.Threads, Processor: processor})
 		}
 
 		var clConf []worker.CLDeviceConfig
@@ -151,13 +151,13 @@ func New(config Config) (*Miner, error) {
 }
 
 func (miner *Miner) Start() error {
-	for _, worker := range miner.workers {
-		go func() {
+	for _, w := range miner.workers {
+		go func(worker worker.Worker) {
 			err := worker.Start()
 			if err != nil {
 				miner.err <- err
 			}
-		}()
+		}(w)
 	}
 
 	log.Debug("miner started")
