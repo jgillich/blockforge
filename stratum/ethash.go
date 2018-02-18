@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/getsentry/raven-go"
 
@@ -51,14 +52,41 @@ type subscribeResult struct {
 }
 
 func NewEthash(pool Pool) (Client, error) {
-	conn, err := pool.dial()
-	if err != nil {
+	stratum := &Ethash{
+		work: make(chan *ethash.Work),
+		pool: pool,
+	}
+
+	if err := stratum.login(); err != nil {
 		return nil, err
+	}
+
+	go func() {
+		for {
+			stratum.loop()
+			if stratum.closed.Load() {
+				return
+			}
+			for err := stratum.login(); err != nil; err = stratum.login() {
+				log.Error(err)
+				log.Info("failed to connect to stratum server, sleeping for 10 seconds...")
+				time.Sleep(10)
+			}
+		}
+	}()
+
+	return stratum, nil
+}
+
+func (stratum *Ethash) login() error {
+	conn, err := stratum.pool.dial()
+	if err != nil {
+		return err
 	}
 
 	subscribeParams, err := json.Marshal([]string{agent, "EthereumStratum/1.0.0"})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := conn.putMessage(&message{
@@ -66,54 +94,54 @@ func NewEthash(pool Pool) (Client, error) {
 		Method: "mining.subscribe",
 		Params: subscribeParams,
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
 	msg, err := conn.getMessage()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var result []json.RawMessage
 	err = json.Unmarshal(msg.Result, &result)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(result) != 2 {
-		return nil, ProtocolError
+		return ProtocolError
 	}
 
 	var first []string
 	err = json.Unmarshal(result[0], &first)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(first) != 3 {
-		return nil, ProtocolError
+		return ProtocolError
 	}
 
 	if first[2] != "EthereumStratum/1.0.0" {
-		return nil, ProtocolError
+		return ProtocolError
 	}
 
 	var extraNonce string
 	err = json.Unmarshal(result[1], &extraNonce)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := conn.putMessage(&message{
 		Id:     1,
 		Method: "mining.extranonce.subscribe",
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
-	authorizeParams, err := json.Marshal([]string{pool.User, pool.Pass})
+	authorizeParams, err := json.Marshal([]string{stratum.pool.User, stratum.pool.Pass})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := conn.putMessage(&message{
@@ -121,50 +149,39 @@ func NewEthash(pool Pool) (Client, error) {
 		Method: "mining.authorize",
 		Params: authorizeParams,
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
 	msg, err = conn.getMessage()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var loginSuccess bool
 	err = json.Unmarshal(msg.Result, &loginSuccess)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if !loginSuccess {
-		return nil, fmt.Errorf("login failed")
+		return fmt.Errorf("login failed")
 	}
 
-	stratum := &Ethash{
-		work: make(chan *ethash.Work),
-		pool: pool,
-		conn: conn,
-		// If pool does not set difficulty before first job, then miner can assume difficulty 1 was being set
-		target: ethash.DiffToTarget(1),
-	}
+	// If pool does not set difficulty before first job, then miner can assume difficulty 1 was being set
+	stratum.target = ethash.DiffToTarget(1)
+
+	stratum.conn = conn
 
 	stratum.setExtraNonce(extraNonce)
 
-	go stratum.loop()
-
-	return stratum, nil
+	return nil
 }
 
 func (stratum *Ethash) loop() {
 	for {
 		msg, err := stratum.conn.getMessage()
 		if err != nil {
-			if stratum.closed.Load() {
-				return
-			}
-			if err == io.EOF {
-				// TODO log error and reconnect
-				log.Error("stratum server closed the connection, aborting")
-				stratum.Close()
+			if stratum.closed.Load() || err == io.EOF {
 				return
 			}
 			stratum.protoErr(err)

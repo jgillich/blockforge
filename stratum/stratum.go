@@ -86,6 +86,8 @@ func (p Pool) dial() (*poolConn, error) {
 		return nil, err
 	}
 
+	log.Infof("connecting to %v", url.Host)
+
 	var conn net.Conn
 	switch url.Scheme {
 	case "stratum+tls":

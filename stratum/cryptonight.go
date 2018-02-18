@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"time"
 
 	raven "github.com/getsentry/raven-go"
 	"gitlab.com/blockforge/blockforge/algo"
@@ -52,18 +53,46 @@ type Cryptonight struct {
 }
 
 func NewCryptonight(pool Pool) (Client, error) {
-	conn, err := pool.dial()
-	if err != nil {
+
+	stratum := &Cryptonight{
+		work: make(chan *cryptonight.Work, 1),
+		pool: pool,
+	}
+
+	if err := stratum.login(); err != nil {
 		return nil, err
 	}
 
+	go func() {
+		for {
+			stratum.loop()
+			if stratum.closed.Load() {
+				return
+			}
+			for err := stratum.login(); err != nil; err = stratum.login() {
+				log.Error(err)
+				log.Info("failed to connect to stratum server, sleeping for 10 seconds...")
+				time.Sleep(10)
+			}
+		}
+	}()
+
+	return stratum, nil
+}
+
+func (stratum *Cryptonight) login() error {
+	conn, err := stratum.pool.dial()
+	if err != nil {
+		return err
+	}
+
 	params, err := json.Marshal(map[string]string{
-		"login": pool.User,
-		"pass":  pool.Pass,
+		"login": stratum.pool.User,
+		"pass":  stratum.pool.Pass,
 		"agent": agent,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := conn.putMessage(&message{
@@ -71,48 +100,36 @@ func NewCryptonight(pool Pool) (Client, error) {
 		Method: "login",
 		Params: params,
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
 	msg, err := conn.getMessage()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var result cryptonightLoginResult
 	if err := json.Unmarshal(msg.Result, &result); err != nil {
-		return nil, err
+		return err
 	}
 
-	stratum := &Cryptonight{
-		work:    make(chan *cryptonight.Work, 1),
-		minerId: result.MinerId,
-		pool:    pool,
-		conn:    conn,
-	}
+	stratum.minerId = result.MinerId
+	stratum.conn = conn
 
 	work, err := stratum.getWork(result.Job)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	stratum.work <- work
 
-	go stratum.loop()
-
-	return stratum, nil
+	return nil
 }
 
 func (stratum *Cryptonight) loop() {
 	for {
 		msg, err := stratum.conn.getMessage()
 		if err != nil {
-			if stratum.closed.Load() {
-				return
-			}
-			if err == io.EOF {
-				// TODO log error and reconnect
-				log.Error("stratum server closed the connection, aborting")
-				stratum.Close()
+			if stratum.closed.Load() || err == io.EOF {
 				return
 			}
 			stratum.protoErr(err)
