@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"gitlab.com/blockforge/blockforge/coin"
+	"gitlab.com/blockforge/blockforge/log"
 
 	"gitlab.com/blockforge/blockforge/hardware/processor"
 
@@ -18,7 +19,6 @@ import (
 
 	"github.com/gobuffalo/packr"
 	"github.com/inconshreveable/mousetrap"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/zserge/webview"
 	"gitlab.com/blockforge/blockforge/miner"
@@ -93,7 +93,7 @@ var guiCmd = &cobra.Command{
 				if data == "__app_js_loaded__" {
 
 					_, err := view.Bind("backend", &guiBackend{
-						errors:     errors,
+						panic:      errors,
 						webview:    view,
 						miner:      nil,
 						Config:     config,
@@ -134,7 +134,7 @@ var guiCmd = &cobra.Command{
 }
 
 type guiBackend struct {
-	errors     chan error
+	panic      chan error
 	webview    webview.WebView
 	miner      *miner.Miner
 	Config     miner.Config           `json:"config"`
@@ -149,13 +149,13 @@ func (g *guiBackend) Start() {
 
 	miner, err := miner.New(g.Config)
 	if err != nil {
-		g.errors <- err
+		g.panic <- err
 		return
 	}
 	go func() {
 		err := miner.Start()
 		if err != nil {
-			g.errors <- err
+			g.panic <- err
 		}
 	}()
 	g.miner = miner
@@ -179,7 +179,7 @@ func (g *guiBackend) Stats() {
 		stats := g.miner.Stats()
 		buf, err := json.Marshal(stats)
 		if err != nil {
-			g.errors <- errors.WithStack(err)
+			log.Error(err)
 			return
 		}
 		g.webview.Dispatch(func() {
@@ -193,28 +193,28 @@ func (g *guiBackend) UpdateConfig(s string) {
 	var config miner.Config
 	err := json.Unmarshal([]byte(s), &config)
 	if err != nil {
-		g.errors <- err
+		g.panic <- err
 		return
 	}
 
 	out, err := yaml.Marshal(&config)
 	if err != nil {
-		g.errors <- err
+		g.panic <- err
 		return
 	}
 
 	err = ioutil.WriteFile(configPath, []byte(out), os.ModePerm)
 	if err != nil {
-		g.errors <- err
+		g.panic <- err
 		return
 	}
 
 	g.Config = config
 
-	// defers are executed in last-in-first-out order (unlock -> stop -> start)
+	// defers are executed in last-in-first-out order (stop -> start)
 	if g.miner != nil {
 		defer g.Start()
 		defer g.Stop()
 	}
-	defer g.mu.Unlock()
+	g.mu.Unlock()
 }
