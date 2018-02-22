@@ -55,7 +55,17 @@ func (worker *Ethash) Start() error {
 		defer close(workChannels[index])
 	}
 
-	var hash *ethash.Ethash
+	var light *ethash.Light
+	var full *ethash.Full
+	defer func() {
+		if light != nil {
+			light.Release()
+		}
+		if full != nil {
+			full.Release()
+		}
+	}()
+
 	var seedhash string
 
 	for work := range worker.Work {
@@ -71,28 +81,40 @@ func (worker *Ethash) Start() error {
 			for i := 0; i < totalThreads; i++ {
 				close(workChannels[i])
 				workChannels[i] = make(chan *ethash.Work, 1)
-				if hash != nil {
-					hash.Release()
+				if light != nil {
+					light.Release()
+					light = nil
+				}
+				if full != nil {
+					full.Release()
+					full = nil
 				}
 			}
 
-			log.Info("DAG is being initialized, this may take a while")
-			hash, err = ethash.NewEthash(seedhashBytes)
+			light, err = ethash.NewLight(seedhashBytes)
 			if err != nil {
 				return err
 			}
-			log.Info("DAG initialized")
+
+			if len(worker.config.Processors) > 0 {
+				log.Info("DAG is being initialized, this may take a while")
+				full, err = ethash.NewFull(light)
+				if err != nil {
+					return err
+				}
+				log.Info("DAG initialized")
+			}
 
 			for cpuIndex, conf := range worker.config.Processors {
 				for i := 0; i < conf.Threads; i++ {
 					key := []string{"cpu", fmt.Sprintf("%v", cpuIndex), fmt.Sprintf("%v", i)}
-					go worker.thread(key, hash, workChannels[len(worker.config.CLDevices)+i])
+					go worker.thread(key, full, workChannels[len(worker.config.CLDevices)+i])
 				}
 			}
 
 			if len(worker.config.CLDevices) > 0 {
 				for i, d := range worker.config.CLDevices {
-					cl, err := newEthashCL(d, hash)
+					cl, err := newEthashCL(d, light)
 					if err != nil {
 						return err
 					}
@@ -111,7 +133,7 @@ func (worker *Ethash) Start() error {
 	return nil
 }
 
-func (worker *Ethash) thread(key []string, hash *ethash.Ethash, workChan chan *ethash.Work) {
+func (worker *Ethash) thread(key []string, full *ethash.Full, workChan chan *ethash.Work) {
 	work := <-workChan
 	var ok bool
 
@@ -128,7 +150,7 @@ func (worker *Ethash) thread(key []string, hash *ethash.Ethash, workChan chan *e
 
 		default:
 			start := time.Now()
-			if err := work.VerifyRange(hash, nonce, stepping, worker.Shares); err != nil {
+			if err := work.VerifyRange(full, nonce, stepping, worker.Shares); err != nil {
 				workerError(err)
 			}
 			nonce += stepping

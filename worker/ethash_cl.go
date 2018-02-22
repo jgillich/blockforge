@@ -29,7 +29,7 @@ type ethashCL struct {
 	globalWorkSize int
 }
 
-func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error) {
+func newEthashCL(config CLDeviceConfig, light *ethash.Light) (*ethashCL, error) {
 	kernel, err := packr.NewBox("../opencl").MustString("ethash.cl")
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 
 	device := config.Device.CL()
 
-	if int(config.Device.CL().GlobalMemSize()) < len(ethash.DAG) {
+	if int(config.Device.CL().GlobalMemSize()) < light.DataSize {
 		return nil, fmt.Errorf("GPU has insufficient memory to fit DAG")
 	}
 
@@ -60,15 +60,15 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 	}
 
 	// TODO CreateBuffer results in Invalid Host Ptr, might be a bug in the bindings
-	cache, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, len(ethash.Cache))
+	cache, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, len(light.Cache))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if _, err := queue.EnqueueWriteBuffer(cache, true, 0, len(ethash.Cache), unsafe.Pointer(&ethash.Cache[0]), nil); err != nil {
+	if _, err := queue.EnqueueWriteBuffer(cache, true, 0, len(light.Cache), unsafe.Pointer(&light.Cache[0]), nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	dag, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, len(ethash.DAG))
+	dag, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, light.DataSize)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -86,8 +86,8 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 	options := []string{
 		fmt.Sprintf("-D%v=%v", "PLATFORM", 0), // TODO 1 for AMD, 2 for NVIDIA
 		fmt.Sprintf("-D%v=%v", "GROUP_SIZE", workgroupSize),
-		fmt.Sprintf("-D%v=%v", "DAG_SIZE", len(ethash.DAG)/128),
-		fmt.Sprintf("-D%v=%v", "LIGHT_SIZE", len(ethash.Cache)/64), // TODO what's the right size?
+		fmt.Sprintf("-D%v=%v", "DAG_SIZE", light.DataSize/128),
+		fmt.Sprintf("-D%v=%v", "LIGHT_SIZE", len(light.Cache)/64), // TODO what's the right size?
 		//fmt.Sprintf("-D%v=%v", "ACCESSES", workgroupSize), TODO??
 		fmt.Sprintf("-D%v=%v", "MAX_OUTPUTS", 1),
 		// fmt.Sprintf("-D%v=%v", "PLATFORM", workgroupSize), TODO!!
@@ -127,7 +127,7 @@ func newEthashCL(config CLDeviceConfig, ethash *ethash.Ethash) (*ethashCL, error
 		return nil, errors.WithStack(err)
 	}
 
-	work := len(ethash.DAG) / 128
+	work := light.DataSize / 128
 	fullRuns := work / globalWorkSize
 	restWork := work % globalWorkSize
 	if restWork > 0 {

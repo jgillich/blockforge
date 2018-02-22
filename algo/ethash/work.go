@@ -49,8 +49,8 @@ func DiffToTarget(diff float32) *big.Int {
 	return new(big.Int).SetBytes(t)
 }
 
-func (work *Work) Verify(hash *Ethash, nonce uint64) (bool, error) {
-	ret := C.ethash_full_compute(hash.full, hashToH256(work.Header), C.uint64_t(nonce))
+func (work *Work) Verify(full *Full, nonce uint64) (bool, error) {
+	ret := C.ethash_full_compute(full.full, hashToH256(work.Header), C.uint64_t(nonce))
 	success, result := bool(ret.success), h256ToHash(ret.result)
 	if !success {
 		return false, fmt.Errorf("ethash compute failed")
@@ -60,8 +60,8 @@ func (work *Work) Verify(hash *Ethash, nonce uint64) (bool, error) {
 	return false, nil
 }
 
-func (work *Work) VerifySend(hash *Ethash, nonce uint64, results chan<- Share) (bool, error) {
-	if ok, err := work.Verify(hash, work.ExtraNonce+nonce); ok {
+func (work *Work) VerifySend(full *Full, nonce uint64, results chan<- Share) (bool, error) {
+	if ok, err := work.Verify(full, work.ExtraNonce+nonce); ok {
 		results <- Share{
 			JobId: work.JobId,
 			Nonce: nonce,
@@ -72,10 +72,10 @@ func (work *Work) VerifySend(hash *Ethash, nonce uint64, results chan<- Share) (
 	}
 }
 
-func (work *Work) VerifyRange(hash *Ethash, start uint64, size uint64, results chan<- Share) error {
+func (work *Work) VerifyRange(full *Full, start uint64, size uint64, results chan<- Share) error {
 	end := start + size
 	for i := start; i < end; i++ {
-		if _, err := work.VerifySend(hash, i, results); err != nil {
+		if _, err := work.VerifySend(full, i, results); err != nil {
 			return err
 		}
 	}

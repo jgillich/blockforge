@@ -15,46 +15,65 @@ import (
 
 var EthashEpochLength uint64 = 30000
 
-type Ethash struct {
-	Cache []byte
+type Light struct {
+	Cache    []byte
+	DataSize int
+	seed     C.ethash_h256_t
+	light    C.ethash_light_t
+}
+
+type Full struct {
+	Light *Light
 	DAG   []byte
-	light C.ethash_light_t
 	full  C.ethash_full_t
 }
 
-func NewEthash(seedhash []byte) (*Ethash, error) {
+func NewLight(seedhash []byte) (*Light, error) {
 	blockNumber, err := seedHashToBlockNum(seedhash)
 	if err != nil {
 		return nil, err
 	}
 
-	sh := hashToH256(seedhash)
+	seed := hashToH256(seedhash)
 
-	light := C.ethash_light_new_internal(C.ethash_get_cachesize(C.uint64_t(blockNumber)), &sh)
+	light := C.ethash_light_new_internal(C.ethash_get_cachesize(C.uint64_t(blockNumber)), &seed)
 	light.block_number = C.uint64_t(blockNumber)
 
+	cache := C.GoBytes(unsafe.Pointer(light.cache), C.int(light.cache_size))
+
+	datasize := int(C.ethash_get_datasize(light.block_number))
+
+	return &Light{
+		cache,
+		datasize,
+		seed,
+		light,
+	}, nil
+}
+
+func NewFull(light *Light) (*Full, error) {
 	dir := make([]byte, 256)
 	if !C.ethash_get_default_dirname((*C.char)(unsafe.Pointer(&dir[0])), 256) {
 		return nil, fmt.Errorf("failed to determine ethash dag storage directory")
 	}
 
-	cache := C.GoBytes(unsafe.Pointer(light.cache), C.int(light.cache_size))
-
-	fullsize := C.ethash_get_datasize(light.block_number)
-	full := C.ethash_full_new_internal((*C.char)(unsafe.Pointer(&dir[0])), sh, fullsize, light, nil)
+	fullsize := C.ethash_get_datasize(light.light.block_number)
+	full := C.ethash_full_new_internal((*C.char)(unsafe.Pointer(&dir[0])), light.seed, fullsize, light.light, nil)
 
 	dag := C.GoBytes(unsafe.Pointer(C.ethash_full_dag(full)), C.int(C.ethash_full_dag_size(full)/4))
 
-	return &Ethash{
-		cache,
-		dag,
+	return &Full{
 		light,
+		dag,
 		full,
 	}, nil
 }
 
-func (e *Ethash) Release() {
+func (e *Light) Release() {
 	C.ethash_light_delete(e.light)
+}
+
+func (e *Full) Release() {
 	C.ethash_full_delete(e.full)
 }
 
