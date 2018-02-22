@@ -25,7 +25,6 @@ type Ethash struct {
 	// random source for nonces
 	rand *rand.Rand
 
-	hash     *ethash.Ethash
 	seedhash string
 
 	metrics *metrics.Metrics
@@ -93,7 +92,7 @@ func (worker *Ethash) Start() error {
 
 			if len(worker.config.CLDevices) > 0 {
 				for i, d := range worker.config.CLDevices {
-					cl, err := newEthashCL(d, worker.hash)
+					cl, err := newEthashCL(d, hash)
 					if err != nil {
 						return err
 					}
