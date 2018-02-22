@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	metrics "github.com/armon/go-metrics"
@@ -28,7 +27,6 @@ type Ethash struct {
 
 	hash     *ethash.Ethash
 	seedhash string
-	lock     sync.RWMutex
 
 	metrics *metrics.Metrics
 }
@@ -60,6 +58,8 @@ func (worker *Ethash) Start() error {
 		defer close(workChannels[index])
 	}
 
+	var hash *ethash.Ethash
+
 	for work := range worker.Work {
 		if worker.seedhash != work.Seedhash {
 			worker.seedhash = work.Seedhash
@@ -72,12 +72,13 @@ func (worker *Ethash) Start() error {
 			for i := 0; i < totalThreads; i++ {
 				close(workChannels[i])
 				workChannels[i] = make(chan *ethash.Work, 1)
+				if hash != nil {
+					hash.Release()
+				}
 			}
 
 			log.Info("DAG is being initialized, this may take a while")
-			worker.lock.Lock()
-			worker.hash, err = ethash.NewEthash(seedhash)
-			worker.lock.Unlock()
+			hash, err = ethash.NewEthash(seedhash)
 			if err != nil {
 				return err
 			}
@@ -86,7 +87,7 @@ func (worker *Ethash) Start() error {
 			for cpuIndex, conf := range worker.config.Processors {
 				for i := 0; i < conf.Threads; i++ {
 					key := []string{"cpu", fmt.Sprintf("%v", cpuIndex), fmt.Sprintf("%v", i)}
-					go worker.thread(key, workChannels[len(worker.config.CLDevices)+i])
+					go worker.thread(key, hash, workChannels[len(worker.config.CLDevices)+i])
 				}
 			}
 
@@ -111,9 +112,12 @@ func (worker *Ethash) Start() error {
 	return nil
 }
 
-func (worker *Ethash) thread(key []string, workChan chan *ethash.Work) {
+func (worker *Ethash) thread(key []string, hash *ethash.Ethash, workChan chan *ethash.Work) {
 	work := <-workChan
 	var ok bool
+
+	nonce := uint64(worker.rand.Uint32())
+	stepping := uint64(128 * 1024)
 
 	for {
 		select {
@@ -121,15 +125,15 @@ func (worker *Ethash) thread(key []string, workChan chan *ethash.Work) {
 			if !ok {
 				return
 			}
+			nonce = uint64(worker.rand.Uint32())
 
 		default:
 			start := time.Now()
-			worker.lock.RLock()
-			if err := work.VerifyRange(worker.hash, uint64(worker.rand.Uint32()), 10*1024, worker.Shares); err != nil {
+			if err := work.VerifyRange(hash, nonce, stepping, worker.Shares); err != nil {
 				workerError(err)
 			}
-			worker.lock.RUnlock()
-			worker.metrics.IncrCounter(key, float32(10*1024/time.Since(start).Seconds()))
+			nonce += stepping
+			worker.metrics.IncrCounter(key, float32(float64(stepping)/time.Since(start).Seconds()))
 		}
 	}
 }
@@ -157,7 +161,6 @@ func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash
 
 		default:
 			start := time.Now()
-			worker.lock.RLock()
 			startNonce := uint64(worker.rand.Uint32())
 			if err := cl.Run(work.ExtraNonce+startNonce, results); err != nil {
 				workerError(err)
@@ -168,7 +171,6 @@ func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash
 					Nonce: startNonce + uint64(results[1]),
 				}
 			}
-			worker.lock.RUnlock()
 			worker.metrics.IncrCounter(key, float32(10*1024/time.Since(start).Seconds()))
 		}
 	}

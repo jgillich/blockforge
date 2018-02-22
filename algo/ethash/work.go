@@ -40,11 +40,13 @@ func DiffToTarget(diff float32) *big.Int {
 		binary.LittleEndian.PutUint64(t[k*4:], m)
 	}
 
-	reverse := make([]byte, 32)
-	for i := 0; i < 32; i++ {
-		reverse[31-i] = t[i]
+	// reverse
+	for i := 0; i < len(t)/2; i++ {
+		j := len(t) - i - 1
+		t[i], t[j] = t[j], t[i]
 	}
-	return new(big.Int).SetBytes(reverse)
+
+	return new(big.Int).SetBytes(t)
 }
 
 func (work *Work) Verify(hash *Ethash, nonce uint64) (bool, error) {
@@ -71,7 +73,8 @@ func (work *Work) VerifySend(hash *Ethash, nonce uint64, results chan<- Share) (
 }
 
 func (work *Work) VerifyRange(hash *Ethash, start uint64, size uint64, results chan<- Share) error {
-	for i := start + work.ExtraNonce; i < start+size+work.ExtraNonce; i++ {
+	end := start + size + work.ExtraNonce
+	for i := start + work.ExtraNonce; i < end; i++ {
 		if _, err := work.VerifySend(hash, i, results); err != nil {
 			return err
 		}

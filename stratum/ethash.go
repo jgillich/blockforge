@@ -244,6 +244,8 @@ func (stratum *Ethash) loop() {
 				continue
 			}
 
+			log.Infof("job difficulty %v", params[0])
+
 			stratum.target = ethash.DiffToTarget(params[0])
 		case "mining.set_extranonce":
 			var params []string
@@ -303,7 +305,7 @@ func (stratum *Ethash) submit(share ethash.Share) {
 		stratum.protoErr(err)
 		return
 	}
-	log.Infof("submitting share %+v", params)
+	log.Infof("submitting share %v", string(params))
 	stratum.conn.putMessage(&message{
 		Id:     1,
 		Method: "mining.submit",

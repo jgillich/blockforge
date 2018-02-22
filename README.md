@@ -5,10 +5,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/6bl4w08cpa6163kx?svg=true)](https://ci.appveyor.com/project/JakobGillich/blockforge)
 [![Snap Status](https://build.snapcraft.io/badge/jgillich/blockforge.svg)](https://build.snapcraft.io/user/jgillich/blockforge)
 
- BlockForge is a next generation miner for cryptocurrencies.
- Easy to use, multi algo and open source.
-
-Current state: Under development.
+BlockForge is a next generation miner for cryptocurrencies. Easy to use, multi algo and open source.
+Alpha quality software under heavy development, use with caution.
 
 ## Usage
 
