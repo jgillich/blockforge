@@ -126,7 +126,7 @@ func (worker *Ethash) thread(key []string, workChan chan *ethash.Work) {
 			start := time.Now()
 			worker.lock.RLock()
 			if err := work.VerifyRange(worker.hash, uint64(worker.rand.Uint32()), 10*1024, worker.Shares); err != nil {
-				log.Error(err)
+				workerError(err)
 			}
 			worker.lock.RUnlock()
 			worker.metrics.IncrCounter(key, float32(10*1024/time.Since(start).Seconds()))
@@ -138,9 +138,11 @@ func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash
 	defer cl.Release()
 
 	work := <-workChan
-	cl.Update(work.Header, work.Target)
-	var ok bool
+	if err := cl.Update(work.Header, work.Target); err != nil {
+		workerError(err)
+	}
 
+	var ok bool
 	var results [2]uint32
 
 	for {
@@ -149,13 +151,17 @@ func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash
 			if !ok {
 				return
 			}
-			cl.Update(work.Header, work.Target)
+			if err := cl.Update(work.Header, work.Target); err != nil {
+				workerError(err)
+			}
 
 		default:
 			start := time.Now()
 			worker.lock.RLock()
 			startNonce := uint64(worker.rand.Uint32())
-			cl.Run(work.ExtraNonce+startNonce, results)
+			if err := cl.Run(work.ExtraNonce+startNonce, results); err != nil {
+				workerError(err)
+			}
 			if results[0] > 0 {
 				worker.Shares <- ethash.Share{
 					JobId: work.JobId,

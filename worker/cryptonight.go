@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/getsentry/raven-go"
+
 	metrics "github.com/armon/go-metrics"
 	"gitlab.com/blockforge/blockforge/algo/cryptonight"
 	"gitlab.com/blockforge/blockforge/log"
@@ -72,7 +74,9 @@ func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCL, workChan c
 
 	var ok bool
 	work := <-workChan
-	cl.SetJob(work.Input, work.Target)
+	if err := cl.Update(work.Input, work.Target); err != nil {
+		workerError(err)
+	}
 
 	for {
 		select {
@@ -80,14 +84,14 @@ func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCL, workChan c
 			start := time.Now()
 			results := make([]uint32, 0x100)
 
-			if err := cl.RunJob(results, work.NextNonce(cl.Intensity)); err != nil {
-				log.Errorw("cl error", "error", err)
-				return
+			if err := cl.Run(results, work.NextNonce(cl.Intensity)); err != nil {
+				workerError(err)
 			}
 
-			// number of results is stored in last item of results array
+			// number of results is stored in last item of results slice
 			for i := uint32(0); i < results[0xFF]; i++ {
 				if !work.VerifySend(worker.Algo.Lite, results[i], worker.Shares) {
+					raven.CaptureMessage("invalid result from CL worker", nil)
 					log.Errorw("invalid result from CL worker")
 				}
 			}
@@ -97,7 +101,9 @@ func (worker *Cryptonight) gpuThread(key []string, cl *cryptonightCL, workChan c
 			if !ok {
 				return
 			}
-			cl.SetJob(work.Input, work.Target)
+			if err := cl.Update(work.Input, work.Target); err != nil {
+				workerError(err)
+			}
 		}
 
 	}

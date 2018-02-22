@@ -156,7 +156,7 @@ func newCryptonightCL(config CLDeviceConfig, lite bool) (*cryptonightCL, error) 
 	return &w, nil
 }
 
-func (w *cryptonightCL) SetJob(input []byte, target uint64) error {
+func (w *cryptonightCL) Update(input []byte, target uint64) error {
 
 	uintensity := uint64(w.Intensity)
 
@@ -268,7 +268,7 @@ func (w *cryptonightCL) SetJob(input []byte, target uint64) error {
 	return nil
 }
 
-func (w *cryptonightCL) RunJob(results []uint32, nonce uint32) error {
+func (w *cryptonightCL) Run(results []uint32, nonce uint32) error {
 
 	// round up to next multiple of worksize
 	threads := ((w.Intensity + w.worksize - 1) / w.worksize) * w.worksize
