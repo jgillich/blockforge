@@ -60,15 +60,18 @@ func (worker *Ethash) Start() error {
 		defer close(workChannels[index])
 	}
 
-	key := []string{"cpu", fmt.Sprintf("%v", 0), fmt.Sprintf("%v", 0)}
-	go worker.thread(key, workChannels[0])
-
 	for work := range worker.Work {
 		if worker.seedhash != work.Seedhash {
 			worker.seedhash = work.Seedhash
 			seedhash, err := hex.DecodeString(strings.TrimPrefix(work.Seedhash, "0x"))
 			if err != nil {
 				return err
+			}
+
+			// when DAG changes, we shutdown and recreate all threads
+			for i := 0; i < totalThreads; i++ {
+				close(workChannels[i])
+				workChannels[i] = make(chan *ethash.Work, 1)
 			}
 
 			log.Info("DAG is being initialized, this may take a while")
@@ -79,6 +82,13 @@ func (worker *Ethash) Start() error {
 				return err
 			}
 			log.Info("DAG initialized")
+
+			for cpuIndex, conf := range worker.config.Processors {
+				for i := 0; i < conf.Threads; i++ {
+					key := []string{"cpu", fmt.Sprintf("%v", cpuIndex), fmt.Sprintf("%v", i)}
+					go worker.thread(key, workChannels[len(worker.config.CLDevices)+i])
+				}
+			}
 
 			if len(worker.config.CLDevices) > 0 {
 				for i, d := range worker.config.CLDevices {
