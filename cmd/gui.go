@@ -85,7 +85,7 @@ var guiCmd = &cobra.Command{
 
 		view := webview.New(webview.Settings{
 			URL:       "http://" + listener.Addr().String(),
-			Title:     fmt.Sprintf("BlockForge %v", VERSION),
+			Title:     fmt.Sprintf("BlockForge %v", cmd.Version),
 			Width:     1232,
 			Height:    700,
 			Resizable: true,

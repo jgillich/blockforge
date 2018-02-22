@@ -12,14 +12,17 @@ import (
 
 //go:generate packr
 
-var DSN = ""
+var (
+	VERSION = "devel"
+	DSN     = ""
+)
 
 func main() {
 	raven.SetDSN(DSN)
 	cobra.MousetrapHelpText = ""
 
 	err, _ := raven.CapturePanicAndWait(func() {
-		err := cmd.Execute()
+		err := cmd.Execute(VERSION)
 		if err != nil {
 			log.Panic(err)
 		}

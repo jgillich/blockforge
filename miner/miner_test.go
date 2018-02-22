@@ -24,7 +24,7 @@ func TestMiner(t *testing.T) {
 		},
 	}
 
-	miner, err := New(config)
+	miner, err := New(&config)
 	if err != nil {
 		t.Fatal(err)
 	}

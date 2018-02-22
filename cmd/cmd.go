@@ -16,12 +16,6 @@ import (
 	"gitlab.com/blockforge/blockforge/miner"
 )
 
-var VERSION = "devel"
-
-func init() {
-	cmd.Version = VERSION
-}
-
 var (
 	debug      bool
 	configPath string
@@ -53,7 +47,8 @@ func init() {
 	cmd.PersistentFlags().StringVar(&configPath, "config", defaultPath, "config file path")
 }
 
-func Execute() error {
+func Execute(version string) error {
+	cmd.Version = version
 	return cmd.Execute()
 }
 
