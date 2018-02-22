@@ -53,7 +53,8 @@ type subscribeResult struct {
 
 func NewEthash(pool Pool) (Client, error) {
 	stratum := &Ethash{
-		work: make(chan *ethash.Work),
+		// buffered so we can keep parsing messages and avoid panic when stop is called during dag generation
+		work: make(chan *ethash.Work, 25),
 		pool: pool,
 	}
 
