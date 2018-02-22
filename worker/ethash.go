@@ -25,8 +25,6 @@ type Ethash struct {
 	// random source for nonces
 	rand *rand.Rand
 
-	seedhash string
-
 	metrics *metrics.Metrics
 }
 
@@ -58,11 +56,13 @@ func (worker *Ethash) Start() error {
 	}
 
 	var hash *ethash.Ethash
+	var seedhash string
 
 	for work := range worker.Work {
-		if worker.seedhash != work.Seedhash {
-			worker.seedhash = work.Seedhash
-			seedhash, err := hex.DecodeString(strings.TrimPrefix(work.Seedhash, "0x"))
+		if seedhash != work.Seedhash {
+			seedhash = work.Seedhash
+
+			seedhashBytes, err := hex.DecodeString(strings.TrimPrefix(work.Seedhash, "0x"))
 			if err != nil {
 				return err
 			}
@@ -77,7 +77,7 @@ func (worker *Ethash) Start() error {
 			}
 
 			log.Info("DAG is being initialized, this may take a while")
-			hash, err = ethash.NewEthash(seedhash)
+			hash, err = ethash.NewEthash(seedhashBytes)
 			if err != nil {
 				return err
 			}
@@ -116,7 +116,7 @@ func (worker *Ethash) thread(key []string, hash *ethash.Ethash, workChan chan *e
 	var ok bool
 
 	nonce := uint64(worker.rand.Uint32())
-	stepping := uint64(128 * 1024)
+	stepping := uint64(64 * 1024)
 
 	for {
 		select {
