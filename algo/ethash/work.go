@@ -61,7 +61,7 @@ func (work *Work) Verify(hash *Ethash, nonce uint64) (bool, error) {
 }
 
 func (work *Work) VerifySend(hash *Ethash, nonce uint64, results chan<- Share) (bool, error) {
-	if ok, err := work.Verify(hash, nonce); ok {
+	if ok, err := work.Verify(hash, work.ExtraNonce+nonce); ok {
 		results <- Share{
 			JobId: work.JobId,
 			Nonce: nonce,
@@ -73,8 +73,8 @@ func (work *Work) VerifySend(hash *Ethash, nonce uint64, results chan<- Share) (
 }
 
 func (work *Work) VerifyRange(hash *Ethash, start uint64, size uint64, results chan<- Share) error {
-	end := start + size + work.ExtraNonce
-	for i := start + work.ExtraNonce; i < end; i++ {
+	end := start + size
+	for i := start; i < end; i++ {
 		if _, err := work.VerifySend(hash, i, results); err != nil {
 			return err
 		}
