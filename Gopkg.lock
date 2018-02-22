@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/armon/go-metrics"
   packages = ["."]
-  revision = "7aa49fde808223f8dadfdbfd3a20ff6c19e5f9ec"
+  revision = "783273d703149aaeb9897cf58613d5af48861c25"
 
 [[projects]]
   name = "github.com/certifi/gocertifi"
@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = ["crypto/sha3"]
-  revision = "5f54075760748ae7f249bf735565924ea885c477"
-  version = "v1.8.0"
+  revision = "1e67410e88d2685bc54611a7c9f75c327b553ccc"
+  version = "v1.8.1"
 
 [[projects]]
   branch = "master"
@@ -53,7 +53,7 @@
   branch = "master"
   name = "github.com/jgillich/go-opencl"
   packages = ["cl"]
-  revision = "db9961dcc93ff747f6695ae3d18664d0a93c42c6"
+  revision = "f56f6b3a26a535598799a18ccfc13b1e76c52908"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -71,7 +71,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "be77323fc05148ef091e83b3866c0d47c8e74a8b"
+  revision = "a1e4933ab784095895e33dbe9f001ba10cfe2060"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -89,7 +89,7 @@
   branch = "master"
   name = "github.com/zserge/webview"
   packages = ["."]
-  revision = "53ed92bbe59bceac926d24e6854331ee54aa86d2"
+  revision = "1efca206df050c167ee39f4572040691b7b84611"
 
 [[projects]]
   name = "go.uber.org/atomic"
