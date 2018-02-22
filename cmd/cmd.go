@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -72,17 +73,7 @@ func initConfig() (*miner.Config, error) {
 		return nil, err
 	}
 
-	file, err := os.Create(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = file.Write(out)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, file.Close()
+	return config, ioutil.WriteFile(configPath, out, os.ModePerm)
 }
 
 func updateConfig(config *miner.Config) error {
@@ -95,15 +86,5 @@ func updateConfig(config *miner.Config) error {
 		return err
 	}
 
-	file, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-
-	_, err = file.Write(out)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(configPath, out, os.ModePerm)
 }
