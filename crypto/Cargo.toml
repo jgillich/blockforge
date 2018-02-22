@@ -3,5 +3,9 @@ name = "crypto"
 version = "0.1.0"
 authors = ["Jakob Gillich <jakob@gillich.me>"]
 
+[lib]
+name = "stringtools"
+crate-type = ["staticlib"]
+
 [dependencies]
 parity = { git = "https://github.com/paritytech/parity" }
