@@ -21,9 +21,11 @@ import (
 )
 
 var initArg bool
+var updateArg bool
 
 func init() {
 	minerCmd.PersistentFlags().BoolVar(&initArg, "init", false, "generate initial config file")
+	minerCmd.PersistentFlags().BoolVar(&updateArg, "update", false, "update config file to match your current hardware")
 
 	cmd.AddCommand(minerCmd)
 }
@@ -46,7 +48,7 @@ Mine coins.
 Supported coins: ` + coinList()),
 	Run: func(cmd *cobra.Command, args []string) {
 		if initArg {
-			err := initConfig()
+			_, err := initConfig()
 			if err != nil {
 				log.Fatalf("unexpected error: %+v", err)
 			}
@@ -68,7 +70,16 @@ Supported coins: ` + coinList()),
 			log.Fatalf("unexpected error: %+v", err)
 		}
 
-		miner, err := miner.New(config)
+		if updateArg {
+			err := updateConfig(&config)
+			if err != nil {
+				log.Fatalf("unexpected error: %+v", err)
+			}
+			fmt.Printf("Wrote config file to '%v'\n", configPath)
+			return
+		}
+
+		miner, err := miner.New(&config)
 		if err != nil {
 			log.Fatalf("unexpected error: %+v", err)
 		}

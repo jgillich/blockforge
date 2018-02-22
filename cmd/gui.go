@@ -38,25 +38,26 @@ var guiCmd = &cobra.Command{
 		}
 
 		errors := make(chan error, 10)
-		var config miner.Config
+		var config *miner.Config
 
 		buf, err := ioutil.ReadFile(configPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err := initConfig()
+				config, err = initConfig()
 				if err != nil {
 					errors <- err
-				} else {
-					buf, err = ioutil.ReadFile(configPath)
-					if err != nil {
-						errors <- err
-					}
 				}
+
 			} else {
 				errors <- err
 			}
 		} else {
 			err = yaml.Unmarshal(buf, &config)
+			if err != nil {
+				errors <- err
+			}
+
+			err = miner.UpdateConfig(config)
 			if err != nil {
 				errors <- err
 			}
@@ -137,7 +138,7 @@ type guiBackend struct {
 	panic      chan error
 	webview    webview.WebView
 	miner      *miner.Miner
-	Config     miner.Config           `json:"config"`
+	Config     *miner.Config          `json:"config"`
 	Processors []*processor.Processor `json:"processors"`
 	Coins      []coin.Coin            `json:"coins"`
 	mu         sync.Mutex
@@ -209,7 +210,7 @@ func (g *guiBackend) UpdateConfig(s string) {
 		return
 	}
 
-	g.Config = config
+	g.Config = &config
 
 	// defers are executed in last-in-first-out order (stop -> start)
 	if g.miner != nil {

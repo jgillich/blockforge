@@ -51,8 +51,36 @@ var defaultCoinConfig = map[string]Coin{
 	},
 }
 
-func GenerateConfig() (*Config, error) {
+func UpdateConfig(current *Config) error {
+	new, err := GenerateConfig()
+	if err != nil {
+		return err
+	}
 
+	for i, processor := range new.Processors {
+		for _, p := range current.Processors {
+			if p.Index == processor.Index {
+				new.Processors[i] = p
+				break
+			}
+		}
+	}
+	current.Processors = new.Processors
+
+	for i, cl := range new.OpenCLDevices {
+		for _, c := range current.OpenCLDevices {
+			if cl.Index == c.Index && cl.Platform == c.Platform {
+				new.OpenCLDevices[i] = c
+				break
+			}
+		}
+	}
+	current.OpenCLDevices = new.OpenCLDevices
+
+	return nil
+}
+
+func GenerateConfig() (*Config, error) {
 	config := Config{
 		Version:       currentConfigVersion,
 		Donate:        5,

@@ -56,18 +56,41 @@ func Execute() error {
 	return cmd.Execute()
 }
 
-func initConfig() error {
+func initConfig() (*miner.Config, error) {
 	config, err := miner.GenerateConfig()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	out, err := yaml.Marshal(&config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = os.MkdirAll(filepath.Dir(configPath), os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Create(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = file.Write(out)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, file.Close()
+}
+
+func updateConfig(config *miner.Config) error {
+	if err := miner.UpdateConfig(config); err != nil {
+		return err
+	}
+
+	out, err := yaml.Marshal(&config)
 	if err != nil {
 		return err
 	}
@@ -82,5 +105,5 @@ func initConfig() error {
 		return err
 	}
 
-	return file.Close()
+	return nil
 }

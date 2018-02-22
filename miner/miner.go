@@ -21,7 +21,7 @@ type Miner struct {
 	metrics  *metrics.Metrics
 }
 
-func New(config Config) (*Miner, error) {
+func New(config *Config) (*Miner, error) {
 	sink := metrics.NewInmemSink(time.Minute, 10*time.Minute)
 
 	metrics, err := metrics.New(metrics.DefaultConfig("worker"), sink)
