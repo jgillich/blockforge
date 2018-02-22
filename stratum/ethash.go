@@ -70,7 +70,7 @@ func NewEthash(pool Pool) (Client, error) {
 			for err := stratum.login(); err != nil; err = stratum.login() {
 				log.Error(err)
 				log.Info("failed to connect to stratum server, sleeping for 10 seconds...")
-				time.Sleep(10)
+				time.Sleep(time.Second * 10)
 			}
 		}
 	}()
