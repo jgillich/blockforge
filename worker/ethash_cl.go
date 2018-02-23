@@ -68,7 +68,7 @@ func newEthashCL(config CLDeviceConfig, light *ethash.Light) (*ethashCL, error) 
 		return nil, errors.WithStack(err)
 	}
 
-	dag, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, light.DataSize)
+	dag, err := ctx.CreateEmptyBuffer(cl.MemReadOnly, light.DataSize/4)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -86,10 +86,10 @@ func newEthashCL(config CLDeviceConfig, light *ethash.Light) (*ethashCL, error) 
 	options := []string{
 		fmt.Sprintf("-D%v=%v", "PLATFORM", 0), // TODO 1 for AMD, 2 for NVIDIA
 		fmt.Sprintf("-D%v=%v", "GROUP_SIZE", workgroupSize),
-		fmt.Sprintf("-D%v=%v", "DAG_SIZE", light.DataSize/128),
+		fmt.Sprintf("-D%v=%v", "DAG_SIZE", light.DataSize/128/4),
 		fmt.Sprintf("-D%v=%v", "LIGHT_SIZE", len(light.Cache)/64), // TODO what's the right size?
 		//fmt.Sprintf("-D%v=%v", "ACCESSES", workgroupSize), TODO??
-		fmt.Sprintf("-D%v=%v", "MAX_OUTPUTS", 1),
+		fmt.Sprintf("-D%v=%v", "MAX_OUTPUTS", "1u"),
 		// fmt.Sprintf("-D%v=%v", "PLATFORM", workgroupSize), TODO!!
 		fmt.Sprintf("-D%v=%v", "COMPUTE", 0), // TODO
 		fmt.Sprintf("-D%v=%v", "THREADS_PER_HASH", 8),
@@ -127,7 +127,7 @@ func newEthashCL(config CLDeviceConfig, light *ethash.Light) (*ethashCL, error) 
 		return nil, errors.WithStack(err)
 	}
 
-	work := light.DataSize / 128
+	work := light.DataSize / 128 / 4
 	fullRuns := work / globalWorkSize
 	restWork := work % globalWorkSize
 	if restWork > 0 {
@@ -176,19 +176,19 @@ func (cl *ethashCL) Update(header []byte, target *big.Int) error {
 	targetBytes := target.Bytes()
 
 	if _, err := cl.queue.EnqueueWriteBuffer(cl.header, false, 0, len(header), unsafe.Pointer(&header[0]), nil); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if _, err := cl.queue.EnqueueWriteBuffer(cl.search, false, 0, 4, unsafe.Pointer(&zero), nil); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err := cl.searchKernel.SetArgBuffer(0, cl.search); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
-	if err := cl.searchKernel.SetArgUnsafe(0, 64, unsafe.Pointer(&targetBytes[0])); err != nil {
-		return err
+	if err := cl.searchKernel.SetArgUnsafe(4, 8, unsafe.Pointer(&targetBytes[0])); err != nil {
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -197,19 +197,19 @@ func (cl *ethashCL) Update(header []byte, target *big.Int) error {
 func (cl *ethashCL) Run(nonce uint64, results [2]uint32) error {
 
 	if _, err := cl.queue.EnqueueReadBuffer(cl.search, true, 0, 4*len(results), unsafe.Pointer(&results[0]), nil); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err := cl.searchKernel.SetArgUint64(3, nonce); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if _, err := cl.queue.EnqueueNDRangeKernel(cl.searchKernel, nil, []int{cl.globalWorkSize}, []int{cl.workgroupSize}, nil); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err := cl.queue.Finish(); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil

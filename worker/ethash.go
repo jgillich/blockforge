@@ -51,8 +51,9 @@ func (worker *Ethash) Start() error {
 	workChannels := make([]chan *ethash.Work, totalThreads)
 	for i := 0; i < totalThreads; i++ {
 		workChannels[i] = make(chan *ethash.Work, 1)
-		index := i
-		defer close(workChannels[index])
+		defer func(i int) {
+			close(workChannels[i])
+		}(i)
 	}
 
 	var light *ethash.Light
@@ -170,6 +171,8 @@ func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash
 	var ok bool
 	var results [2]uint32
 
+	nonce := uint64(worker.rand.Uint32())
+
 	for {
 		select {
 		case work, ok = <-workChan:
@@ -179,20 +182,22 @@ func (worker *Ethash) clThread(key []string, cl *ethashCL, workChan chan *ethash
 			if err := cl.Update(work.Header, work.Target); err != nil {
 				workerError(err)
 			}
+			nonce = uint64(worker.rand.Uint32())
 
 		default:
 			start := time.Now()
-			startNonce := uint64(worker.rand.Uint32())
-			if err := cl.Run(work.ExtraNonce+startNonce, results); err != nil {
+
+			if err := cl.Run(work.ExtraNonce+nonce, results); err != nil {
 				workerError(err)
 			}
 			if results[0] > 0 {
 				worker.Shares <- ethash.Share{
 					JobId: work.JobId,
-					Nonce: startNonce + uint64(results[1]),
+					Nonce: nonce + uint64(results[1]),
 				}
 			}
-			worker.metrics.IncrCounter(key, float32(10*1024/time.Since(start).Seconds()))
+			nonce += uint64(cl.globalWorkSize)
+			worker.metrics.IncrCounter(key, float32(float64(cl.globalWorkSize)/time.Since(start).Seconds()))
 		}
 	}
 

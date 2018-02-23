@@ -393,10 +393,8 @@ __kernel void ethash_search(
 
 	if (as_ulong(as_uchar8(state[0]).s76543210) < target)
 	{
-    // TODO "error: call to 'min' is ambiguous" with beignet
-		// uint slot = min(MAX_OUTPUTS, atomic_inc(&g_output[0]) + 1);
-		// g_output[slot] = gid;
-    g_output[1] = gid;
+		uint slot = min(MAX_OUTPUTS, atomic_inc(&g_output[0]) + 1);
+		g_output[slot] = gid;
 	}
 }
 

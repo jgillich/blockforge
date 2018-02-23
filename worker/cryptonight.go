@@ -37,8 +37,9 @@ func (worker *Cryptonight) Start() error {
 	workChannels := make([]chan *cryptonight.Work, totalThreads)
 	for i := 0; i < totalThreads; i++ {
 		workChannels[i] = make(chan *cryptonight.Work, 1)
-		index := i
-		defer close(workChannels[index])
+		defer func(i int) {
+			close(workChannels[i])
+		}(i)
 	}
 
 	if len(worker.clDevices) > 0 {

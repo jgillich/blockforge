@@ -43,6 +43,6 @@ type CLDeviceConfig struct {
 // workerError reports an error and sleeps
 func workerError(err error) {
 	raven.CaptureError(err, nil)
-	log.Error(err)
+	log.Errorf("%+v", err)
 	time.Sleep(time.Minute * 1)
 }
